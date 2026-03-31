@@ -32,17 +32,17 @@ npm install @valkyrianlabs/payload-markdown
 import { markdownField } from '@valkyrianlabs/payload-markdown'
 
 export const Posts = {
-slug: 'posts',
-fields: [
-{
-name: 'title',
-type: 'text',
-},
-markdownField({
-name: 'content',
-label: 'Content',
-}),
-],
+  slug: 'posts',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+    },
+    markdownField({
+      name: 'content',
+      label: 'Content',
+    }),
+  ],
 }
 ```
 
@@ -54,8 +54,8 @@ label: 'Content',
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 
 <MarkdownRenderer
-markdown={post.content}
-options={{ theme: 'github-dark' }}
+  markdown={post.content}
+  options={{ theme: 'github-dark' }}
 />
 ```
 
@@ -86,12 +86,12 @@ No Tailwind? No problem — output will still render as plain HTML.
 
 ```typescript jsx
 <MarkdownRenderer
-markdown={content}
-variant="blog"        // blog | docs | compact | unstyled
-size="lg"             // sm | md | lg
-centered
-enableGutter
-fullBleedCode
+  markdown={content}
+  variant="blog"        // blog | docs | compact | unstyled
+  size="lg"             // sm | md | lg
+  centered
+  enableGutter
+  fullBleedCode
 />
 ```
 
