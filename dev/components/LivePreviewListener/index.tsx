@@ -7,5 +7,6 @@ import { getClientSideURL } from '../../utilities/getURL'
 
 export const LivePreviewListener: React.FC = () => {
   const router = useRouter()
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   return <PayloadLivePreview refresh={router.refresh} serverURL={getClientSideURL()} />
 }
