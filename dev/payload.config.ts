@@ -1,4 +1,4 @@
-import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
@@ -7,8 +7,9 @@ import { payloadMarkdown } from 'payload-markdown'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
-import { testEmailAdapter } from './helpers/testEmailAdapter.js'
-import { seed } from './seed.js'
+import { Posts } from './collections/Posts'
+import { testEmailAdapter } from './helpers/testEmailAdapter'
+import { seed } from './seed'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,10 +37,7 @@ const buildConfigWithMemoryDB = async () => {
       },
     },
     collections: [
-      {
-        slug: 'posts',
-        fields: [],
-      },
+      Posts,
       {
         slug: 'media',
         fields: [],
@@ -48,9 +46,10 @@ const buildConfigWithMemoryDB = async () => {
         },
       },
     ],
-    db: mongooseAdapter({
-      ensureIndexes: true,
-      url: process.env.DATABASE_URL || '',
+    db: postgresAdapter({
+      pool: {
+        connectionString: process.env.DATABASE_URL || '',
+      },
     }),
     editor: lexicalEditor(),
     email: testEmailAdapter,

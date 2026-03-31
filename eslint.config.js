@@ -27,6 +27,7 @@ export default [
   {
     rules: {
       'no-restricted-exports': 'off',
+      'curly': 'off',
     },
   },
   {

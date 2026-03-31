@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Base reset / polish */
+:root {
+    color-scheme: dark;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+/* Optional: nicer defaults */
+body {
+    @apply bg-neutral-950 text-neutral-100;
+}

@@ -14,6 +14,7 @@
     ".next/types/**/*.ts"
   ],
   "compilerOptions": {
+    "moduleResolution": "bundler",
     "baseUrl": "./",
     "paths": {
       "@payload-config": [
@@ -27,7 +28,7 @@
       ],
       "payload-markdown/rsc": [
         "../src/exports/rsc.ts"
-      ]
+      ],
     },
     "noEmit": true,
     "emitDeclarationOnly": false,
