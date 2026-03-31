@@ -11,6 +11,7 @@
     "skipLibCheck": true,
     "strict": true,
     "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "resolveJsonModule": true,
