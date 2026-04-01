@@ -1,52 +1,69 @@
-// import type { Payload } from 'payload'
-//
-// import config from '@payload-config'
-// import { createPayloadRequest, getPayload } from 'payload'
-// import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-//
-// import { customEndpointHandler } from '../src/endpoints/customEndpointHandler.js'
-//
-// let payload: Payload
-//
-// afterAll(async () => {
-//   await payload.destroy()
-// })
-//
-// beforeAll(async () => {
-//   payload = await getPayload({ config })
-// })
-//
-// describe('Plugin integration tests', () => {
-//   test('should query custom endpoint added by plugin', async () => {
-//     const request = new Request('http://localhost:3000/api/my-plugin-endpoint', {
-//       method: 'GET',
-//     })
-//
-//     const payloadRequest = await createPayloadRequest({ config, request })
-//     const response = await customEndpointHandler(payloadRequest)
-//     expect(response.status).toBe(200)
-//
-//     const data = await response.json()
-//     expect(data).toMatchObject({
-//       message: 'Hello from custom endpoint',
-//     })
-//   })
-//
-//   test('can create post with custom text field added by plugin', async () => {
-//     const post = await payload.create({
-//       collection: 'posts',
-//       data: {
-//         addedByPlugin: 'added by plugin',
-//       },
-//     })
-//     expect(post.addedByPlugin).toBe('added by plugin')
-//   })
-//
-//   test('plugin creates and seeds plugin-collection', async () => {
-//     expect(payload.collections['plugin-collection']).toBeDefined()
-//
-//     const { docs } = await payload.find({ collection: 'plugin-collection' })
-//
-//     expect(docs).toHaveLength(1)
-//   })
-// })
+import type { Config } from 'payload'
+
+import { describe, expect, test } from 'vitest'
+
+import { payloadMarkdown } from '../src/index.ts'
+
+describe('payload-markdown plugin', () => {
+  test('adds markdown block globally', async () => {
+    const config = await payloadMarkdown({
+      enabled: true,
+    })({
+      collections: [],
+    } as unknown as Config)
+
+    const block = config.blocks?.find((b) => b.slug === '@valkyrianlabs/markdown-block')
+
+    expect(block).toBeDefined()
+  })
+
+  test('injects markdown field into collection', async () => {
+    const baseConfig = {
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const config = await payloadMarkdown({
+      collections: {
+        posts: true,
+      },
+      enabled: true,
+    })(baseConfig)
+
+    const collection = config.collections?.find((c) => c.slug === 'posts')
+
+    const field = collection?.fields.find((f) => 'name' in f && f.name === 'content')
+
+    expect(field).toBeDefined()
+  })
+
+  test('respects custom field name', async () => {
+    const baseConfig = {
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const config = await payloadMarkdown({
+      collections: {
+        posts: {
+          fieldName: 'markdownBody',
+        },
+      },
+      enabled: true,
+    })(baseConfig)
+
+    const collection = config.collections?.find((c) => c.slug === 'posts')
+
+    const field = collection?.fields.find((f) => 'name' in f && f.name === 'markdownBody')
+
+    expect(field).toBeDefined()
+  })
+})

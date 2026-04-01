@@ -2,7 +2,7 @@ import path from 'path'
 import { loadEnv } from 'payload/node'
 import { fileURLToPath } from 'url'
 import tsconfigPaths from 'vite-tsconfig-paths'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -18,9 +18,10 @@ export default defineConfig(() => {
     ],
     test: {
       environment: 'node',
-      pool: 'vmThreads',
       hookTimeout: 30_000,
       testTimeout: 30_000,
+      include: ['dev/**/*int.spec.ts'],
+      exclude: [...configDefaults.exclude, '**/*.e2e.spec.ts'],
     },
   }
 })
