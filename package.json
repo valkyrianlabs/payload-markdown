@@ -1,6 +1,6 @@
 {
   "name": "@valkyrianlabs/payload-markdown",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Beautiful, production-ready Markdown rendering and editor support for Payload CMS, with Tailwind styling and extensible parsing (MDX, plugins, and custom formatting coming soon).",
   "license": "MIT",
   "type": "module",

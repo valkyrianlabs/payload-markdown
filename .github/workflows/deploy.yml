@@ -34,3 +34,8 @@ jobs:
         run: |
           export NEXT_CPU_COUNT=$(nproc)
           pnpm build
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          pnpm test:int

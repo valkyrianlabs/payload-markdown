@@ -129,7 +129,7 @@ jobs:
       - name: Run tests
         run: |
           set -euo pipefail
-          pnpm test
+          pnpm test:int
 
       - name: Build package
         run: |
