@@ -6,8 +6,9 @@
 
 Beautiful, production-ready Markdown for Payload CMS.
 
-Render Markdown with clean, modern styling out of the box — plus **layout-aware extensions** for building real content (
-columns, sections, structured blocks) without leaving Markdown.
+**Built for modern workflows — including seamless human ↔ AI collaboration.**
+
+Render Markdown with clean, modern styling out of the box — plus **layout-aware extensions** for building real content (columns, sections, structured blocks) without leaving Markdown.
 
 ---
 
@@ -17,23 +18,34 @@ columns, sections, structured blocks) without leaving Markdown.
 
 Write simple Markdown → get structured layouts instantly.
 
+**Install. Write. Preview. — in minutes, not hours.**
+
 ---
 
 ## 🧱 Layout-Aware Markdown
 
 Write layout-aware content directly in Markdown — **no MDX, no custom components, no editor friction.**
 
+**Qualifiers**:
+- Opening Qualifier: `:::section`, `:::2col`, `:::3col`
+- Closing Qualifier: `:::` (closes the most recent open block)
+  - If columns are nested inside a section, a single `:::` may close both
+  - Optional explicit closures: `:::end` | `:::endsection` | `:::endcol`
+
 **Section**:
 
 ```markdown
-:::section # optional section qualifier for grouping content
-:::          # closing qualifier (or `:::endsection` or `:::end`)
+:::section
+
+# My content here
+
+:::      
 ```
 
-**Columns**:
+**Columns** *(use :::2col or :::3col depending on layout)*:
 
 ```markdown
-:::2col # or :::3col
+:::2col
 
 # Column 1 content
 
@@ -95,6 +107,15 @@ Just clean, portable content.
 
 ---
 
+## 🎯 Use Cases
+
+- Developer blogs
+- Technical documentation
+- Content-heavy apps
+- AI-assisted writing workflows
+
+---
+
 ## 📦 Installation
 
 ```bash
@@ -153,10 +174,8 @@ export const Posts = {
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 
 <MarkdownRenderer
-  markdown = { post.content }
-  options = {
-    { theme: 'github-dark' }
-  }
+  markdown={post.content}
+  options={{ theme: 'github-dark' }}
 />
 ```
 
