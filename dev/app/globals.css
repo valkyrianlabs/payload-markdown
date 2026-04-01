@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@source "../../dist";
 
 /* Base reset / polish */
 :root {

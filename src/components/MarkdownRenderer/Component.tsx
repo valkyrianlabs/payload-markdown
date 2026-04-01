@@ -4,7 +4,7 @@ import type {
   MarkdownVariant,
 } from './types.d.ts'
 
-import { compileMarkdown } from '../../processing/renderMarkdown.ts'
+import { compileMarkdown } from '../../core/renderMarkdown.ts'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 

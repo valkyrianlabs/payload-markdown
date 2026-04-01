@@ -5,6 +5,7 @@ import { fromHtml } from 'hast-util-from-html'
 import { toString } from 'hast-util-to-string'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
+import remarkDirective from 'remark-directive'
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -17,6 +18,14 @@ import type {
 } from '../components/MarkdownRenderer/types.d.ts'
 
 import { codeToHtml, DEFAULT_CODE_THEME } from './codeToHtml.ts'
+import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.ts'
+
+function normalizeLayoutSyntax(input: string): string {
+  return input
+    .replace(/^[ \t]*:::endcol[ \t]*$/gim, ':::')
+    .replace(/^[ \t]*:::end[ \t]*$/gim, ':::')
+    .replace(/^[ \t]*:::endsection[ \t]*$/gim, ':::')
+}
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string,
@@ -94,9 +103,13 @@ const sanitizeSchema: Schema = {
     code: [...(defaultSchema.attributes?.code ?? []), ['className']],
     div: [...(defaultSchema.attributes?.div ?? []), ['className'], ['style']],
     pre: [...(defaultSchema.attributes?.pre ?? []), ['className'], ['style'], ['tabindex']],
+    section: [
+      ...((defaultSchema.attributes?.section as Array<[string, ...string[]] | string>) ?? []),
+      ['className'],
+    ],
     span: [...(defaultSchema.attributes?.span ?? []), ['className'], ['style']],
   },
-  tagNames: [...(defaultSchema.tagNames ?? []), 'span'],
+  tagNames: [...(defaultSchema.tagNames ?? []), 'span', 'section'],
 }
 
 export async function compileMarkdown(
@@ -106,18 +119,22 @@ export async function compileMarkdown(
   const warnings: string[] = []
 
   try {
+    const normalizedMarkdown = normalizeLayoutSyntax(markdown)
+
     const file = await unified()
-    .use(remarkParse)
-     .use(remarkGfm)
-     .use(remarkRehype, {
-      allowDangerousHtml: false,
-    })
-     .use(rehypeShikiCodeBlocks, {
-      theme: options.theme || DEFAULT_CODE_THEME,
-    })
-     .use(rehypeSanitize, sanitizeSchema)
-     .use(rehypeStringify)
-     .process(markdown)
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkDirective)
+      .use(remarkLayoutDirectives)
+      .use(remarkRehype, {
+        allowDangerousHtml: false,
+      })
+      .use(rehypeShikiCodeBlocks, {
+        theme: options.theme || DEFAULT_CODE_THEME,
+      })
+      .use(rehypeSanitize, sanitizeSchema)
+      .use(rehypeStringify)
+      .process(normalizedMarkdown)
 
     return {
       html: String(file),
