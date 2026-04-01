@@ -89,7 +89,6 @@ jobs:
         env:
           PKG_NAME: ${{ steps.pkg.outputs.name }}
           PKG_VERSION: ${{ steps.pkg.outputs.version }}
-          PUBLISHED_VERSION: ${{ env.PUBLISHED_VERSION }}
         run: |
           set -euo pipefail
 
@@ -103,23 +102,78 @@ jobs:
           echo "npm version: $PUBLISHED_VERSION"
           echo "local version: $PKG_VERSION"
 
-          node - <<'NODE'
-          const semver = require('semver');
+          PUBLISHED_VERSION="$PUBLISHED_VERSION" PKG_VERSION="$PKG_VERSION" node - <<'NODE'
           const published = process.env.PUBLISHED_VERSION;
           const local = process.env.PKG_VERSION;
 
-          if (!semver.valid(local)) {
-            console.error(`Local version is not valid semver: ${local}`);
-            process.exit(1);
-          }
+          const parse = (v) => {
+            const match = v.match(
+              /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/
+            );
+            if (!match) return null;
+            return {
+              major: Number(match[1]),
+              minor: Number(match[2]),
+              patch: Number(match[3]),
+              prerelease: match[4] ?? null,
+            };
+          };
 
-          if (!semver.valid(published)) {
+          const compareIdentifiers = (a, b) => {
+            const aNum = /^[0-9]+$/.test(a);
+            const bNum = /^[0-9]+$/.test(b);
+            if (aNum && bNum) return Number(a) - Number(b);
+            if (aNum) return -1;
+            if (bNum) return 1;
+            return a.localeCompare(b);
+          };
+
+          const comparePrerelease = (a, b) => {
+            if (a === null && b === null) return 0;
+            if (a === null) return 1;
+            if (b === null) return -1;
+
+            const aParts = a.split('.');
+            const bParts = b.split('.');
+            const len = Math.max(aParts.length, bParts.length);
+
+            for (let i = 0; i < len; i++) {
+              const aPart = aParts[i];
+              const bPart = bParts[i];
+              if (aPart === undefined) return -1;
+              if (bPart === undefined) return 1;
+
+              const cmp = compareIdentifiers(aPart, bPart);
+              if (cmp !== 0) return cmp;
+            }
+
+            return 0;
+          };
+
+          const compare = (a, b) => {
+            if (a.major !== b.major) return a.major - b.major;
+            if (a.minor !== b.minor) return a.minor - b.minor;
+            if (a.patch !== b.patch) return a.patch - b.patch;
+            return comparePrerelease(a.prerelease, b.prerelease);
+          };
+
+          const parsedPublished = parse(published);
+          const parsedLocal = parse(local);
+
+          if (!parsedPublished) {
             console.error(`Published version is not valid semver: ${published}`);
             process.exit(1);
           }
 
-          if (!semver.gt(local, published)) {
-            console.error(`Refusing publish: local version ${local} is not greater than npm version ${published}`);
+          if (!parsedLocal) {
+            console.error(`Local version is not valid semver: ${local}`);
+            process.exit(1);
+          }
+
+          if (compare(parsedLocal, parsedPublished) <= 0) {
+            console.error(
+              `Refusing publish: local version ${local} is not greater than npm version ${published}`
+            );
             process.exit(1);
           }
 
