@@ -81,6 +81,20 @@ Some content for the second column.
 
 ---
 
+## 🤖 AI-Friendly by Design
+
+Content is stored as plain Markdown — making it seamless to collaborate with AI.
+
+- Copy/paste directly into ChatGPT, Claude, or any AI tool
+- Refactor, expand, or rewrite content
+- Paste back with zero formatting loss
+
+No proprietary JSON formats.  
+No schema translation.  
+Just clean, portable content.
+
+---
+
 ## 📦 Installation
 
 ```bash
