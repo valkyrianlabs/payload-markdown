@@ -1,0 +1,168 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-production
+  cancel-in-progress: false
+
+jobs:
+  publish-to-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://www.npmjs.com/package/${{ vars.NPM_PACKAGE_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Read package metadata
+        id: pkg
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          PRIVATE="$(node -p "Boolean(require('./package.json').private)")"
+
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "private=$PRIVATE" >> "$GITHUB_OUTPUT"
+
+          echo "Package: $NAME"
+          echo "Version: $VERSION"
+          echo "Private: $PRIVATE"
+
+      - name: Ensure package is publishable
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.pkg.outputs.private }}" = "true" ]; then
+            echo "package.json has private=true; refusing to publish."
+            exit 1
+          fi
+
+      - name: Ensure release tag matches package.json version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PKG_VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          EXPECTED_ONE="v${PKG_VERSION}"
+          EXPECTED_TWO="${PKG_VERSION}"
+
+          if [ "$RELEASE_TAG" != "$EXPECTED_ONE" ] && [ "$RELEASE_TAG" != "$EXPECTED_TWO" ]; then
+            echo "Release tag '$RELEASE_TAG' does not match package.json version '$PKG_VERSION'."
+            echo "Expected '$EXPECTED_ONE' or '$EXPECTED_TWO'."
+            exit 1
+          fi
+
+      - name: Ensure version is newer than npm
+        shell: bash
+        env:
+          PKG_NAME: ${{ steps.pkg.outputs.name }}
+          PKG_VERSION: ${{ steps.pkg.outputs.version }}
+          PUBLISHED_VERSION: ${{ env.PUBLISHED_VERSION }}
+        run: |
+          set -euo pipefail
+
+          PUBLISHED_VERSION="$(npm view "$PKG_NAME" version 2>/dev/null || true)"
+
+          if [ -z "$PUBLISHED_VERSION" ]; then
+            echo "Package not found on npm yet. First publish allowed."
+            exit 0
+          fi
+
+          echo "npm version: $PUBLISHED_VERSION"
+          echo "local version: $PKG_VERSION"
+
+          node - <<'NODE'
+          const semver = require('semver');
+          const published = process.env.PUBLISHED_VERSION;
+          const local = process.env.PKG_VERSION;
+
+          if (!semver.valid(local)) {
+            console.error(`Local version is not valid semver: ${local}`);
+            process.exit(1);
+          }
+
+          if (!semver.valid(published)) {
+            console.error(`Published version is not valid semver: ${published}`);
+            process.exit(1);
+          }
+
+          if (!semver.gt(local, published)) {
+            console.error(`Refusing publish: local version ${local} is not greater than npm version ${published}`);
+            process.exit(1);
+          }
+
+          console.log(`Version check passed: ${local} > ${published}`);
+          NODE
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          pnpm test
+
+      - name: Build package
+        run: |
+          set -euo pipefail
+          export NEXT_CPU_COUNT="$(nproc)"
+          pnpm build
+
+      - name: Validate package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm pack --dry-run
+
+          TMP_DIR="$(mktemp -d)"
+          TARBALL="$(npm pack --pack-destination "$TMP_DIR" | tail -n 1)"
+          echo "Created tarball: $TMP_DIR/$TARBALL"
+
+          tar -tf "$TMP_DIR/$TARBALL" > "$TMP_DIR/files.txt"
+          echo "Packed files:"
+          cat "$TMP_DIR/files.txt"
+
+          if ! grep -q '^package/package.json$' "$TMP_DIR/files.txt"; then
+            echo "Packed tarball does not contain package.json"
+            exit 1
+          fi
+
+      - name: Publish dry-run
+        run: |
+          set -euo pipefail
+          npm publish --dry-run --access public
+
+      - name: Publish to npm
+        run: |
+          set -euo pipefail
+          npm publish --access public

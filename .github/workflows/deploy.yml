@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-publish-release:
+    runs-on: [self-hosted, Linux, X64, ubuntu-latest-lts]
+    if: ${{ github.event_name == 'push' && github.event.pull_request == null }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - uses: actions/cache@v3
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('package.json', 'pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-next-
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
+
+      - name: Build
+        run: |
+          export NEXT_CPU_COUNT=$(nproc)
+          pnpm build
