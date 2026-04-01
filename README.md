@@ -167,6 +167,51 @@ No Tailwind? No problem — output will still render as plain HTML.
 
 ---
 
+## 💡 Layout Extensions
+
+![@valkyrianlabs/payload-markdown column qualifier example](https://project-media.cooperhlarson.com/payload-markdown_column_example-1400x1263.png)
+
+Write structured layouts directly in Markdown using lightweight directives:
+
+**Section**:
+```markdown
+:::section   # optional section qualifier for grouping content
+:::          # closing qualifier (or `:::endsection` or `:::end`)
+```
+
+**Columns**:
+```markdown
+:::2col   # or :::3col
+
+# Column 1 content
+a description of the first column
+
+# Column 2 content
+a description of the second column
+
+:::
+```
+
+**Full Example**:
+```markdown
+:::section
+
+# My Blog Post
+This is a blog post with a two-column layout.
+
+:::2col
+
+## Column 1
+Some content for the first column.
+
+## Column 2
+Some content for the second column.
+
+:::      # closes both the columns and the section
+```
+
+---
+
 ## 🧠 Philosophy
 
 Markdown is the editor.
