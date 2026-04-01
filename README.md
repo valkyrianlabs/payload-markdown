@@ -6,13 +6,74 @@
 
 Beautiful, production-ready Markdown for Payload CMS.
 
-Render Markdown with clean, modern styling out of the box, plus a lightweight editor experience built around Markdown itself.
+Render Markdown with clean, modern styling out of the box — plus **layout-aware extensions** for building real content (
+columns, sections, structured blocks) without leaving Markdown.
+
+---
+
+## 📸 Example
+
+![payload-markdown example](https://project-media.cooperhlarson.com/payload-markdown_column_example-1400x1263.png)
+
+Write simple Markdown → get structured layouts instantly.
+
+---
+
+## 🧱 Layout-Aware Markdown
+
+Write layout-aware content directly in Markdown — **no MDX, no custom components, no editor friction.**
+
+**Section**:
+
+```markdown
+:::section # optional section qualifier for grouping content
+:::          # closing qualifier (or `:::endsection` or `:::end`)
+```
+
+**Columns**:
+
+```markdown
+:::2col # or :::3col
+
+# Column 1 content
+
+a description of the first column
+
+# Column 2 content
+
+a description of the second column
+
+:::
+```
+
+**Full Example**:
+
+```markdown
+:::section
+
+# My Blog Post
+
+This is a blog post with a two-column layout.
+
+:::2col
+
+## Column 1
+
+Some content for the first column.
+
+## Column 2
+
+Some content for the second column.
+
+:::      # closes both the columns and the section
+```
 
 ---
 
 ## ✨ Features
 
 * 🎯 Drop-in Markdown renderer with polished defaults
+* 🧱 Layout-aware Markdown (columns, sections, grid directives)
 * 🧼 Clean, readable output using Tailwind-friendly prose styling
 * ⚡ Lightweight editor integration (no heavy WYSIWYG overhead)
 * 🔌 Extensible pipeline (remark / rehype support)
@@ -46,13 +107,11 @@ export default {
 }
 ```
 
-This enables Markdown support globally and injects fields into configured collections.
+No boilerplate required — fields are automatically added to configured collections.
 
 ---
 
-### 2. Add the Markdown field to your collection (optional override)
-
-If you want manual control instead of automatic injection:
+### 2. Add the Markdown field manually (optional)
 
 ```ts
 import { markdownField } from '@valkyrianlabs/payload-markdown'
@@ -80,18 +139,16 @@ export const Posts = {
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 
 <MarkdownRenderer
-markdown={post.content}
-options={{ theme: 'github-dark' }}
+  markdown = { post.content }
+  options = {
+    { theme: 'github-dark' }
+  }
 />
 ```
 
 ---
 
 ### 4. Use with Payload Blocks (Layout Builder)
-
-If you're using block-based layouts (recommended for pages, landing content, etc), you can use the built-in `MarkdownBlock`.
-
-#### Add the block to your collection
 
 ```ts
 import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
@@ -114,9 +171,7 @@ export const Pages = {
 
 ---
 
-#### Register the block renderer
-
-In your `RenderBlocks.tsx` (or equivalent):
+### Register block renderer
 
 ```ts
 import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
@@ -126,29 +181,24 @@ const blockComponents = {
 }
 ```
 
-Now any Markdown block added in the admin panel will render automatically in your layout pipeline.
-
 ---
 
 ## 🎨 Styling
 
 This package ships with Tailwind-friendly defaults.
 
-If you're using Tailwind (recommended), install typography:
-
 ```bash
 npm install @tailwindcss/typography
 ```
 
-Then add (or adjust) the following to your `app/globals.css`:
-
 ```css
 @import "tailwindcss";
+
 @plugin "@tailwindcss/typography";
 @source "../node_modules/@valkyrianlabs/payload-markdown/dist";
 ```
 
-No Tailwind? No problem — output will still render as plain HTML.
+No Tailwind? No problem — output still renders as clean HTML.
 
 ---
 
@@ -167,48 +217,12 @@ No Tailwind? No problem — output will still render as plain HTML.
 
 ---
 
-## 💡 Layout Extensions
+## 🤔 Why not MDX?
 
-![@valkyrianlabs/payload-markdown column qualifier example](https://project-media.cooperhlarson.com/payload-markdown_column_example-1400x1263.png)
+MDX is powerful, but often introduces complexity, build overhead, and tighter coupling to React.
 
-Write structured layouts directly in Markdown using lightweight directives:
-
-**Section**:
-```markdown
-:::section   # optional section qualifier for grouping content
-:::          # closing qualifier (or `:::endsection` or `:::end`)
-```
-
-**Columns**:
-```markdown
-:::2col   # or :::3col
-
-# Column 1 content
-a description of the first column
-
-# Column 2 content
-a description of the second column
-
-:::
-```
-
-**Full Example**:
-```markdown
-:::section
-
-# My Blog Post
-This is a blog post with a two-column layout.
-
-:::2col
-
-## Column 1
-Some content for the first column.
-
-## Column 2
-Some content for the second column.
-
-:::      # closes both the columns and the section
-```
+This plugin keeps Markdown as the source of truth while still enabling structured layouts — striking a balance between
+simplicity and power.
 
 ---
 
@@ -216,13 +230,12 @@ Some content for the second column.
 
 Markdown is the editor.
 
-Instead of heavy UI layers, this package embraces Markdown as the source of truth while providing a clean editing and rendering experience.
+Instead of layering heavy UI abstractions, this package embraces Markdown as the source of truth while providing a clean
+editing and rendering experience.
 
 ---
 
 ## 🔮 Roadmap
-
-Planned improvements:
 
 * MDX support
 * Custom remark / rehype plugin pipeline
@@ -233,7 +246,7 @@ Planned improvements:
 
 ## 🧪 Development
 
-```
+```bash
 npm install
 npm run dev
 ```
