@@ -35,9 +35,8 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
     return () => window.clearTimeout(timer)
   }, [draftValue, value, setValue])
 
-  return (
-    <MarkdownEditor
-      label={field.label ?? 'Markdown'}
+  return <MarkdownEditor
+      label={field.label}
       onChangeAction={setDraftValue}
       placeholder={
         'placeholder' in field && typeof field.placeholder === 'string'
@@ -46,5 +45,4 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
       }
       value={draftValue}
     />
-  )
 }
