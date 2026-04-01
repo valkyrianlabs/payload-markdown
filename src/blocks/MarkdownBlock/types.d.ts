@@ -1,6 +1,6 @@
 export interface MarkdownBlockProps {
   blockName?: null | string
-  blockType: '@valkyrianlabs/payload-markdown/markdown-block'
+  blockType: '@valkyrianlabs/markdown-block'
   content: string
   id?: null | string
 }

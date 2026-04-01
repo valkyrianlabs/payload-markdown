@@ -1,17 +1,9 @@
-import type { CollectionConfig, CollectionSlug, Config, Plugin } from 'payload'
+import type { CollectionConfig, Config, Plugin } from 'payload'
+
+import type { PayloadMarkdownConfig } from './types.d.ts'
 
 import { MarkdownBlock } from './blocks/MarkdownBlock/config.ts'
 import { markdownField, type MarkdownFieldOptions } from './field/MarkdownField/config.ts'
-
-export type PayloadMarkdownCollectionConfig = {
-  field?: Omit<MarkdownFieldOptions, 'name'>
-  fieldName?: string
-}
-
-export type PayloadMarkdownConfig = {
-  collections?: Partial<Record<CollectionSlug, PayloadMarkdownCollectionConfig | true>>
-  disabled?: boolean
-}
 
 function ensureMarkdownBlock(config: Config) {
   if (!config.blocks) config.blocks = []
@@ -44,8 +36,9 @@ function ensureMarkdownField(
 
 export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
-  (config: Config): Config => {
-    if (pluginOptions.disabled) return config
+  (incomingConfig: Config): Config => {
+    const config = { ...incomingConfig }
+    if (!pluginOptions.enabled) return config
 
     ensureMarkdownBlock(config)
 
@@ -73,4 +66,4 @@ export const payloadMarkdown =
   }
 
 export { MarkdownBlock, markdownField }
-export type { MarkdownFieldOptions }
+export type { MarkdownFieldOptions, PayloadMarkdownConfig }
