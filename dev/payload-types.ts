@@ -65,9 +65,7 @@ export interface Config {
   auth: {
     users: UserAuthOperations;
   };
-  blocks: {
-    '@valkyrianlabs/markdown-block': MarkdownBlock;
-  };
+  blocks: {};
   collections: {
     pages: Page;
     posts: Post;
@@ -130,16 +128,6 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "@valkyrianlabs/markdown-block".
- */
-export interface MarkdownBlock {
-  content: string;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: '@valkyrianlabs/markdown-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

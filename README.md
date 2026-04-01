@@ -1,5 +1,9 @@
 # @valkyrianlabs/payload-markdown
 
+![npm](https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown)
+![downloads](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)
+![license](https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown)
+
 Beautiful, production-ready Markdown for Payload CMS.
 
 Render Markdown with clean, modern styling out of the box, plus a lightweight editor experience built around Markdown itself.
@@ -8,11 +12,11 @@ Render Markdown with clean, modern styling out of the box, plus a lightweight ed
 
 ## ✨ Features
 
-- 🎯 Drop-in Markdown renderer with polished defaults
-- 🧼 Clean, readable output using Tailwind-friendly prose styling
-- ⚡ Lightweight editor integration (no heavy WYSIWYG overhead)
-- 🔌 Extensible pipeline (remark / rehype support)
-- 🧠 Built for real-world use in blogs, docs, and content-heavy apps
+* 🎯 Drop-in Markdown renderer with polished defaults
+* 🧼 Clean, readable output using Tailwind-friendly prose styling
+* ⚡ Lightweight editor integration (no heavy WYSIWYG overhead)
+* 🔌 Extensible pipeline (remark / rehype support)
+* 🧠 Built for real-world use in blogs, docs, and content-heavy apps
 
 ---
 
@@ -26,9 +30,31 @@ npm install @valkyrianlabs/payload-markdown
 
 ## 🚀 Usage
 
-### 1. Add the Markdown field to your collection
+### 1. Register the plugin in `payload.config.ts`
 
-```typescript jsx
+```ts
+import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+
+export default {
+  plugins: [
+    payloadMarkdown({
+      collections: {
+        posts: true,
+      },
+    }),
+  ],
+}
+```
+
+This enables Markdown support globally and injects fields into configured collections.
+
+---
+
+### 2. Add the Markdown field to your collection (optional override)
+
+If you want manual control instead of automatic injection:
+
+```ts
 import { markdownField } from '@valkyrianlabs/payload-markdown'
 
 export const Posts = {
@@ -48,16 +74,59 @@ export const Posts = {
 
 ---
 
-### 2. Render Markdown in your frontend
+### 3. Render Markdown in your frontend
 
-```typescript jsx
+```tsx
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 
 <MarkdownRenderer
-  markdown={post.content}
-  options={{ theme: 'github-dark' }}
+markdown={post.content}
+options={{ theme: 'github-dark' }}
 />
 ```
+
+---
+
+### 4. Use with Payload Blocks (Layout Builder)
+
+If you're using block-based layouts (recommended for pages, landing content, etc), you can use the built-in `MarkdownBlock`.
+
+#### Add the block to your collection
+
+```ts
+import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
+
+export const Pages = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'layout',
+      type: 'blocks',
+      admin: {
+        initCollapsed: true,
+      },
+      blocks: [MarkdownBlock],
+      required: true,
+    },
+  ],
+}
+```
+
+---
+
+#### Register the block renderer
+
+In your `RenderBlocks.tsx` (or equivalent):
+
+```ts
+import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
+
+const blockComponents = {
+  markdownBlock: MarkdownBlockComponent,
+}
+```
+
+Now any Markdown block added in the admin panel will render automatically in your layout pipeline.
 
 ---
 
@@ -71,11 +140,12 @@ If you're using Tailwind (recommended), install typography:
 npm install @tailwindcss/typography
 ```
 
-Then add:
+Then add (or adjust) the following to your `app/globals.css`:
 
 ```css
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@source "../node_modules/@valkyrianlabs/payload-markdown/dist";
 ```
 
 No Tailwind? No problem — output will still render as plain HTML.
@@ -84,7 +154,7 @@ No Tailwind? No problem — output will still render as plain HTML.
 
 ## ⚙️ Renderer Options
 
-```typescript jsx
+```tsx
 <MarkdownRenderer
   markdown={content}
   variant="blog"        // blog | docs | compact | unstyled
@@ -109,14 +179,16 @@ Instead of heavy UI layers, this package embraces Markdown as the source of trut
 
 Planned improvements:
 
-- MDX support
-- Custom remark / rehype plugin pipeline
-- Advanced formatting extensions
-- Optional editor enhancements (shortcuts, structure helpers)
+* MDX support
+* Custom remark / rehype plugin pipeline
+* Advanced formatting extensions
+* Optional editor enhancements (shortcuts, structure helpers)
 
 ---
 
 ## 🧪 Development
 
+```
 npm install
 npm run dev
+```
