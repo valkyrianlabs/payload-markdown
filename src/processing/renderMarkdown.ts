@@ -1,7 +1,5 @@
 import type { Element, Parent, Root, RootContent } from 'hast'
 import type { Schema } from 'hast-util-sanitize'
-import type { JSX } from 'react'
-import type React from 'react'
 
 import { fromHtml } from 'hast-util-from-html'
 import { toString } from 'hast-util-to-string'
@@ -13,36 +11,12 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
+import type {
+  RenderMarkdownOptions,
+  RenderMarkdownResult,
+} from '../components/MarkdownRenderer/types.d.ts'
+
 import { codeToHtml, DEFAULT_CODE_THEME } from './codeToHtml.ts'
-
-export type RenderMarkdownOptions = {
-  theme?: string
-}
-
-export type RenderMarkdownResult = {
-  html: string
-  warnings: string[]
-}
-
-export type MarkdownRendererProps = {
-  as?: keyof JSX.IntrinsicElements
-  className?: string
-  emptyFallback?: React.ReactNode
-  errorFallback?: React.ReactNode
-  markdown?: null | string
-  options?: RenderMarkdownOptions
-  wrapperClassName?: string
-}
-
-export const DEFAULT_MARKDOWN_CLASS_NAME =
-  [
-    'prose prose-neutral max-w-none',
-    'prose-headings:scroll-mt-24',
-    'prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border',
-    'prose-code:before:content-none prose-code:after:content-none',
-    'prose-img:rounded-xl',
-    'dark:prose-invert',
-  ].join(' ')
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string,

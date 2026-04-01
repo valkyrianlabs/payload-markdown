@@ -5,7 +5,7 @@ import type { TextFieldClientComponent } from 'payload'
 import { useField } from '@payloadcms/ui'
 import React, { useEffect, useState } from 'react'
 
-import { MarkdownEditor } from '../editor/MarkdownEditor.tsx'
+import { MarkdownEditor } from '../../editor/MarkdownEditor.tsx'
 
 const SAVE_DEBOUNCE_MS = 800
 

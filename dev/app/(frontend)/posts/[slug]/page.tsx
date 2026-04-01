@@ -1,7 +1,7 @@
 import configPromise from '@payload-config'
+import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 import { draftMode } from 'next/headers'
 import { getPayload } from 'payload'
-import { MarkdownRenderer } from 'payload-markdown/client'
 import React, { cache } from 'react'
 
 import { LivePreviewListener } from '../../../../components/LivePreviewListener'

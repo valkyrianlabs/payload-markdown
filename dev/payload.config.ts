@@ -1,16 +1,18 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { payloadMarkdown } from 'payload-markdown'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { testEmailAdapter } from './helpers/testEmailAdapter'
 import { seed } from './seed'
 
+// @ts-expect-error - This is a valid import.meta use, the dev config doesn't actually export to js
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -37,6 +39,7 @@ const buildConfigWithMemoryDB = async () => {
       },
     },
     collections: [
+      Pages,
       Posts,
       {
         slug: 'media',

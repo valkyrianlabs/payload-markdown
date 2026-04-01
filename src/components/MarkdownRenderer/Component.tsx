@@ -1,26 +1,10 @@
-import type { ReactNode } from 'react'
+import type {
+  MarkdownRendererProps,
+  MarkdownSize,
+  MarkdownVariant,
+} from './types.d.ts'
 
-import type { MarkdownRendererProps as BaseMarkdownRendererProps } from '../processing/renderMarkdown.ts'
-
-import { compileMarkdown } from '../processing/renderMarkdown.ts'
-
-type MarkdownVariant = 'blog' | 'compact' | 'docs' | 'unstyled'
-type MarkdownSize = 'lg' | 'md' | 'sm'
-
-export type MarkdownRendererProps = {
-  centered?: boolean
-  className?: string
-  enableGutter?: boolean
-  fullBleedCode?: boolean
-  lead?: ReactNode
-  mutedHeadings?: boolean
-  size?: MarkdownSize
-  variant?: MarkdownVariant
-  wrapperClassName?: string
-} & Omit<
-  BaseMarkdownRendererProps,
-  'className' | 'wrapperClassName'
->
+import { compileMarkdown } from '../../processing/renderMarkdown.ts'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 

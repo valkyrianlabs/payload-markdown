@@ -1,6 +1,7 @@
 import type { CollectionConfig, CollectionSlug, Config, Plugin } from 'payload'
 
-import { markdownField, type MarkdownFieldOptions } from './field/markdownField.ts'
+import { MarkdownBlock } from './blocks/MarkdownBlock/config.ts'
+import { markdownField, type MarkdownFieldOptions } from './field/MarkdownField/config.ts'
 
 export type PayloadMarkdownCollectionConfig = {
   field?: Omit<MarkdownFieldOptions, 'name'>
@@ -10,6 +11,15 @@ export type PayloadMarkdownCollectionConfig = {
 export type PayloadMarkdownConfig = {
   collections?: Partial<Record<CollectionSlug, PayloadMarkdownCollectionConfig | true>>
   disabled?: boolean
+}
+
+function ensureMarkdownBlock(config: Config) {
+  if (!config.blocks) config.blocks = []
+
+  const alreadyExists = config.blocks.some((block) => block.slug === MarkdownBlock.slug)
+  if (alreadyExists) return
+
+  config.blocks.push(MarkdownBlock)
 }
 
 function ensureMarkdownField(
@@ -36,13 +46,15 @@ export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
   (config: Config): Config => {
     if (pluginOptions.disabled) return config
+
+    ensureMarkdownBlock(config)
+
     if (!pluginOptions.collections || !config.collections) return config
 
     for (const [collectionSlug, collectionOptions] of Object.entries(pluginOptions.collections)) {
       if (!collectionOptions) continue
 
       const collection = config.collections.find((entry) => entry.slug === collectionSlug)
-
       if (!collection) continue
 
       if (collectionOptions === true) {
@@ -60,5 +72,5 @@ export const payloadMarkdown =
     return config
   }
 
-export { markdownField }
+export { MarkdownBlock, markdownField }
 export type { MarkdownFieldOptions }

@@ -19,7 +19,7 @@ export function markdownField(options: MarkdownFieldOptions): Field {
       ...admin,
       components: {
         ...(admin?.components || {}),
-        Field: 'payload-markdown/client#PayloadMarkdownField',
+        Field: '@valkyrianlabs/payload-markdown/server#PayloadMarkdownField',
       },
     },
     defaultValue,

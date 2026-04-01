@@ -1,2 +1,1 @@
-export { MarkdownRenderer } from '../components/MarkdownRenderer.tsx'
-export { PayloadMarkdownField } from '../field/PayloadMarkdownField.tsx'
+export { MarkdownRenderer } from '../components/MarkdownRenderer/Component.tsx'

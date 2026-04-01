@@ -18,6 +18,7 @@ export default defineConfig(() => {
     ],
     test: {
       environment: 'node',
+      pool: 'vmThreads',
       hookTimeout: 30_000,
       testTimeout: 30_000,
     },

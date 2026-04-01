@@ -1,13 +1,13 @@
 import type { AccessArgs, CollectionConfig } from 'payload'
 
-import { markdownField } from '@valkyrianlabs/payload-markdown'
+import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
 import { slugField } from 'payload'
 
-import { generatePreviewPath } from '../../utilities/generatePreviewPath.ts'
-import { revalidateDelete, revalidatePost } from './hooks/revalidatePost.ts'
+import { generatePreviewPath } from '../../utilities/generatePreviewPath'
+import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
-export const Posts: CollectionConfig<'posts'> = {
-  slug: 'posts',
+export const Pages: CollectionConfig<'pages'> = {
+  slug: 'pages',
   access: {
     create: ({ req }: AccessArgs) => Boolean(req.user),
     delete: ({ req }: AccessArgs) => Boolean(req.user),
@@ -16,19 +16,19 @@ export const Posts: CollectionConfig<'posts'> = {
     update: ({ req }: AccessArgs) => Boolean(req.user),
   },
   admin: {
-    defaultColumns: ['title', 'slug', 'updatedAt'],
+    defaultColumns: ['title', 'slug'],
     livePreview: {
       url: ({ data, req }) =>
         generatePreviewPath({
           slug: typeof data?.slug === 'string' ? data.slug : '',
-          collection: 'posts',
+          collection: 'pages',
           req,
         })
-      },
+    },
     preview: (data, { req }) =>
       generatePreviewPath({
         slug: typeof data?.slug === 'string' ? data.slug : '',
-        collection: 'posts',
+        collection: 'pages',
         req,
       }),
     useAsTitle: 'title',
@@ -44,38 +44,18 @@ export const Posts: CollectionConfig<'posts'> = {
       required: true,
     },
     {
-      name: 'heroImage',
-      type: 'upload',
-      relationTo: 'media',
-    },
-    markdownField({
-      name: 'content',
-      label: 'Content',
-    }),
-    {
-      name: 'publishedAt',
-      type: 'date',
+      name: 'layout',
+      type: 'blocks',
       admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
-        position: 'sidebar',
+        initCollapsed: true,
       },
-      hooks: {
-        beforeChange: [
-          ({ siblingData, value }) => {
-            if (siblingData._status === 'published' && !value) {
-              return new Date()
-            }
-            return value
-          },
-        ],
-      },
+      blocks: [MarkdownBlock],
+      required: true,
     },
     slugField(),
   ],
   hooks: {
-    afterChange: [revalidatePost],
+    afterChange: [revalidatePage],
     afterDelete: [revalidateDelete],
   },
   versions: {
