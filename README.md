@@ -86,6 +86,61 @@ Some content for the second column.
 
 ---
 
+## 💻 Code Blocks & Syntax Highlighting
+
+![code blocks example](https://project-media.cooperhlarson.com/payload-markdown_code_blocks_example.png)
+
+Markdown code blocks are rendered with **high-fidelity syntax highlighting** powered by Shiki — the same engine used by VS Code.
+
+This means your code looks exactly how developers expect it to look:
+- accurate tokenization (keywords, strings, types, operators)
+- consistent theming across languages
+- zero guesswork or regex-based highlighting
+
+Shiki is built on **TextMate grammars**, giving it extremely precise language support across a wide range of ecosystems.
+
+---
+
+### ⚡ Why this matters
+
+Most Markdown renderers treat code blocks as an afterthought.
+
+This doesn’t.
+
+- **Readable at a glance** — colors reinforce structure and intent
+- **Language-aware** — not just “colored text,” but real parsing
+- **Consistent with dev tools** — matches what engineers see in their editor
+- **Zero runtime overhead** — highlighting is generated ahead of time
+
+Unlike browser-based highlighters that rely on client-side parsing, Shiki generates fully styled HTML during rendering, so you ship **no extra JavaScript** while still getting IDE-quality results.
+
+---
+
+### 🧠 Built for real-world content
+
+- Supports a wide range of languages out of the box
+- Line numbers and formatting handled automatically
+- Clean copy-paste output (no artifacts, no formatting noise)
+- Fully customizable via transformer pipeline
+
+Whether you're writing:
+- blog posts
+- documentation
+- tutorials
+- API guides
+
+…your code blocks look sharp, readable, and production-ready.
+
+---
+
+## 🧾 TL;DR
+
+You’re not getting “pretty code.”
+
+You’re getting **editor-grade syntax rendering in Markdown**, without the overhead of a full editor.
+
+---
+
 ## ✨ Features
 
 * 🎯 Drop-in Markdown renderer with polished defaults
