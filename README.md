@@ -18,7 +18,7 @@ Render Markdown with clean, modern styling out of the box — plus **layout-awar
 
 ## 📸 Example
 
-![payload-markdown example](https://project-media.cooperhlarson.com/payload-markdown_column_example-1400x1263.png)
+![payload-markdown example](https://project-media.cooperhlarson.com/payload-markdown_posts_example.png)
 
 Write simple Markdown → get structured layouts instantly.
 
