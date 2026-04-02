@@ -104,7 +104,7 @@ export default async function Post({ params: paramsPromise }: Args) {
               '[&_pre_shiki]:border [&_pre_shiki]:border-border',
             ].join(' ')}
             markdown={post.content}
-            options={{ theme: 'github-dark' }}
+            // options={{ theme: 'github-dark' }}
             wrapperClassName="w-full"
           />
         </div>
