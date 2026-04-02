@@ -4,6 +4,10 @@
 ![downloads](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)
 ![license](https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown)
 
+```bash
+pnpm add @valkyrianlabs/payload-markdown
+```
+
 Beautiful, production-ready Markdown for Payload CMS.
 
 **Built for modern workflows — including seamless human ↔ AI collaboration.**
