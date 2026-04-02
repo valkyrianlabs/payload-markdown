@@ -17,7 +17,7 @@ import type {
   RenderMarkdownResult,
 } from '../components/MarkdownRenderer/types.d.ts'
 
-import { codeToHtml, DEFAULT_CODE_THEME } from './codeToHtml.ts'
+import { codeToHtml } from './codeToHtml.ts'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.ts'
 
 function normalizeLayoutSyntax(input: string): string {
@@ -82,8 +82,8 @@ function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
       work.push(
         (async () => {
           const highlighted = await codeToHtml(code, {
-            lang,
-            theme: options.theme,
+            ...options,
+            lang
           })
 
           const replacementNodes = parseHtmlFragment(highlighted)
@@ -126,12 +126,8 @@ export async function compileMarkdown(
       .use(remarkGfm)
       .use(remarkDirective)
       .use(remarkLayoutDirectives)
-      .use(remarkRehype, {
-        allowDangerousHtml: false,
-      })
-      .use(rehypeShikiCodeBlocks, {
-        theme: options.theme || DEFAULT_CODE_THEME,
-      })
+      .use(remarkRehype, { allowDangerousHtml: false })
+      .use(rehypeShikiCodeBlocks, options)
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeStringify)
       .process(normalizedMarkdown)

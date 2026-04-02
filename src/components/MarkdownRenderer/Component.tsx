@@ -1,10 +1,9 @@
-import type {
-  MarkdownRendererProps,
-  MarkdownSize,
-  MarkdownVariant,
-} from './types.d.ts'
+import { randomUUID } from 'node:crypto'
+
+import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from './types.d.ts'
 
 import { compileMarkdown } from '../../core/renderMarkdown.ts'
+import { MarkdownRendererClient } from './Component.client.tsx'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 
@@ -27,10 +26,12 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   'prose-pre:my-8 prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950 prose-pre:shadow-sm',
   'prose-pre:px-0 prose-pre:py-0',
   '[&_pre]:p-0',
+  '[&_pre]:m-0',
+  '[&_pre_code]:m-0',
+  '[&_pre_code]:bg-transparent',
   '[&_pre_shiki]:m-0 [&_pre_shiki]:rounded-2xl',
   '[&_pre_shiki]:border [&_pre_shiki]:border-border',
   '[&_pre_shiki]:px-5 [&_pre_shiki]:py-4',
-  '[&_pre code]:bg-transparent [&_pre code]:p-0',
 )
 
 const MARKDOWN_VARIANT_CLASS_NAMES: Record<MarkdownVariant, string> = {
@@ -113,26 +114,11 @@ export async function MarkdownRenderer({
   variant = 'blog',
   wrapperClassName,
 }: MarkdownRendererProps) {
-  if (
-    process.env.NODE_ENV === 'development' &&
-    variant !== 'unstyled' &&
-    typeof window !== 'undefined'
-  ) {
-    const hasProse = document.querySelector('.prose')
-
-    if (!hasProse) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[MarkdownRenderer] Tailwind prose classes not detected. ' +
-          'Install @tailwindcss/typography or use variant="unstyled".',
-      )
-    }
-  }
-
   if (!markdown || !markdown.trim()) return emptyFallback
 
   const result = await compileMarkdown(markdown, options)
   const Tag = as
+  const containerId = `payload-markdown-${randomUUID()}`
 
   if (result.warnings.length > 0 && errorFallback) return errorFallback
 
@@ -152,11 +138,13 @@ export async function MarkdownRenderer({
 
   return (
     <div className={resolvedWrapperClassName}>
+      <MarkdownRendererClient containerId={containerId} />
       {lead ? <div className="mb-8">{lead}</div> : null}
 
       <Tag
         className={resolvedMarkdownClassName}
         dangerouslySetInnerHTML={{ __html: result.html }}
+        id={containerId}
       />
     </div>
   )
