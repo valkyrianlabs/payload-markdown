@@ -1,10 +1,11 @@
 'use client'
 
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { markdown } from '@codemirror/lang-markdown'
 import { EditorState } from '@codemirror/state'
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view'
 import React, { useEffect, useRef } from 'react'
+
+import { payloadMarkdownTheme } from './themes/payload.ts'
 
 type MarkdownCodeMirrorProps = {
   onChangeAction: (value: string) => void
@@ -28,27 +29,9 @@ export const MarkdownCodeMirror: React.FC<MarkdownCodeMirrorProps> = ({
       extensions: [
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        markdown(),
         EditorView.lineWrapping,
         cmPlaceholder(placeholder),
-        EditorView.theme({
-          '&': {
-            backgroundColor: 'transparent',
-            fontSize: '0.875rem',
-            minHeight: '500px',
-          },
-          '.cm-content': {
-            minHeight: '500px',
-          },
-          '.cm-focused': {
-            outline: 'none',
-          },
-          '.cm-scroller': {
-            fontFamily: 'monospace',
-            minHeight: '500px',
-            padding: '0.75rem',
-          },
-        }),
+        payloadMarkdownTheme,
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           onChangeAction(update.state.doc.toString())
