@@ -6,15 +6,15 @@ import { markdownField } from '../../field/MarkdownField/config.ts'
 export const MarkdownBlock: Block = {
   slug: 'vlMdBlock',
   fields: [
+    blocksParams(),
     markdownField({
       name: 'content',
       label: 'Markdown Content',
-      required: true
+      required: true,
     }),
-    blocksParams()
   ],
   labels: {
     plural: 'Markdown Blocks',
-    singular: 'Markdown Block'
+    singular: 'Markdown Block',
   },
 }

@@ -20,8 +20,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value = '',
 }) => {
   return (
-    <div className="space-y-2">
-      <div className="text-xs uppercase tracking-wide text-neutral-500">{String(label)}</div>
+    <div style={{}}>
+      <div style={{ margin: '1rem 0' }}>{String(label)}</div>
 
       <MarkdownCodeMirror onChangeAction={onChangeAction} placeholder={placeholder} value={value} />
     </div>

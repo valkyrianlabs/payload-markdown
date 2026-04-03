@@ -66,6 +66,7 @@ export interface Config {
     users: UserAuthOperations;
   };
   blocks: {
+    archive: ArchiveBlock;
     vlMdBlock: VlMdBlock;
   };
   collections: {
@@ -95,12 +96,8 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {
-    'vl-markdown-block-global': VlMarkdownBlockGlobal;
-  };
-  globalsSelect: {
-    'vl-markdown-block-global': VlMarkdownBlockGlobalSelect<false> | VlMarkdownBlockGlobalSelect<true>;
-  };
+  globals: {};
+  globalsSelect: {};
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -137,61 +134,130 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ArchiveBlock".
+ */
+export interface ArchiveBlock {
+  introContent?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  populateBy?: ('collection' | 'selection') | null;
+  relationTo?: 'posts' | null;
+  limit?: number | null;
+  selectedDocs?:
+    | {
+        relationTo: 'posts';
+        value: number | Post;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'archive';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  heroImage?: (number | null) | Media;
+  publishedAt?: string | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  content?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "vlMdBlock".
  */
 export interface VlMdBlock {
-  content: string;
   'md-params'?: {
     /**
      * Whether to enable custom parameters for markdown blocks. This is required to use any of the other block parameter fields, but can be left disabled if you only need the default styles and behavior.
      */
     enable?: boolean | null;
-    mdGroup?: {
+    config?: {
       /**
        * Additional Tailwind classes to apply to the block wrapper element.
        */
-      'tailwind-wrapper'?: string | null;
+      wrapperClassName?: string | null;
       /**
        * Additional Tailwind classes to apply to the block element itself.
        */
-      'tailwind-element'?: string | null;
+      className?: string | null;
       /**
        * Additional Tailwind classes to apply to the block section element.
        */
-      'tailwind-section'?: string | null;
+      sectionClassName?: string | null;
       /**
        * Additional Tailwind classes to apply to the block column element.
        */
-      'tailwind-column'?: string | null;
+      columnClassName?: string | null;
       /**
        * The visual style variant to apply to the block.
        */
-      'md-variant'?: ('blog' | 'compact' | 'docs' | 'unstyled') | null;
+      variant?: ('blog' | 'compact' | 'docs' | 'unstyled') | null;
       /**
        * The typography size to apply to the block.
        */
-      'md-size'?: ('lg' | 'md' | 'sm') | null;
+      size?: ('lg' | 'md' | 'sm') | null;
       /**
        * Whether to center the block content within its wrapper.
        */
-      'md-centered'?: boolean | null;
+      centered?: boolean | null;
       /**
        * Whether to apply horizontal gutter padding to the block wrapper.
        */
-      'md-enableGutter'?: boolean | null;
+      enableGutter?: boolean | null;
       /**
        * Whether fenced code blocks should extend beyond the normal content width on larger screens.
        */
-      'md-fullBleedCode'?: boolean | null;
+      fullBleedCode?: boolean | null;
       /**
        * Whether heading colors should be slightly muted.
        */
-      'md-mutedHeadings'?: boolean | null;
-      code_params?: {
+      mutedHeadings?: boolean | null;
+      options?: {
         /**
          * The Shiki theme to use for syntax highlighting this code block. Defaults to "github-dark". Note that this plugin is optimized around themes that still look good when block backgrounds are removed or reduced. Some light themes may require additional customization to maintain good contrast and readability.
          */
-        shiki_theme?:
+        theme?:
           | (
               | 'andromeeda'
               | 'aurora-x'
@@ -275,6 +341,7 @@ export interface VlMdBlock {
       };
     };
   };
+  content: string;
   id?: string | null;
   blockName?: string | null;
   blockType: 'vlMdBlock';
@@ -286,146 +353,149 @@ export interface VlMdBlock {
 export interface Page {
   id: number;
   title: string;
-  layout: {
-    content: string;
-    'md-params'?: {
-      /**
-       * Whether to enable custom parameters for markdown blocks. This is required to use any of the other block parameter fields, but can be left disabled if you only need the default styles and behavior.
-       */
-      enable?: boolean | null;
-      mdGroup?: {
-        /**
-         * Additional Tailwind classes to apply to the block wrapper element.
-         */
-        'tailwind-wrapper'?: string | null;
-        /**
-         * Additional Tailwind classes to apply to the block element itself.
-         */
-        'tailwind-element'?: string | null;
-        /**
-         * Additional Tailwind classes to apply to the block section element.
-         */
-        'tailwind-section'?: string | null;
-        /**
-         * Additional Tailwind classes to apply to the block column element.
-         */
-        'tailwind-column'?: string | null;
-        /**
-         * The visual style variant to apply to the block.
-         */
-        'md-variant'?: ('blog' | 'compact' | 'docs' | 'unstyled') | null;
-        /**
-         * The typography size to apply to the block.
-         */
-        'md-size'?: ('lg' | 'md' | 'sm') | null;
-        /**
-         * Whether to center the block content within its wrapper.
-         */
-        'md-centered'?: boolean | null;
-        /**
-         * Whether to apply horizontal gutter padding to the block wrapper.
-         */
-        'md-enableGutter'?: boolean | null;
-        /**
-         * Whether fenced code blocks should extend beyond the normal content width on larger screens.
-         */
-        'md-fullBleedCode'?: boolean | null;
-        /**
-         * Whether heading colors should be slightly muted.
-         */
-        'md-mutedHeadings'?: boolean | null;
-        code_params?: {
+  layout: (
+    | ArchiveBlock
+    | {
+        'md-params'?: {
           /**
-           * The Shiki theme to use for syntax highlighting this code block. Defaults to "github-dark". Note that this plugin is optimized around themes that still look good when block backgrounds are removed or reduced. Some light themes may require additional customization to maintain good contrast and readability.
+           * Whether to enable custom parameters for markdown blocks. This is required to use any of the other block parameter fields, but can be left disabled if you only need the default styles and behavior.
            */
-          shiki_theme?:
-            | (
-                | 'andromeeda'
-                | 'aurora-x'
-                | 'ayu-dark'
-                | 'ayu-light'
-                | 'ayu-mirage'
-                | 'catppuccin-frappe'
-                | 'catppuccin-latte'
-                | 'catppuccin-macchiato'
-                | 'catppuccin-mocha'
-                | 'dark-plus'
-                | 'dracula'
-                | 'dracula-soft'
-                | 'everforest-dark'
-                | 'everforest-light'
-                | 'github-dark'
-                | 'github-dark-default'
-                | 'github-dark-dimmed'
-                | 'github-dark-high-contrast'
-                | 'github-light'
-                | 'github-light-default'
-                | 'github-light-high-contrast'
-                | 'gruvbox-dark-hard'
-                | 'gruvbox-dark-medium'
-                | 'gruvbox-dark-soft'
-                | 'gruvbox-light-hard'
-                | 'gruvbox-light-medium'
-                | 'gruvbox-light-soft'
-                | 'horizon'
-                | 'horizon-bright'
-                | 'houston'
-                | 'kanagawa-dragon'
-                | 'kanagawa-lotus'
-                | 'kanagawa-wave'
-                | 'laserwave'
-                | 'light-plus'
-                | 'material-theme'
-                | 'material-theme-darker'
-                | 'material-theme-lighter'
-                | 'material-theme-ocean'
-                | 'material-theme-palenight'
-                | 'min-dark'
-                | 'min-light'
-                | 'monokai'
-                | 'night-owl'
-                | 'night-owl-light'
-                | 'nord'
-                | 'one-dark-pro'
-                | 'one-light'
-                | 'plastic'
-                | 'poimandres'
-                | 'red'
-                | 'rose-pine'
-                | 'rose-pine-dawn'
-                | 'rose-pine-moon'
-                | 'slack-dark'
-                | 'slack-ochin'
-                | 'snazzy-light'
-                | 'solarized-dark'
-                | 'solarized-light'
-                | 'synthwave-84'
-                | 'tokyo-night'
-                | 'vesper'
-                | 'vitesse-black'
-                | 'vitesse-dark'
-                | 'vitesse-light'
-              )
-            | null;
-          /**
-           * Whether to show line numbers in the code block.
-           */
-          showLineNumbers?: boolean | null;
-          /**
-           * Whether to apply the plugin's enhanced code block formatting. When enabled, the renderer normalizes Shiki output for better integration with markdown prose styling. This includes adjustments such as background removal, spacing cleanup, line layout normalization, and other structural fixes needed for features like line numbers and consistent empty-line rendering. Set this to false if you want to preserve raw Shiki block styling as much as possible.
-           */
-          prettyCodeBlocks?: boolean | null;
-          /**
-           * Whether to enable line highlighting for the code block. When enabled, you can specify lines to highlight by including a line number list in the code block's language declaration. For example, a declaration of "js{1,4-5}" would highlight lines 1, 4, and 5 in the block.
-           */
-          highlightLines?: boolean | null;
+          enable?: boolean | null;
+          config?: {
+            /**
+             * Additional Tailwind classes to apply to the block wrapper element.
+             */
+            wrapperClassName?: string | null;
+            /**
+             * Additional Tailwind classes to apply to the block element itself.
+             */
+            className?: string | null;
+            /**
+             * Additional Tailwind classes to apply to the block section element.
+             */
+            sectionClassName?: string | null;
+            /**
+             * Additional Tailwind classes to apply to the block column element.
+             */
+            columnClassName?: string | null;
+            /**
+             * The visual style variant to apply to the block.
+             */
+            variant?: ('blog' | 'compact' | 'docs' | 'unstyled') | null;
+            /**
+             * The typography size to apply to the block.
+             */
+            size?: ('lg' | 'md' | 'sm') | null;
+            /**
+             * Whether to center the block content within its wrapper.
+             */
+            centered?: boolean | null;
+            /**
+             * Whether to apply horizontal gutter padding to the block wrapper.
+             */
+            enableGutter?: boolean | null;
+            /**
+             * Whether fenced code blocks should extend beyond the normal content width on larger screens.
+             */
+            fullBleedCode?: boolean | null;
+            /**
+             * Whether heading colors should be slightly muted.
+             */
+            mutedHeadings?: boolean | null;
+            options?: {
+              /**
+               * The Shiki theme to use for syntax highlighting this code block. Defaults to "github-dark". Note that this plugin is optimized around themes that still look good when block backgrounds are removed or reduced. Some light themes may require additional customization to maintain good contrast and readability.
+               */
+              theme?:
+                | (
+                    | 'andromeeda'
+                    | 'aurora-x'
+                    | 'ayu-dark'
+                    | 'ayu-light'
+                    | 'ayu-mirage'
+                    | 'catppuccin-frappe'
+                    | 'catppuccin-latte'
+                    | 'catppuccin-macchiato'
+                    | 'catppuccin-mocha'
+                    | 'dark-plus'
+                    | 'dracula'
+                    | 'dracula-soft'
+                    | 'everforest-dark'
+                    | 'everforest-light'
+                    | 'github-dark'
+                    | 'github-dark-default'
+                    | 'github-dark-dimmed'
+                    | 'github-dark-high-contrast'
+                    | 'github-light'
+                    | 'github-light-default'
+                    | 'github-light-high-contrast'
+                    | 'gruvbox-dark-hard'
+                    | 'gruvbox-dark-medium'
+                    | 'gruvbox-dark-soft'
+                    | 'gruvbox-light-hard'
+                    | 'gruvbox-light-medium'
+                    | 'gruvbox-light-soft'
+                    | 'horizon'
+                    | 'horizon-bright'
+                    | 'houston'
+                    | 'kanagawa-dragon'
+                    | 'kanagawa-lotus'
+                    | 'kanagawa-wave'
+                    | 'laserwave'
+                    | 'light-plus'
+                    | 'material-theme'
+                    | 'material-theme-darker'
+                    | 'material-theme-lighter'
+                    | 'material-theme-ocean'
+                    | 'material-theme-palenight'
+                    | 'min-dark'
+                    | 'min-light'
+                    | 'monokai'
+                    | 'night-owl'
+                    | 'night-owl-light'
+                    | 'nord'
+                    | 'one-dark-pro'
+                    | 'one-light'
+                    | 'plastic'
+                    | 'poimandres'
+                    | 'red'
+                    | 'rose-pine'
+                    | 'rose-pine-dawn'
+                    | 'rose-pine-moon'
+                    | 'slack-dark'
+                    | 'slack-ochin'
+                    | 'snazzy-light'
+                    | 'solarized-dark'
+                    | 'solarized-light'
+                    | 'synthwave-84'
+                    | 'tokyo-night'
+                    | 'vesper'
+                    | 'vitesse-black'
+                    | 'vitesse-dark'
+                    | 'vitesse-light'
+                  )
+                | null;
+              /**
+               * Whether to show line numbers in the code block.
+               */
+              showLineNumbers?: boolean | null;
+              /**
+               * Whether to apply the plugin's enhanced code block formatting. When enabled, the renderer normalizes Shiki output for better integration with markdown prose styling. This includes adjustments such as background removal, spacing cleanup, line layout normalization, and other structural fixes needed for features like line numbers and consistent empty-line rendering. Set this to false if you want to preserve raw Shiki block styling as much as possible.
+               */
+              prettyCodeBlocks?: boolean | null;
+              /**
+               * Whether to enable line highlighting for the code block. When enabled, you can specify lines to highlight by including a line number list in the code block's language declaration. For example, a declaration of "js{1,4-5}" would highlight lines 1, 4, and 5 in the block.
+               */
+              highlightLines?: boolean | null;
+            };
+          };
         };
-      };
-    };
-    id?: string | null;
-    blockName?: string | null;
-    blockType: 'vlMdBlock';
-  }[];
+        content: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'vlMdBlock';
+      }
+  )[];
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -434,43 +504,6 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
-  id: number;
-  title: string;
-  heroImage?: (number | null) | Media;
-  publishedAt?: string | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  content?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -680,37 +713,38 @@ export interface PagesSelect<T extends boolean = true> {
   layout?:
     | T
     | {
+        archive?: T | ArchiveBlockSelect<T>;
         vlMdBlock?:
           | T
           | {
-              content?: T;
               'md-params'?:
                 | T
                 | {
                     enable?: T;
-                    mdGroup?:
+                    config?:
                       | T
                       | {
-                          'tailwind-wrapper'?: T;
-                          'tailwind-element'?: T;
-                          'tailwind-section'?: T;
-                          'tailwind-column'?: T;
-                          'md-variant'?: T;
-                          'md-size'?: T;
-                          'md-centered'?: T;
-                          'md-enableGutter'?: T;
-                          'md-fullBleedCode'?: T;
-                          'md-mutedHeadings'?: T;
-                          code_params?:
+                          wrapperClassName?: T;
+                          className?: T;
+                          sectionClassName?: T;
+                          columnClassName?: T;
+                          variant?: T;
+                          size?: T;
+                          centered?: T;
+                          enableGutter?: T;
+                          fullBleedCode?: T;
+                          mutedHeadings?: T;
+                          options?:
                             | T
                             | {
-                                shiki_theme?: T;
+                                theme?: T;
                                 showLineNumbers?: T;
                                 prettyCodeBlocks?: T;
                                 highlightLines?: T;
                               };
                         };
                   };
+              content?: T;
               id?: T;
               blockName?: T;
             };
@@ -720,6 +754,19 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ArchiveBlock_select".
+ */
+export interface ArchiveBlockSelect<T extends boolean = true> {
+  introContent?: T;
+  populateBy?: T;
+  relationTo?: T;
+  limit?: T;
+  selectedDocs?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -845,185 +892,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vl-markdown-block-global".
- */
-export interface VlMarkdownBlockGlobal {
-  id: number;
-  'md-params'?: {
-    /**
-     * Whether to enable custom parameters for markdown blocks. This is required to use any of the other block parameter fields, but can be left disabled if you only need the default styles and behavior.
-     */
-    enable?: boolean | null;
-    mdGroup?: {
-      /**
-       * Additional Tailwind classes to apply to the block wrapper element.
-       */
-      'tailwind-wrapper'?: string | null;
-      /**
-       * Additional Tailwind classes to apply to the block element itself.
-       */
-      'tailwind-element'?: string | null;
-      /**
-       * Additional Tailwind classes to apply to the block section element.
-       */
-      'tailwind-section'?: string | null;
-      /**
-       * Additional Tailwind classes to apply to the block column element.
-       */
-      'tailwind-column'?: string | null;
-      /**
-       * The visual style variant to apply to the block.
-       */
-      'md-variant'?: ('blog' | 'compact' | 'docs' | 'unstyled') | null;
-      /**
-       * The typography size to apply to the block.
-       */
-      'md-size'?: ('lg' | 'md' | 'sm') | null;
-      /**
-       * Whether to center the block content within its wrapper.
-       */
-      'md-centered'?: boolean | null;
-      /**
-       * Whether to apply horizontal gutter padding to the block wrapper.
-       */
-      'md-enableGutter'?: boolean | null;
-      /**
-       * Whether fenced code blocks should extend beyond the normal content width on larger screens.
-       */
-      'md-fullBleedCode'?: boolean | null;
-      /**
-       * Whether heading colors should be slightly muted.
-       */
-      'md-mutedHeadings'?: boolean | null;
-      code_params?: {
-        /**
-         * The Shiki theme to use for syntax highlighting this code block. Defaults to "github-dark". Note that this plugin is optimized around themes that still look good when block backgrounds are removed or reduced. Some light themes may require additional customization to maintain good contrast and readability.
-         */
-        shiki_theme?:
-          | (
-              | 'andromeeda'
-              | 'aurora-x'
-              | 'ayu-dark'
-              | 'ayu-light'
-              | 'ayu-mirage'
-              | 'catppuccin-frappe'
-              | 'catppuccin-latte'
-              | 'catppuccin-macchiato'
-              | 'catppuccin-mocha'
-              | 'dark-plus'
-              | 'dracula'
-              | 'dracula-soft'
-              | 'everforest-dark'
-              | 'everforest-light'
-              | 'github-dark'
-              | 'github-dark-default'
-              | 'github-dark-dimmed'
-              | 'github-dark-high-contrast'
-              | 'github-light'
-              | 'github-light-default'
-              | 'github-light-high-contrast'
-              | 'gruvbox-dark-hard'
-              | 'gruvbox-dark-medium'
-              | 'gruvbox-dark-soft'
-              | 'gruvbox-light-hard'
-              | 'gruvbox-light-medium'
-              | 'gruvbox-light-soft'
-              | 'horizon'
-              | 'horizon-bright'
-              | 'houston'
-              | 'kanagawa-dragon'
-              | 'kanagawa-lotus'
-              | 'kanagawa-wave'
-              | 'laserwave'
-              | 'light-plus'
-              | 'material-theme'
-              | 'material-theme-darker'
-              | 'material-theme-lighter'
-              | 'material-theme-ocean'
-              | 'material-theme-palenight'
-              | 'min-dark'
-              | 'min-light'
-              | 'monokai'
-              | 'night-owl'
-              | 'night-owl-light'
-              | 'nord'
-              | 'one-dark-pro'
-              | 'one-light'
-              | 'plastic'
-              | 'poimandres'
-              | 'red'
-              | 'rose-pine'
-              | 'rose-pine-dawn'
-              | 'rose-pine-moon'
-              | 'slack-dark'
-              | 'slack-ochin'
-              | 'snazzy-light'
-              | 'solarized-dark'
-              | 'solarized-light'
-              | 'synthwave-84'
-              | 'tokyo-night'
-              | 'vesper'
-              | 'vitesse-black'
-              | 'vitesse-dark'
-              | 'vitesse-light'
-            )
-          | null;
-        /**
-         * Whether to show line numbers in the code block.
-         */
-        showLineNumbers?: boolean | null;
-        /**
-         * Whether to apply the plugin's enhanced code block formatting. When enabled, the renderer normalizes Shiki output for better integration with markdown prose styling. This includes adjustments such as background removal, spacing cleanup, line layout normalization, and other structural fixes needed for features like line numbers and consistent empty-line rendering. Set this to false if you want to preserve raw Shiki block styling as much as possible.
-         */
-        prettyCodeBlocks?: boolean | null;
-        /**
-         * Whether to enable line highlighting for the code block. When enabled, you can specify lines to highlight by including a line number list in the code block's language declaration. For example, a declaration of "js{1,4-5}" would highlight lines 1, 4, and 5 in the block.
-         */
-        highlightLines?: boolean | null;
-      };
-    };
-  };
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vl-markdown-block-global_select".
- */
-export interface VlMarkdownBlockGlobalSelect<T extends boolean = true> {
-  'md-params'?:
-    | T
-    | {
-        enable?: T;
-        mdGroup?:
-          | T
-          | {
-              'tailwind-wrapper'?: T;
-              'tailwind-element'?: T;
-              'tailwind-section'?: T;
-              'tailwind-column'?: T;
-              'md-variant'?: T;
-              'md-size'?: T;
-              'md-centered'?: T;
-              'md-enableGutter'?: T;
-              'md-fullBleedCode'?: T;
-              'md-mutedHeadings'?: T;
-              code_params?:
-                | T
-                | {
-                    shiki_theme?: T;
-                    showLineNumbers?: T;
-                    prettyCodeBlocks?: T;
-                    highlightLines?: T;
-                  };
-            };
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

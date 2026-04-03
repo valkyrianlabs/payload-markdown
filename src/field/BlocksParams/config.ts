@@ -10,11 +10,7 @@ export type BlocksParamsOptions = {
 }
 
 export function blocksParams(options: BlocksParamsOptions = {}): Field {
-  const {
-    name = 'md-params',
-    admin,
-    label = 'Markdown Blocks Params',
-  } = options
+  const { name = 'md-params', admin, label = 'Markdown Blocks Params' } = options
 
   return {
     name,
@@ -33,35 +29,35 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
         label: 'Enable Blocks Params',
       },
       {
-        name: 'mdGroup',
+        name: 'config',
         type: 'group',
         admin: {
-          condition: (_, siblingData) => !!siblingData?.['vlEnableBlocksParams'],
+          condition: (_, siblingData) => !!siblingData?.enable,
         },
         fields: [
           tailwindField({
-            name: 'tailwind-wrapper',
+            name: 'wrapperClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block wrapper element.',
             },
             label: 'Tailwind Wrapper Classes',
           }),
           tailwindField({
-            name: 'tailwind-element',
+            name: 'className',
             admin: {
               description: 'Additional Tailwind classes to apply to the block element itself.',
             },
             label: 'Tailwind Markdown Element Classes',
           }),
           tailwindField({
-            name: 'tailwind-section',
+            name: 'sectionClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block section element.',
             },
             label: 'Tailwind Markdown Section Classes',
           }),
           tailwindField({
-            name: 'tailwind-column',
+            name: 'columnClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block column element.',
             },
@@ -71,7 +67,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
             type: 'row',
             fields: [
               {
-                name: 'md-variant',
+                name: 'variant',
                 type: 'select',
                 admin: {
                   description: 'The visual style variant to apply to the block.',
@@ -87,7 +83,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
                 ],
               },
               {
-                name: 'md-size',
+                name: 'size',
                 type: 'select',
                 admin: {
                   description: 'The typography size to apply to the block.',
@@ -107,7 +103,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
             type: 'row',
             fields: [
               {
-                name: 'md-centered',
+                name: 'centered',
                 type: 'checkbox',
                 admin: {
                   description: 'Whether to center the block content within its wrapper.',
@@ -115,7 +111,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
                 label: 'Centered',
               },
               {
-                name: 'md-enableGutter',
+                name: 'enableGutter',
                 type: 'checkbox',
                 admin: {
                   description: 'Whether to apply horizontal gutter padding to the block wrapper.',
@@ -128,7 +124,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
             type: 'row',
             fields: [
               {
-                name: 'md-fullBleedCode',
+                name: 'fullBleedCode',
                 type: 'checkbox',
                 admin: {
                   description:
@@ -137,7 +133,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
                 label: 'Full Bleed Code',
               },
               {
-                name: 'md-mutedHeadings',
+                name: 'mutedHeadings',
                 type: 'checkbox',
                 admin: {
                   description: 'Whether heading colors should be slightly muted.',
@@ -146,11 +142,10 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
               },
             ],
           },
-          codeBlockParams()
+          codeBlockParams({ name: 'options' }),
         ],
       },
     ],
     label,
   }
 }
-

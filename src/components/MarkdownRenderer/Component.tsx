@@ -1,8 +1,18 @@
 import { randomUUID } from 'node:crypto'
 
-import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from '../../core/types.d.ts'
+import type {
+  MarkdownRendererProps,
+  MarkdownRendererScope,
+  MarkdownSize,
+  MarkdownVariant,
+} from '../../core/types.d.ts'
 
 import { compileMarkdown } from '../../core/renderMarkdown.ts'
+import {
+  mergeMarkdownConfigs,
+  resolveMarkdownBlockDefaults,
+  resolveMarkdownFieldDefaults,
+} from '../../runtime/index.ts'
 import { MarkdownRendererClient } from './Component.client.tsx'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
@@ -98,25 +108,40 @@ function buildMarkdownClassName({
   )
 }
 
-export async function MarkdownRenderer({
-  as = 'article',
-  centered = true,
-  className,
-  emptyFallback = null,
-  enableGutter = false,
-  errorFallback,
-  fullBleedCode = false,
-  lead,
-  markdown = '',
-  mutedHeadings = false,
-  options,
-  size = 'lg',
-  variant = 'blog',
-  wrapperClassName,
-}: MarkdownRendererProps) {
+function resolveScopedDefaults(scope: MarkdownRendererScope, collectionSlug?: string) {
+  return scope === 'blocks'
+    ? resolveMarkdownBlockDefaults(collectionSlug)
+    : resolveMarkdownFieldDefaults(collectionSlug)
+}
+
+export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
+  const {
+    as = 'article',
+    collectionSlug,
+    emptyFallback = null,
+    errorFallback,
+    lead,
+    markdown = '',
+    scope = 'field',
+  } = rawProps
+
   if (!markdown || !markdown.trim()) return emptyFallback
 
-  const result = await compileMarkdown(markdown, options)
+  const resolvedProps =
+    mergeMarkdownConfigs(resolveScopedDefaults(scope, collectionSlug), rawProps) ?? rawProps
+
+  const {
+    centered = true,
+    className,
+    enableGutter = false,
+    fullBleedCode = false,
+    mutedHeadings = false,
+    size = 'lg',
+    variant = 'blog',
+    wrapperClassName,
+  } = resolvedProps
+
+  const result = await compileMarkdown(markdown, resolvedProps)
   const Tag = as
   const containerId = `payload-markdown-${randomUUID()}`
 

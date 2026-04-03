@@ -1,8 +1,8 @@
 import type { AccessArgs, CollectionConfig } from 'payload'
 
-import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
 import { slugField } from 'payload'
 
+import { Archive } from '../../blocks/ArchiveBlock/config.ts'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
@@ -49,7 +49,7 @@ export const Pages: CollectionConfig<'pages'> = {
       admin: {
         initCollapsed: true,
       },
-      blocks: [MarkdownBlock],
+      blocks: [Archive],
       required: true,
     },
     slugField(),

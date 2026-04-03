@@ -4,6 +4,8 @@ import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
 
+import type { MarkdownConfig } from '../types.d.ts'
+
 type DirectiveChild = ContainerDirective['children'][number]
 type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
 
@@ -75,8 +77,8 @@ function groupGridChildren(children: DirectiveChild[]): DirectiveChild[] {
   return out
 }
 
-export const remarkLayoutDirectives: Plugin<[], Root> = () => {
-  return (tree) => {
+export const remarkLayoutDirectives: Plugin<[MarkdownConfig?], Root> = () => {
+  return (tree: Root) => {
     visit(tree, (node) => {
       if (!isContainerDirective(node)) return
       if (!isSupportedDirective(node.name)) return
@@ -86,17 +88,7 @@ export const remarkLayoutDirectives: Plugin<[], Root> = () => {
       if (node.name === 'section') {
         data.hName = 'section'
         data.hProperties = {
-          className: [
-            'bg-black/50',
-            'backdrop-blur-2xl',
-            'rounded-xl',
-            'p-6',
-            'my-8',
-            'space-y-6',
-            '[&>h1]:my-2',
-            '[&>h1]:text-4xl',
-            '[&>h1]:font-semibold',
-          ],
+          dataVlLayout: 'section',
         }
         return
       }
@@ -104,7 +96,7 @@ export const remarkLayoutDirectives: Plugin<[], Root> = () => {
       if (node.name === 'cell') {
         data.hName = 'div'
         data.hProperties = {
-          className: ['flex', 'flex-col', 'w-full', 'gap-2', '[&>h2]:text-2xl', '[&>h2]:my-4'],
+          dataVlLayout: 'cell',
         }
         return
       }
@@ -114,13 +106,7 @@ export const remarkLayoutDirectives: Plugin<[], Root> = () => {
 
         data.hName = 'div'
         data.hProperties = {
-          className: [
-            'grid',
-            'grid-cols-1',
-            node.name === '2col' ? 'md:grid-cols-2' : 'md:grid-cols-3',
-            'gap-6',
-            'w-full'
-          ],
+          dataVlLayout: node.name,
         }
       }
     })

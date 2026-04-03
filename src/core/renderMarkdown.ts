@@ -12,9 +12,10 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { RenderMarkdownOptions, RenderMarkdownResult } from './types.d.ts'
+import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.d.ts'
 
 import { codeToHtml } from './codeToHtml.ts'
+import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.ts'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.ts'
 
 function normalizeLayoutSyntax(input: string): string {
@@ -25,19 +26,18 @@ function normalizeLayoutSyntax(input: string): string {
 }
 
 function extractCodeLanguage(
-  className?: Array<number | string> | boolean | null | number | string,
+  className?: Array<number | string> | boolean | null | number | string  ,
 ): string | undefined {
-  const classList = Array.isArray(className)
-    ? className
-    : typeof className === 'string'
+  const classes =
+    typeof className === 'string'
       ? className.split(/\s+/)
-      : []
+      : Array.isArray(className)
+        ? className
+        : []
 
-  const languageClass = classList.find(
-    (value): value is string => typeof value === 'string' && value.startsWith('language-'),
-  )
-
-  return languageClass?.replace(/^language-/, '') || undefined
+  return classes
+    .find((c): c is string => typeof c === 'string' && c.startsWith('language-'))
+    ?.slice(9)
 }
 
 function isElement(node: RootContent): node is Element {
@@ -93,25 +93,40 @@ function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
   }
 }
 
+type SanitizeAttributeValue = boolean | null | number | RegExp | string | undefined
+type SanitizeAttributeDefinition = [string, ...SanitizeAttributeValue[]] | string
+
+function getAttributeDefinitions(
+  value: Schema['attributes'] extends infer A
+    ? A extends Record<string, infer V>
+      ? V
+      : never
+    : never,
+): SanitizeAttributeDefinition[] {
+  return (value as SanitizeAttributeDefinition[] | undefined) ?? []
+}
+
 const sanitizeSchema: Schema = {
   ...defaultSchema,
   attributes: {
     ...(defaultSchema.attributes ?? {}),
-    code: [...(defaultSchema.attributes?.code ?? []), ['className']],
-    div: [...(defaultSchema.attributes?.div ?? []), ['className'], ['style']],
-    pre: [...(defaultSchema.attributes?.pre ?? []), ['className'], ['style'], ['tabindex']],
-    section: [
-      ...((defaultSchema.attributes?.section as Array<[string, ...string[]] | string>) ?? []),
-      ['className'],
+    code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
+    div: [...getAttributeDefinitions(defaultSchema.attributes?.div ?? []), 'dataVlLayout'],
+    pre: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.pre ?? []),
+      'className',
+      'style',
+      'tabindex',
     ],
-    span: [...(defaultSchema.attributes?.span ?? []), ['className'], ['style']],
+    section: [...getAttributeDefinitions(defaultSchema.attributes?.section ?? []), 'dataVlLayout'],
+    span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
   },
   tagNames: [...(defaultSchema.tagNames ?? []), 'span', 'section'],
 }
 
 export async function compileMarkdown(
   markdown: string,
-  options: RenderMarkdownOptions = {},
+  config: MarkdownConfig = {},
 ): Promise<RenderMarkdownResult> {
   const warnings: string[] = []
 
@@ -124,8 +139,9 @@ export async function compileMarkdown(
       .use(remarkDirective)
       .use(remarkLayoutDirectives)
       .use(remarkRehype, { allowDangerousHtml: false })
-      .use(rehypeShikiCodeBlocks, options)
+      .use(rehypeShikiCodeBlocks, config.options)
       .use(rehypeSanitize, sanitizeSchema)
+      .use(rehypeApplyLayoutClasses, config)
       .use(rehypeStringify)
       .process(normalizedMarkdown)
 
@@ -141,11 +157,4 @@ export async function compileMarkdown(
       warnings,
     }
   }
-}
-
-export async function renderMarkdown(
-  markdown: string,
-  options: RenderMarkdownOptions = {},
-): Promise<RenderMarkdownResult> {
-  return compileMarkdown(markdown, options)
 }

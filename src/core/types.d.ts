@@ -4,6 +4,8 @@
 
 import type { JSX, ReactNode } from 'react'
 
+export type MarkdownRendererScope = 'blocks' | 'field'
+
 /**
  * Options that control how fenced code blocks are rendered inside markdown content.
  *
@@ -202,7 +204,10 @@ export type BaseMarkdownRendererProps = {
  * This merges persisted/configurable markdown presentation settings with the
  * runtime-only rendering props required by the component itself.
  */
-export type MarkdownRendererProps = BaseMarkdownRendererProps & MarkdownConfig
+export type MarkdownRendererProps = {
+    collectionSlug?: string
+    scope?: MarkdownRendererScope
+  } & BaseMarkdownRendererProps & MarkdownConfig
 
 /**
  * Options available while rendering an individual fenced code block.
@@ -247,6 +252,11 @@ export interface MarkdownBlockProps {
    * Stored block data from Payload.
    */
   block: MarkdownBlockData
+
+  /**
+   * The slug of the collection this block is rendered within, if applicable.
+   */
+  collectionSlug?: string
 
   /**
    * Default markdown configuration, typically sourced from global or collection-level settings.

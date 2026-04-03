@@ -10,7 +10,7 @@ export function codeBlockParams(options: CodeBlockParams = {}): Field {
   const {
     name = 'code_params',
     admin,
-    label = 'Code Block Params',
+    label = 'Code Block Options',
   } = options
 
   return {
@@ -19,7 +19,7 @@ export function codeBlockParams(options: CodeBlockParams = {}): Field {
     admin,
     fields: [
       {
-        name: 'shiki_theme',
+        name: 'theme',
         type: 'select',
         admin: {
           description: 'The Shiki theme to use for syntax highlighting this code block. ' +
@@ -28,7 +28,6 @@ export function codeBlockParams(options: CodeBlockParams = {}): Field {
             'Some light themes may require additional customization ' +
             'to maintain good contrast and readability.',
         },
-        dbName: 'theme',
         defaultValue: 'github-dark',
         options: [
           { label: 'Andromeeda', value: 'andromeeda' },

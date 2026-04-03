@@ -1,10 +1,10 @@
-import type { CollectionConfig, Config, Plugin } from 'payload'
+import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
-import type { PayloadMarkdownConfig, PayloadMarkdownGlobalPluginConfig } from './types.d.ts'
+import type { PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.d.ts'
 
 import { MarkdownBlock } from './blocks/MarkdownBlock/config.ts'
 import { markdownField, type MarkdownFieldOptions } from './field/MarkdownField/config.ts'
-import { markdownBlockGlobal } from './globals/MarkdownBlock/config.ts'
+import { setPayloadMarkdownSettings } from './runtime/index.ts'
 
 function ensureMarkdownBlock(config: Config) {
   if (!config.blocks) config.blocks = []
@@ -35,33 +35,85 @@ function ensureMarkdownField(
   )
 }
 
-function ensureMarkdownGlobal(
-  config: Config,
-  globalOptions: boolean | PayloadMarkdownGlobalPluginConfig,
-) {
-  if (!config.globals) config.globals = []
+function ensureBlockInBlocksField(field: Field, block: Block) {
+  if (field.type !== 'blocks') return
 
-  const resolvedOptions = globalOptions === true ? {} : globalOptions
-  if (!resolvedOptions) return
+  if (!field.blocks) field.blocks = []
 
-  const globalConfig = markdownBlockGlobal(resolvedOptions)
-
-  const alreadyExists = config.globals.some((global) => global.slug === globalConfig.slug)
-
+  const alreadyExists = field.blocks.some((entry) => entry.slug === block.slug)
   if (alreadyExists) return
 
-  config.globals.push(globalConfig)
+  field.blocks.push(block)
+}
+
+function walkFieldsAndInstallBlock(fields: Field[], block: Block) {
+  for (const field of fields) {
+    ensureBlockInBlocksField(field, block)
+
+    if ('fields' in field && Array.isArray(field.fields))
+      walkFieldsAndInstallBlock(field.fields, block)
+
+    if (field.type === 'tabs' && Array.isArray(field.tabs)) {
+      for (const tab of field.tabs)
+        if ('fields' in tab && Array.isArray(tab.fields))
+          walkFieldsAndInstallBlock(tab.fields, block)
+    }
+  }
+}
+
+function ensureMarkdownBlockInCollectionBlocks(collection: CollectionConfig) {
+  walkFieldsAndInstallBlock(collection.fields, MarkdownBlock)
+}
+
+function collectionHasBlocksField(fields: Field[]): boolean {
+  for (const field of fields) {
+    if (field.type === 'blocks') return true
+
+    if ('fields' in field && Array.isArray(field.fields))
+      if (collectionHasBlocksField(field.fields)) return true
+
+    if (field.type === 'tabs' && Array.isArray(field.tabs))
+      for (const tab of field.tabs)
+        if ('fields' in tab && Array.isArray(tab.fields))
+          if (collectionHasBlocksField(tab.fields)) return true
+  }
+
+  return false
+}
+
+function resolveCollectionInstallBehavior(
+  collection: CollectionConfig,
+  collectionOptions: PayloadMarkdownCollectionConfig | true,
+) {
+  const hasBlocksField = collectionHasBlocksField(collection.fields)
+
+  if (collectionOptions === true) {
+    return {
+      fieldName: 'content',
+      fieldOptions: undefined,
+      installField: !hasBlocksField,
+      installIntoBlocks: hasBlocksField,
+    }
+  }
+
+  return {
+    fieldName: collectionOptions.fieldName || 'content',
+    fieldOptions: collectionOptions.field,
+    installField: collectionOptions.installField ?? !hasBlocksField,
+    installIntoBlocks: collectionOptions.installIntoBlocks ?? hasBlocksField,
+  }
 }
 
 export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
   (incomingConfig: Config): Config => {
     const config = { ...incomingConfig }
-    if (pluginOptions.enabled !== null && !pluginOptions.enabled) return config
+
+    if (pluginOptions.enabled === false) return config
+
+    setPayloadMarkdownSettings(pluginOptions)
 
     ensureMarkdownBlock(config)
-
-    if (pluginOptions.global) ensureMarkdownGlobal(config, pluginOptions.global)
 
     if (!pluginOptions.collections || !config.collections) return config
 
@@ -71,16 +123,12 @@ export const payloadMarkdown =
       const collection = config.collections.find((entry) => entry.slug === collectionSlug)
       if (!collection) continue
 
-      if (collectionOptions === true) {
-        ensureMarkdownField(collection, 'content')
-        continue
-      }
+      const resolved = resolveCollectionInstallBehavior(collection, collectionOptions)
 
-      ensureMarkdownField(
-        collection,
-        collectionOptions.fieldName || 'content',
-        collectionOptions.field,
-      )
+      if (resolved.installIntoBlocks) ensureMarkdownBlockInCollectionBlocks(collection)
+
+      if (resolved.installField)
+        ensureMarkdownField(collection, resolved.fieldName, resolved.fieldOptions)
     }
 
     return config
