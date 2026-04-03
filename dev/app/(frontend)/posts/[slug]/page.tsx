@@ -1,5 +1,5 @@
 import configPromise from '@payload-config'
-import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
+import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
 import { draftMode } from 'next/headers'
 import { getPayload } from 'payload'
 import React, { cache } from 'react'
