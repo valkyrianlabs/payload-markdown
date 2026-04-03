@@ -1,9 +1,10 @@
 import type { CollectionConfig, Config, Plugin } from 'payload'
 
-import type { PayloadMarkdownConfig } from './types.d.ts'
+import type { PayloadMarkdownConfig, PayloadMarkdownGlobalPluginConfig } from './types.d.ts'
 
 import { MarkdownBlock } from './blocks/MarkdownBlock/config.ts'
 import { markdownField, type MarkdownFieldOptions } from './field/MarkdownField/config.ts'
+import { markdownBlockGlobal } from './globals/MarkdownBlock/config.ts'
 
 function ensureMarkdownBlock(config: Config) {
   if (!config.blocks) config.blocks = []
@@ -34,13 +35,33 @@ function ensureMarkdownField(
   )
 }
 
+function ensureMarkdownGlobal(
+  config: Config,
+  globalOptions: boolean | PayloadMarkdownGlobalPluginConfig,
+) {
+  if (!config.globals) config.globals = []
+
+  const resolvedOptions = globalOptions === true ? {} : globalOptions
+  if (!resolvedOptions) return
+
+  const globalConfig = markdownBlockGlobal(resolvedOptions)
+
+  const alreadyExists = config.globals.some((global) => global.slug === globalConfig.slug)
+
+  if (alreadyExists) return
+
+  config.globals.push(globalConfig)
+}
+
 export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
   (incomingConfig: Config): Config => {
     const config = { ...incomingConfig }
-    if (!pluginOptions.enabled) return config
+    if (pluginOptions.enabled !== null && !pluginOptions.enabled) return config
 
     ensureMarkdownBlock(config)
+
+    if (pluginOptions.global) ensureMarkdownGlobal(config, pluginOptions.global)
 
     if (!pluginOptions.collections || !config.collections) return config
 

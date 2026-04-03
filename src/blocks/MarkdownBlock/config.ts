@@ -1,15 +1,17 @@
 import type { Block } from 'payload'
 
+import { blocksParams } from '../../field/BlocksParams/config.ts'
 import { markdownField } from '../../field/MarkdownField/config.ts'
 
 export const MarkdownBlock: Block = {
-  slug: '@valkyrianlabs/markdown-block',
+  slug: 'vlMdBlock',
   fields: [
     markdownField({
       name: 'content',
       label: 'Markdown Content',
       required: true
-    })
+    }),
+    blocksParams()
   ],
   labels: {
     plural: 'Markdown Blocks',

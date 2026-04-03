@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from './types.d.ts'
+import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from '../../core/types.d.ts'
 
 import { compileMarkdown } from '../../core/renderMarkdown.ts'
 import { MarkdownRendererClient } from './Component.client.tsx'

@@ -12,10 +12,7 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type {
-  RenderMarkdownOptions,
-  RenderMarkdownResult,
-} from '../components/MarkdownRenderer/types.d.ts'
+import type { RenderMarkdownOptions, RenderMarkdownResult } from './types.d.ts'
 
 import { codeToHtml } from './codeToHtml.ts'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.ts'

@@ -12,6 +12,20 @@ export type PayloadMarkdownCollectionConfig = {
   fieldName?: string
 }
 
+export type PayloadMarkdownGlobalPluginConfig = {
+  /**
+   * Label for the generated global.
+   * @default 'Markdown Block Global Settings'
+   */
+  label?: string
+
+  /**
+   * Slug for the generated global.
+   * @default 'vl-markdown-block-global'
+   */
+  slug?: string
+}
+
 export interface PayloadMarkdownConfig {
   /**
    * Add markdown field to collections.
@@ -24,4 +38,11 @@ export interface PayloadMarkdownConfig {
    * @default false
    */
   enabled?: boolean
+
+  /**
+   * Auto-register a global for markdown defaults.
+   * - true: use defaults
+   * - object: customize the generated global
+   */
+  global?: boolean | PayloadMarkdownGlobalPluginConfig
 }

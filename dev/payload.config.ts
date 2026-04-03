@@ -56,6 +56,7 @@ const buildConfigWithMemoryDB = async () => {
     }),
     editor: lexicalEditor(),
     email: testEmailAdapter,
+    globals: [],
     onInit: async (payload) => {
       await seed(payload)
     },
@@ -64,6 +65,8 @@ const buildConfigWithMemoryDB = async () => {
         collections: {
           posts: true,
         },
+        enabled: true,
+        global: true
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
