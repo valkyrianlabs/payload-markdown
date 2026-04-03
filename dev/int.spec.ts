@@ -1,69 +1,211 @@
 import type { Config } from 'payload'
 
-import { describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { payloadMarkdown } from '../src/index.ts'
+import {
+  clearPayloadMarkdownSettings,
+  getPayloadMarkdownSettings,
+  resolveMarkdownBlockDefaults,
+  resolveMarkdownFieldDefaults,
+} from '../src/runtime'
 
-describe('payload-markdown plugin', () => {
-  test('adds markdown block globally', async () => {
-    const config = await payloadMarkdown({
-      enabled: true,
-    })({
-      collections: [],
-    } as unknown as Config)
-
-    const block = config.blocks?.find((b) => b.slug === '@valkyrianlabs/markdown-block')
-
-    expect(block).toBeDefined()
+describe('payloadMarkdown', () => {
+  beforeEach(() => {
+    clearPayloadMarkdownSettings()
   })
 
-  test('injects markdown field into collection', async () => {
-    const baseConfig = {
+  it('registers plugin settings and applies inferred install behavior for field and block collections', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
       collections: [
         {
           slug: 'posts',
-          fields: [],
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          slug: 'pages',
+          fields: [
+            {
+              name: 'layout',
+              type: 'blocks',
+              blocks: [
+                {
+                  slug: 'hero',
+                  fields: [],
+                },
+              ],
+            },
+          ],
         },
       ],
-    } as unknown as Config
+    } as Config
 
-    const config = await payloadMarkdown({
+    const plugin = payloadMarkdown({
       collections: {
+        pages: true,
         posts: true,
       },
-      enabled: true,
-    })(baseConfig)
+      config: {
+        blocks: {
+          size: 'md',
+          variant: 'docs',
+        },
+        field: {
+          size: 'lg',
+          variant: 'blog',
+        },
+      },
+    })
 
-    const collection = config.collections?.find((c) => c.slug === 'posts')
+    const result = await plugin(config)
 
-    const field = collection?.fields.find((f) => 'name' in f && f.name === 'content')
+    const posts = result.collections?.find((collection) => collection.slug === 'posts')
+    const pages = result.collections?.find((collection) => collection.slug === 'pages')
 
-    expect(field).toBeDefined()
+    expect(posts).toBeDefined()
+    expect(pages).toBeDefined()
+
+    // posts has no blocks field, so it should get a standalone markdown field by default
+    expect(posts?.fields.some((field) => 'name' in field && field.name === 'content')).toBe(true)
+
+    // pages has a blocks field, so it should get the markdown block installed into that blocks field
+    const layoutField = pages?.fields.find((field) => 'name' in field && field.name === 'layout')
+
+    expect(layoutField).toBeDefined()
+    expect(layoutField && 'blocks' in layoutField && Array.isArray(layoutField.blocks)).toBe(true)
+    expect(
+      layoutField &&
+        'blocks' in layoutField &&
+        layoutField.blocks?.some((block) => block.slug === 'vlMdBlock'),
+    ).toBe(true)
+
+    // pages should not get a standalone markdown field by default because it already has a blocks field
+    expect(pages?.fields.some((field) => 'name' in field && field.name === 'content')).toBe(false)
+
+    // registry should be seeded
+    const settings = getPayloadMarkdownSettings()
+
+    expect(settings.enabled).toBe(true)
+    expect(settings.collections.posts).toBe(true)
+    expect(settings.collections.pages).toBe(true)
+
+    // runtime config resolution should respect split field/block config
+    expect(resolveMarkdownFieldDefaults('posts')).toMatchObject({
+      size: 'lg',
+      variant: 'blog',
+    })
+
+    expect(resolveMarkdownBlockDefaults('pages')).toMatchObject({
+      size: 'md',
+      variant: 'docs',
+    })
   })
 
-  test('respects custom field name', async () => {
-    const baseConfig = {
+  it('respects explicit install overrides', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
       collections: [
         {
-          slug: 'posts',
-          fields: [],
+          slug: 'pages',
+          fields: [
+            {
+              name: 'layout',
+              type: 'blocks',
+              blocks: [],
+            },
+          ],
         },
       ],
     } as unknown as Config
 
-    const config = await payloadMarkdown({
+    const plugin = payloadMarkdown({
       collections: {
-        posts: {
-          fieldName: 'markdownBody',
+        pages: {
+          fieldName: 'body',
+          installField: true,
+          installIntoBlocks: false,
         },
       },
-      enabled: true,
-    })(baseConfig)
+    })
 
-    const collection = config.collections?.find((c) => c.slug === 'posts')
+    const result = await plugin(config)
+    const pages = result.collections?.find((collection) => collection.slug === 'pages')
 
-    const field = collection?.fields.find((f) => 'name' in f && f.name === 'markdownBody')
+    expect(pages?.fields.some((field) => 'name' in field && field.name === 'body')).toBe(true)
 
-    expect(field).toBeDefined()
+    const layoutField = pages?.fields.find((field) => 'name' in field && field.name === 'layout')
+
+    expect(
+      layoutField &&
+        'blocks' in layoutField &&
+        Array.isArray(layoutField.blocks) &&
+        layoutField.blocks.some((block) => block.slug === 'vlMdBlock'),
+    ).toBe(false)
+  })
+
+  it('does not duplicate injected markdown field or markdown block', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      blocks: [
+        {
+          slug: 'vlMdBlock',
+          fields: [],
+        },
+      ],
+      collections: [
+        {
+          slug: 'pages',
+          fields: [
+            {
+              name: 'content',
+              type: 'textarea',
+            },
+            {
+              name: 'layout',
+              type: 'blocks',
+              blocks: [
+                {
+                  slug: 'vlMdBlock',
+                  fields: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      collections: {
+        pages: {
+          installField: true,
+          installIntoBlocks: true,
+        },
+      },
+    })
+
+    const result = await plugin(config)
+    const pages = result.collections?.find((collection) => collection.slug === 'pages')
+
+    expect(result.blocks?.filter((block) => block.slug === 'vlMdBlock').length).toBe(1)
+
+    expect(
+      pages?.fields.filter((field) => 'name' in field && field.name === 'content').length,
+    ).toBe(1)
+
+    const layoutField = pages?.fields.find((field) => 'name' in field && field.name === 'layout')
+
+    expect(
+      layoutField &&
+        'blocks' in layoutField &&
+        Array.isArray(layoutField.blocks) &&
+        layoutField.blocks.filter((block) => block.slug === 'vlMdBlock').length,
+    ).toBe(1)
   })
 })

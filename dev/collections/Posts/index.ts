@@ -1,6 +1,5 @@
 import type { AccessArgs, CollectionConfig } from 'payload'
 
-import { markdownField } from '@valkyrianlabs/payload-markdown'
 import { slugField } from 'payload'
 
 import { generatePreviewPath } from '../../utilities/generatePreviewPath.ts'
@@ -48,10 +47,6 @@ export const Posts: CollectionConfig<'posts'> = {
       type: 'upload',
       relationTo: 'media',
     },
-    markdownField({
-      name: 'content',
-      label: 'Content',
-    }),
     {
       name: 'publishedAt',
       type: 'date',

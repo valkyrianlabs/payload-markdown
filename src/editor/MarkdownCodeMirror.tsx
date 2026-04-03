@@ -20,6 +20,7 @@ export const MarkdownCodeMirror: React.FC<MarkdownCodeMirrorProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 
   useEffect(() => {
     if (!containerRef.current || viewRef.current) return
@@ -68,7 +69,15 @@ export const MarkdownCodeMirror: React.FC<MarkdownCodeMirrorProps> = ({
   }, [value])
 
   return (
-    <div className="min-h-125 overflow-hidden rounded-xl border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-950">
+    <div
+      style={{
+        border: isDarkMode ? '1px solid rgba(120, 120, 120, .4)' : '1px solid rgba(120, 120, 120, .8)',
+        borderRadius: '5px',
+        maxHeight: '80vh',
+        minHeight: '125px',
+        overflowX: 'hidden',
+        overflowY: 'scroll',
+      }}>
       <div ref={containerRef} />
     </div>
   )
