@@ -232,6 +232,9 @@ export const Pages = {
 
 ### Render blocks
 
+Note: you must register using the 'vlMdBlock' key for the block renderer to work out of the box as this is what payload-types generates the block type as. More to come on this in the future as we expand block support and configuration options.
+
+`/blocks/RenderBlocks.tsx`
 ```tsx
 import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
 
