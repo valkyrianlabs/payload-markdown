@@ -8,70 +8,65 @@
 pnpm add @valkyrianlabs/payload-markdown
 ```
 
-Beautiful, production-ready Markdown for Payload CMS.
+Markdown for Payload CMS — with clean rendering, Shiki-powered code blocks, and layout-aware directives for real content.
 
-**Built for modern workflows — including seamless human ↔ AI collaboration.**
+It keeps Markdown as the source of truth while covering the gap between plain text and the kind of structure people usually overcomplicate with MDX, custom components, or bloated editors.
 
-Render Markdown with clean, modern styling out of the box — plus **layout-aware extensions** for building real content (columns, sections, structured blocks) without leaving Markdown.
+Built for blogs, docs, content-heavy apps, and AI-assisted workflows.
 
 ---
 
-## 📸 Example
+## Example
 
 ![payload-markdown example](https://project-media.cooperhlarson.com/payload-markdown_posts_example.png)
 
 Write simple Markdown → get structured layouts instantly.
 
-**Install. Write. Preview. — in minutes, not hours.**
+---
+
+## Features
+
+- Drop-in Markdown support for Payload CMS
+- Layout-aware Markdown with sections and columns
+- Shiki-powered syntax highlighting
+- Clean, Tailwind-friendly rendered output
+- Lightweight editor workflow without heavy WYSIWYG overhead
+- Plain Markdown storage for portability and AI collaboration
+- Extensible remark / rehype pipeline
 
 ---
 
-## 🧱 Layout-Aware Markdown
+## Layout-Aware Markdown
 
-Write layout-aware content directly in Markdown — **no MDX, no custom components, no editor friction.**
+Write structured content directly in Markdown with simple block directives.
 
-**Qualifiers**:
-- Opening Qualifier: `:::section`, `:::2col`, `:::3col`
-- Closing Qualifier: `:::` (closes the most recent open block)
-  - If columns are nested inside a section, a single `:::` may close both
-  - Optional explicit closures: `:::end` | `:::endsection` | `:::endcol`
+Supported opening directives:
 
-**Section**:
+- `:::section`
+- `:::2col`
+- `:::3col`
+
+Close blocks with:
+
+- `:::`
+- `:::end`
+- `:::endsection`
+- `:::endcol`
+
+### Section example
 
 ```markdown
-:::section
+:::
 
 # My content here
-
-:::      
-```
-
-**Columns** *(use :::2col or :::3col depending on layout)*:
-
-```markdown
-:::2col
-
-# Column 1 content
-
-a description of the first column
-
-# Column 2 content
-
-a description of the second column
 
 :::
 ```
 
-**Full Example**:
+### Column example
 
 ```markdown
-:::section
-
-# My Blog Post
-
-This is a blog post with a two-column layout.
-
-:::2col
+:::
 
 ## Column 1
 
@@ -81,101 +76,69 @@ Some content for the first column.
 
 Some content for the second column.
 
-:::      # closes both the columns and the section
+:::
 ```
+
+### Full example
+
+```markdown
+:::
+
+# My Blog Post
+
+This is a blog post with a two-column layout.
+
+:::
+
+## Column 1
+
+Some content for the first column.
+
+## Column 2
+
+Some content for the second column.
+
+:::
+```
+
+Structured layouts without switching formats, wiring up custom MDX components, or forcing authors into a visual editor.
 
 ---
 
-## 💻 Code Blocks & Syntax Highlighting
+## Code Blocks & Syntax Highlighting
 
 ![code blocks example](https://project-media.cooperhlarson.com/payload-markdown_code_blocks_example.png)
 
-Markdown code blocks are rendered with **high-fidelity syntax highlighting** powered by Shiki — the same engine used by VS Code.
+Markdown code blocks are rendered with high-fidelity syntax highlighting powered by Shiki — the same engine used by VS Code.
 
-This means your code looks exactly how developers expect it to look:
-- accurate tokenization (keywords, strings, types, operators)
-- consistent theming across languages
-- zero guesswork or regex-based highlighting
+That gives you:
 
-Shiki is built on **TextMate grammars**, giving it extremely precise language support across a wide range of ecosystems.
+- accurate tokenization
+- broad language support
+- consistent theming
+- zero client-side highlighting overhead
 
----
+Unlike browser highlighters that parse code at runtime, Shiki generates styled HTML during rendering. You get IDE-grade output without shipping extra JavaScript.
 
-### ⚡ Why this matters
-
-Most Markdown renderers treat code blocks as an afterthought.
-
-This doesn’t.
-
-- **Readable at a glance** — colors reinforce structure and intent
-- **Language-aware** — not just “colored text,” but real parsing
-- **Consistent with dev tools** — matches what engineers see in their editor
-- **Zero runtime overhead** — highlighting is generated ahead of time
-
-Unlike browser-based highlighters that rely on client-side parsing, Shiki generates fully styled HTML during rendering, so you ship **no extra JavaScript** while still getting IDE-quality results.
+Whether you're publishing blog posts, tutorials, API documentation, or internal guides, code blocks stay sharp, readable, and production-ready.
 
 ---
 
-### 🧠 Built for real-world content
+## AI-Friendly by Design
 
-- Supports a wide range of languages out of the box
-- Line numbers and formatting handled automatically
-- Clean copy-paste output (no artifacts, no formatting noise)
-- Fully customizable via transformer pipeline
+Content is stored as plain Markdown.
 
-Whether you're writing:
-- blog posts
-- documentation
-- tutorials
-- API guides
+That makes it naturally compatible with AI workflows:
 
-…your code blocks look sharp, readable, and production-ready.
+- copy content into ChatGPT, Claude, or other tools
+- rewrite, expand, summarize, or refactor it
+- paste it back without schema conversion or formatting loss
+
+No proprietary document format. No JSON lock-in. Just Markdown.
 
 ---
 
-## 🧾 TL;DR
-
-You’re not getting “pretty code.”
-
-You’re getting **editor-grade syntax rendering in Markdown**, without the overhead of a full editor.
-
----
-
-## ✨ Features
-
-* 🎯 Drop-in Markdown renderer with polished defaults
-* 🧱 Layout-aware Markdown (columns, sections, grid directives)
-* 🧼 Clean, readable output using Tailwind-friendly prose styling
-* ⚡ Lightweight editor integration (no heavy WYSIWYG overhead)
-* 🔌 Extensible pipeline (remark / rehype support)
-* 🧠 Built for real-world use in blogs, docs, and content-heavy apps
-
----
-
-## 🤖 AI-Friendly by Design
-
-Content is stored as plain Markdown — making it seamless to collaborate with AI.
-
-- Copy/paste directly into ChatGPT, Claude, or any AI tool
-- Refactor, expand, or rewrite content
-- Paste back with zero formatting loss
-
-No proprietary JSON formats.  
-No schema translation.  
-Just clean, portable content.
-
----
-
-## 🎯 Use Cases
-
-- Developer blogs
-- Technical documentation
-- Content-heavy apps
-- AI-assisted writing workflows
-
----
-
-## 📦 Installation
+## Installation
 
 ```bash
 npm install @valkyrianlabs/payload-markdown
@@ -183,9 +146,9 @@ npm install @valkyrianlabs/payload-markdown
 
 ---
 
-## 🚀 Usage
+## Usage
 
-### 1. Register the plugin in `payload.config.ts`
+### Register the plugin in `payload.config.ts`
 
 ```ts
 import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
@@ -201,11 +164,11 @@ export default {
 }
 ```
 
-No boilerplate required — fields are automatically added to configured collections.
+Fields are automatically added to configured collections.
 
 ---
 
-### 2. Add the Markdown field manually (optional)
+### Add the Markdown field manually
 
 ```ts
 import { markdownField } from '@valkyrianlabs/payload-markdown'
@@ -227,7 +190,7 @@ export const Posts = {
 
 ---
 
-### 3. Render Markdown in your frontend
+### Render Markdown in your frontend
 
 ```tsx
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
@@ -240,7 +203,7 @@ import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/client'
 
 ---
 
-### 4. Use with Payload Blocks (Layout Builder)
+### Use with Payload Blocks
 
 ```ts
 import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
@@ -261,9 +224,7 @@ export const Pages = {
 }
 ```
 
----
-
-### Register block renderer
+### Register the block renderer
 
 ```ts
 import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
@@ -275,7 +236,7 @@ const blockComponents = {
 
 ---
 
-## 🎨 Styling
+## Styling
 
 This package ships with Tailwind-friendly defaults.
 
@@ -290,11 +251,11 @@ npm install @tailwindcss/typography
 @source "../node_modules/@valkyrianlabs/payload-markdown/dist";
 ```
 
-No Tailwind? No problem — output still renders as clean HTML.
+No Tailwind? No problem. The output still renders as clean HTML.
 
 ---
 
-## ⚙️ Renderer Options
+## Renderer Options
 
 ```tsx
 <MarkdownRenderer
@@ -309,36 +270,21 @@ No Tailwind? No problem — output still renders as clean HTML.
 
 ---
 
-## 🤔 Why not MDX?
+## Why not MDX?
 
-MDX is powerful, but often introduces complexity, build overhead, and tighter coupling to React.
+MDX is powerful, but it also introduces more complexity, tighter React coupling, and more authoring surface area than many content-driven sites actually need.
 
-This plugin keeps Markdown as the source of truth while still enabling structured layouts — striking a balance between
-simplicity and power.
+This package is intentionally Markdown-first.
 
----
+The goal is not to recreate MDX prematurely, but to push Markdown further through carefully designed extensions that preserve portability, readability, and simplicity.
 
-## 🧠 Philosophy
-
-Markdown is the editor.
-
-Instead of layering heavy UI abstractions, this package embraces Markdown as the source of truth while providing a clean
-editing and rendering experience.
+If future use cases emerge that genuinely require capabilities beyond what can be expressed cleanly through extended Markdown, they can be evaluated then. Until that point, this package is opinionated about keeping Markdown as the source of truth.
 
 ---
 
-## 🔮 Roadmap
+## Roadmap
 
-* MDX support
-* Custom remark / rehype plugin pipeline
-* Advanced formatting extensions
-* Optional editor enhancements (shortcuts, structure helpers)
-
----
-
-## 🧪 Development
-
-```bash
-npm install
-npm run dev
-```
+- Expanded layout and formatting directives
+- Custom remark / rehype plugin pipeline
+- Optional editor enhancements
+- Continued refinement of Markdown-first authoring ergonomics
