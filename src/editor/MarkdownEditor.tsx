@@ -4,7 +4,7 @@ import type { StaticLabel } from 'payload'
 
 import React from 'react'
 
-import { MarkdownCodeMirror } from './MarkdownCodeMirror.tsx'
+import { MarkdownCodeMirror } from './MarkdownCodeMirror.js'
 
 type MarkdownEditorProps = {
   label?: StaticLabel

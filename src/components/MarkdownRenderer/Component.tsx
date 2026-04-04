@@ -5,15 +5,15 @@ import type {
   MarkdownRendererScope,
   MarkdownSize,
   MarkdownVariant,
-} from '../../core/types.d.ts'
+} from '../../core/types.d.js'
 
-import { compileMarkdown } from '../../core/renderMarkdown.ts'
+import { compileMarkdown } from '../../core/renderMarkdown.js'
 import {
   mergeMarkdownConfigs,
   resolveMarkdownBlockDefaults,
   resolveMarkdownFieldDefaults,
-} from '../../runtime/index.ts'
-import { MarkdownRendererClient } from './Component.client.tsx'
+} from '../../runtime/index.js'
+import { MarkdownRendererClient } from './Component.client.js'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 

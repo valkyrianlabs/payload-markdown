@@ -1,6 +1,6 @@
 import { createHighlighter, type ShikiTransformer } from 'shiki'
 
-import type { CodeBlockOptions } from './types.d.ts'
+import type { CodeBlockOptions } from './types.d.js'
 
 export const DEFAULT_CODE_LANG = 'text'
 export const DEFAULT_CODE_THEME = 'github-dark'

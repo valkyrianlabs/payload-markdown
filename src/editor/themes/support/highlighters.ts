@@ -3,7 +3,7 @@ import type { Extension } from '@codemirror/state'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 
-import { supported as s } from './lang.ts'
+import { supported as s } from './lang.js'
 
 type HighlightRule = Parameters<typeof HighlightStyle.define>[0][number]
 

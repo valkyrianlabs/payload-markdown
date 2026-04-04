@@ -1,7 +1,7 @@
 import type { Field, GroupField } from 'payload'
 
-import { codeBlockParams } from '../CodeBlockParams/config.ts'
-import { tailwindField } from '../TailwindField/config.ts'
+import { codeBlockParams } from '../CodeBlockParams/config.js'
+import { tailwindField } from '../TailwindField/config.js'
 
 export type BlocksParamsOptions = {
   admin?: Partial<GroupField['admin']>

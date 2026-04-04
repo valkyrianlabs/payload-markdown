@@ -1,7 +1,7 @@
-import type { MarkdownBlockProps } from '../../core/types.d.ts'
+import type { MarkdownBlockProps } from '../../core/types.d.js'
 
-import { MarkdownRenderer } from '../../components/MarkdownRenderer/Component.tsx'
-import { resolveMarkdownBlockDefaults } from '../../runtime/index.ts'
+import { MarkdownRenderer } from '../../components/MarkdownRenderer/Component.js'
+import { resolveMarkdownBlockDefaults } from '../../runtime/index.js'
 
 export const MarkdownBlockComponent = ({ block, collectionSlug }: MarkdownBlockProps) => {
   const resolvedConfig = resolveMarkdownBlockDefaults(collectionSlug)

@@ -12,11 +12,11 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.d.ts'
+import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.d.js'
 
-import { codeToHtml } from './codeToHtml.ts'
-import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.ts'
-import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.ts'
+import { codeToHtml } from './codeToHtml.js'
+import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
+import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 
 function normalizeLayoutSyntax(input: string): string {
   return input

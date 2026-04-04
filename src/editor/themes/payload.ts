@@ -5,8 +5,8 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { EditorView } from '@codemirror/view'
 import { tags as t, Tag } from '@lezer/highlight'
 
-import { supportedLangHighlight } from './support/highlighters.ts'
-import { languages } from './support/lang.ts'
+import { supportedLangHighlight } from './support/highlighters.js'
+import { languages } from './support/lang.js'
 
 const activeLine = '#6699ff0b',
   bracketMatch = '#bad0f847',

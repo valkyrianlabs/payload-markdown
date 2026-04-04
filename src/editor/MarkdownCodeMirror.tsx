@@ -5,7 +5,7 @@ import { EditorState } from '@codemirror/state'
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view'
 import React, { useEffect, useRef } from 'react'
 
-import { payloadMarkdownTheme } from './themes/payload.ts'
+import { payloadMarkdownTheme } from './themes/payload.js'
 
 type MarkdownCodeMirrorProps = {
   onChangeAction: (value: string) => void

@@ -1,7 +1,7 @@
 import type { Block } from 'payload'
 
-import { blocksParams } from '../../field/BlocksParams/config.ts'
-import { markdownField } from '../../field/MarkdownField/config.ts'
+import { blocksParams } from '../../field/BlocksParams/config.js'
+import { markdownField } from '../../field/MarkdownField/config.js'
 
 export const MarkdownBlock: Block = {
   slug: 'vlMdBlock',
