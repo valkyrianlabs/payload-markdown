@@ -79,7 +79,7 @@ function buildWrapperClassName({
   wrapperClassName,
 }: Pick<MarkdownRendererProps, 'centered' | 'enableGutter' | 'wrapperClassName'>): string {
   return cx(
-    centered && 'mx-auto w-full max-w-3xl',
+    centered && 'mx-2 sm:mx-4 md:mx-6 lg:mx-8',
     enableGutter && 'px-5 sm:px-6 lg:px-8',
     wrapperClassName,
   )
