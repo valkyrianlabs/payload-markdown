@@ -1,10 +1,10 @@
-import type { MarkdownConfig } from '../core/types.d.js'
+import type { MarkdownConfig } from '../core/types.js'
 import type {
   ConfigOptions,
   DualMarkdownFieldConfig,
   PayloadMarkdownCollectionConfig,
   PayloadMarkdownConfig,
-} from '../types.d.js'
+} from '../types.js'
 
 export type PayloadMarkdownResolvedSettings = {
   collections: Partial<Record<string, PayloadMarkdownCollectionConfig | true>>

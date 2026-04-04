@@ -1,9 +1,9 @@
 import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
-import type { PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.d.js'
+import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.js'
 
 import { MarkdownBlock } from './blocks/MarkdownBlock/config.js'
-import { markdownField, type MarkdownFieldOptions } from './field/MarkdownField/config.js'
+import { markdownField } from './field/MarkdownField/config.js'
 import { setPayloadMarkdownSettings } from './runtime/index.js'
 
 function ensureMarkdownBlock(config: Config) {

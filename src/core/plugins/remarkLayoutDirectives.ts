@@ -4,7 +4,7 @@ import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig } from '../types.d.js'
+import type { MarkdownConfig } from '../types.js'
 
 type DirectiveChild = ContainerDirective['children'][number]
 type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'

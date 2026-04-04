@@ -1,6 +1,6 @@
-import type { CollectionSlug } from 'payload'
+import type { CollectionSlug, TextField } from 'payload'
 
-import type { MarkdownConfig } from './core/types.d.js'
+import type { MarkdownConfig } from './core/types.js'
 
 export type DualMarkdownFieldConfig = {
   blocks?: MarkdownConfig
@@ -8,6 +8,15 @@ export type DualMarkdownFieldConfig = {
 }
 
 export type ConfigOptions = DualMarkdownFieldConfig | MarkdownConfig
+
+export type MarkdownFieldOptions = {
+  admin?: Partial<TextField['admin']>
+  defaultValue?: string
+  label?: string
+  localized?: boolean
+  name?: string
+  required?: boolean
+}
 
 export type PayloadMarkdownCollectionConfig = {
   /**

@@ -5,7 +5,7 @@ import type {
   MarkdownRendererScope,
   MarkdownSize,
   MarkdownVariant,
-} from '../../core/types.d.js'
+} from '../../core/types.js'
 
 import { compileMarkdown } from '../../core/renderMarkdown.js'
 import {

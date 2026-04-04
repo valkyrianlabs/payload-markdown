@@ -12,7 +12,7 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.d.js'
+import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.js'
 
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'

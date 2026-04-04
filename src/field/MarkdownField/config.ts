@@ -1,13 +1,6 @@
-import type { Field, TextField } from 'payload'
+import type { Field } from 'payload'
 
-export type MarkdownFieldOptions = {
-  admin?: Partial<TextField['admin']>
-  defaultValue?: string
-  label?: string
-  localized?: boolean
-  name?: string
-  required?: boolean
-}
+import type { MarkdownFieldOptions } from '../../types.ts'
 
 export function markdownField(options: MarkdownFieldOptions = {}): Field {
   const {
