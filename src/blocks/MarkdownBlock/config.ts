@@ -13,6 +13,7 @@ export const MarkdownBlock: Block = {
       required: true,
     }),
   ],
+  interfaceName: 'MarkdownBlock',
   labels: {
     plural: 'Markdown Blocks',
     singular: 'Markdown Block',
