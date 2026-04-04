@@ -231,7 +231,7 @@ export interface MarkdownBlockData {
   /**
    * The Payload block slug.
    */
-  blockType: '@valkyrianlabs/markdown-block'
+  blockType: 'vlMdBlock'
 
   /**
    * Markdown source content for this block.
