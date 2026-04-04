@@ -247,24 +247,9 @@ export interface MarkdownBlockData {
 /**
  * Props for the markdown block component wrapper.
  */
-export interface MarkdownBlockProps {
-  /**
-   * Stored block data from Payload.
-   */
-  block: MarkdownBlockData
-
+export interface MarkdownBlockProps extends MarkdownBlockData {
   /**
    * The slug of the collection this block is rendered within, if applicable.
    */
   collectionSlug?: string
-
-  /**
-   * Default markdown configuration, typically sourced from global or collection-level settings.
-   */
-  defaults?: MarkdownConfig
-
-  /**
-   * Block-specific markdown configuration overrides.
-   */
-  overrides?: MarkdownConfig
 }
