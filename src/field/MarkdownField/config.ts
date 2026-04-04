@@ -5,12 +5,19 @@ export type MarkdownFieldOptions = {
   defaultValue?: string
   label?: string
   localized?: boolean
-  name: string
+  name?: string
   required?: boolean
 }
 
-export function markdownField(options: MarkdownFieldOptions): Field {
-  const { name, admin, defaultValue, label, localized = false, required = false } = options
+export function markdownField(options: MarkdownFieldOptions = {}): Field {
+  const {
+    name = 'content',
+    admin,
+    defaultValue,
+    label = 'Markdown',
+    localized = false,
+    required = false
+  } = options
 
   return {
     name,
