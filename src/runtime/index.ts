@@ -76,12 +76,20 @@ export function mergeMarkdownConfigs(
   const merged: MarkdownConfig = {}
 
   for (const config of filtered) {
-    Object.assign(merged, config)
+    if (!config) continue
 
-    if (config?.options) {
+    const { options, ...rest } = config
+
+    for (const [key, value] of Object.entries(rest) as Array<
+      [keyof typeof rest, (typeof rest)[keyof typeof rest]]
+    >) {
+      if (value !== undefined) (merged as Record<string, unknown>)[key] = value
+    }
+
+    if (options) {
       merged.options = {
-        ...merged.options,
-        ...config.options,
+        ...(merged.options ?? {}),
+        ...options,
       }
     }
   }

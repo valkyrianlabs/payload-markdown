@@ -66,7 +66,12 @@ const buildConfigWithMemoryDB = async () => {
       payloadMarkdown({
         collections: {
           pages: true,
-          posts: true,
+          posts: {
+            config: {
+              className: '[&_li::marker]:!text-cyan-200/90',
+              wrapperClassName: '[&_li::marker]:!text-cyan-200/90',
+            },
+          },
         },
       }),
     ],

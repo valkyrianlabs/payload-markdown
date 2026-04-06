@@ -81,6 +81,7 @@ export default async function Post({ params: paramsPromise }: Args) {
         <div className="mx-auto max-w-3xl">
           <MarkdownRenderer
             as="article"
+            collectionSlug='posts'
             markdown={post.content}
             wrapperClassName="w-full"
           />
