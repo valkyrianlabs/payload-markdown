@@ -5,22 +5,21 @@ import { EditorState } from '@codemirror/state'
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view'
 import React, { useEffect, useRef } from 'react'
 
-import { payloadMarkdownTheme } from './themes/payload.js'
+import { payloadMarkdownTheme } from '../themes/payload.js'
 
-type MarkdownCodeMirrorProps = {
+type MarkdownCodeMirrorClientProps = {
   onChangeAction: (value: string) => void
   placeholder?: string
   value?: string
 }
 
-export const MarkdownCodeMirror: React.FC<MarkdownCodeMirrorProps> = ({
+export const MarkdownCodeMirrorClient: React.FC<MarkdownCodeMirrorClientProps> = ({
   onChangeAction,
   placeholder = 'Write markdown...',
   value = '',
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
-  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 
   useEffect(() => {
     if (!containerRef.current || viewRef.current) return
@@ -71,13 +70,15 @@ export const MarkdownCodeMirror: React.FC<MarkdownCodeMirrorProps> = ({
   return (
     <div
       style={{
-        border: isDarkMode ? '1px solid rgba(120, 120, 120, .4)' : '1px solid rgba(120, 120, 120, .8)',
+        border: '1px solid rgba(120, 120, 120, .5)',
         borderRadius: '5px',
         maxHeight: '80vh',
         minHeight: '125px',
         overflowX: 'hidden',
         overflowY: 'scroll',
-      }}>
+        padding: '6px 0',
+      }}
+    >
       <div ref={containerRef} />
     </div>
   )

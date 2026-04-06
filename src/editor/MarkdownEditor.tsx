@@ -1,10 +1,8 @@
-'use client'
-
 import type { StaticLabel } from 'payload'
 
 import React from 'react'
 
-import { MarkdownCodeMirror } from './MarkdownCodeMirror.js'
+import { MarkdownCodeMirror } from './MarkdownCodeMirror/Component.js'
 
 type MarkdownEditorProps = {
   label?: StaticLabel
@@ -20,10 +18,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value = '',
 }) => {
   return (
-    <div style={{}}>
+    <>
       <div style={{ margin: '1rem 0' }}>{String(label)}</div>
-
       <MarkdownCodeMirror onChangeAction={onChangeAction} placeholder={placeholder} value={value} />
-    </div>
+    </>
   )
 }
