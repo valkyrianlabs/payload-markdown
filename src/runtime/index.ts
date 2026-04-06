@@ -67,6 +67,10 @@ export function resolveConfigOptions(value?: ConfigOptions): {
   }
 }
 
+function joinClassNames(...values: Array<string | undefined>) {
+  return values.filter(Boolean).join(' ')
+}
+
 export function mergeMarkdownConfigs(
   ...configs: Array<MarkdownConfig | undefined>
 ): MarkdownConfig | undefined {
@@ -78,18 +82,22 @@ export function mergeMarkdownConfigs(
   for (const config of filtered) {
     if (!config) continue
 
-    const { options, ...rest } = config
+    if (config.className) merged.className = joinClassNames(merged.className, config.className)
 
-    for (const [key, value] of Object.entries(rest) as Array<
-      [keyof typeof rest, (typeof rest)[keyof typeof rest]]
-    >) {
-      if (value !== undefined) (merged as Record<string, unknown>)[key] = value
-    }
+    if (config.wrapperClassName)
+      merged.wrapperClassName = joinClassNames(merged.wrapperClassName, config.wrapperClassName)
 
-    if (options) {
+    if (config.variant !== undefined) merged.variant = config.variant
+    if (config.size !== undefined) merged.size = config.size
+    if (config.lead !== undefined) merged.lead = config.lead
+    if (config.fullBleedCode !== undefined) merged.fullBleedCode = config.fullBleedCode
+    if (config.mutedHeadings !== undefined) merged.mutedHeadings = config.mutedHeadings
+    if (config.enableGutter !== undefined) merged.enableGutter = config.enableGutter
+
+    if (config.options) {
       merged.options = {
         ...(merged.options ?? {}),
-        ...options,
+        ...config.options,
       }
     }
   }
