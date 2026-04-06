@@ -18,52 +18,97 @@ import { MarkdownRendererClient } from './Component.client.js'
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 
 const MARKDOWN_BASE_CLASS_NAME = cx(
-  'prose max-w-none text-foreground dark:prose-invert',
+  'prose w-full max-w-none mx-0 p-0 text-foreground dark:prose-invert',
+
+  // headings
   'prose-headings:font-semibold prose-headings:tracking-tight',
-  'prose-p:leading-8 prose-p:text-foreground/88',
+  'prose-h1:scroll-mt-24 prose-h2:scroll-mt-24 prose-h3:scroll-mt-24',
+
+  // text
+  'prose-p:leading-7 prose-p:text-foreground/90',
   'prose-strong:text-foreground',
+
+  // links
   'prose-a:font-medium prose-a:text-cyan-400 no-underline transition-colors hover:prose-a:text-cyan-300',
-  'prose-hr:my-10 prose-hr:border-border',
-  'prose-blockquote:my-8 prose-blockquote:border-l-[3px] prose-blockquote:border-l-neutral-300 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-foreground/70 dark:prose-blockquote:border-l-neutral-700',
-  'prose-ul:my-6 prose-ol:my-6',
-  'prose-li:my-1 prose-li:marker:text-foreground/35',
-  'prose-table:my-8 prose-table:w-full',
-  'prose-th:border-b prose-th:border-border prose-th:pb-3 prose-th:text-left prose-th:font-semibold',
-  'prose-td:border-b prose-td:border-border/60 prose-td:py-3',
-  'prose-img:rounded-2xl prose-img:border prose-img:border-border prose-img:shadow-sm',
-  'prose-code:rounded prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.9em] prose-code:font-medium prose-code:text-foreground dark:prose-code:bg-white/10',
+
+  // hr
+  'prose-hr:my-8 prose-hr:border-border',
+
+  // lists
+  '[&_ul]:my-3 [&_ol]:my-3',
+
+  // only elements immediately before lists
+  '[&_p:has(+ul)]:mb-3 [&_p:has(+ol)]:mb-3',
+  '[&_h2:has(+ul)]:mb-3 [&_h2:has(+ol)]:mb-3',
+  '[&_h3:has(+ul)]:mb-3 [&_h3:has(+ol)]:mb-3',
+
+  // tune list top spacing by predecessor type
+  '[&_p+ul]:mt-0 [&_p+ol]:mt-0',
+  '[&_h2+ul]:mt-2 [&_h2+ol]:mt-2',
+  '[&_h3+ul]:mt-2 [&_h3+ol]:mt-2',
+
+  '[&_ul]:pl-5 [&_ol]:pl-5',
+  '[&_li]:my-0',
+  '[&_li+li]:mt-1.5',
+  '[&_li>p]:my-0',
+  '[&_li>ul]:mt-1.5 [&_li>ol]:mt-1.5',
+  '[&_ul_ul]:my-1 [&_ul_ol]:my-1 [&_ol_ul]:my-1 [&_ol_ol]:my-1',
+  '[&_li::marker]:text-foreground/55',
+
+  // task lists
+  '[&_.contains-task-list]:list-none [&_.contains-task-list]:pl-0',
+
+  // blockquote
+  'prose-blockquote:my-6 prose-blockquote:border-l-2 prose-blockquote:border-border prose-blockquote:pl-4 prose-blockquote:text-foreground/75',
+
+  // tables
+  'prose-table:my-6 prose-table:w-full',
+  'prose-th:border-b prose-th:border-border prose-th:pb-2 prose-th:text-left prose-th:font-semibold',
+  'prose-td:border-b prose-td:border-border/60 prose-td:py-2',
+
+  // media
+  'prose-img:rounded-xl',
+
+  // inline code
+  'prose-code:rounded prose-code:bg-black/5 prose-code:px-1 prose-code:py-0.5 prose-code:text-[0.9em] prose-code:font-medium dark:prose-code:bg-white/10',
   'prose-code:before:content-none prose-code:after:content-none',
-  'prose-pre:my-8 prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950 prose-pre:shadow-sm',
+
+  // fenced code
+  'prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950',
   'prose-pre:px-0 prose-pre:py-0',
-  '[&_pre]:p-0',
-  '[&_pre]:m-0',
-  '[&_pre_code]:m-0',
-  '[&_pre_code]:bg-transparent',
-  '[&_pre_shiki]:m-0 [&_pre_shiki]:rounded-2xl',
-  '[&_pre_shiki]:border [&_pre_shiki]:border-border',
-  '[&_pre_shiki]:px-5 [&_pre_shiki]:py-4',
+  '[&_pre]:m-0 [&_pre]:p-0',
+  '[&_pre_code]:m-0 [&_pre_code]:bg-transparent',
+  '[&_pre_.shiki]:m-0 [&_pre_.shiki]:rounded-xl',
+  '[&_pre_.shiki]:px-4 [&_pre_.shiki]:py-3.5',
 )
 
 const MARKDOWN_VARIANT_CLASS_NAMES: Record<MarkdownVariant, string> = {
   blog: cx(
-    'prose-h1:mb-6 prose-h1:text-4xl md:prose-h1:text-5xl',
-    'prose-h2:mt-14 prose-h2:mb-4 prose-h2:text-3xl md:prose-h2:text-[2rem]',
-    'prose-h3:mt-10 prose-h3:mb-3 prose-h3:text-2xl',
-    'prose-p:text-[1.05rem]',
+    'prose-h1:mb-5 prose-h1:text-4xl md:prose-h1:text-5xl',
+    'prose-h2:mt-10 prose-h2:mb-3 prose-h2:text-3xl',
+    'prose-h3:mt-7 prose-h3:mb-2 prose-h3:text-2xl',
+    'prose-p:text-[1.02rem]',
+    'prose-blockquote:text-[1.02rem]',
   ),
-  compact: cx(
-    'prose-h1:mb-4 prose-h1:text-3xl',
-    'prose-h2:mt-8 prose-h2:mb-3 prose-h2:text-2xl',
-    'prose-h3:mt-6 prose-h3:mb-2 prose-h3:text-xl',
-    'prose-p:leading-7 prose-p:text-[0.95rem]',
-  ),
+
   docs: cx(
-    'prose-h1:mb-5 prose-h1:text-4xl',
-    'prose-h2:mt-12 prose-h2:mb-3 prose-h2:text-2xl',
-    'prose-h3:mt-8 prose-h3:mb-2 prose-h3:text-xl',
+    'prose-h1:mb-4 prose-h1:text-3xl md:prose-h1:text-4xl',
+    'prose-h2:mt-8 prose-h2:mb-2 prose-h2:text-2xl',
+    'prose-h3:mt-6 prose-h3:mb-2 prose-h3:text-xl',
     'prose-p:text-[0.98rem]',
-    'prose-ul:text-[0.98rem] prose-ol:text-[0.98rem]',
+    'prose-li:text-[0.98rem]',
+    'prose-code:text-[0.875em]',
   ),
+
+  compact: cx(
+    'prose-h1:mb-3 prose-h1:text-3xl',
+    'prose-h2:mt-6 prose-h2:mb-2 prose-h2:text-2xl',
+    'prose-h3:mt-5 prose-h3:mb-1 prose-h3:text-xl',
+    'prose-p:leading-6 prose-p:text-[0.95rem]',
+    'prose-ul:my-3 prose-ol:my-3',
+    'prose-pre:my-5',
+  ),
+
   unstyled: '',
 }
 
@@ -74,12 +119,11 @@ const MARKDOWN_SIZE_CLASS_NAMES: Record<MarkdownSize, string> = {
 }
 
 function buildWrapperClassName({
-  centered,
   enableGutter,
   wrapperClassName,
-}: Pick<MarkdownRendererProps, 'centered' | 'enableGutter' | 'wrapperClassName'>): string {
+}: Pick<MarkdownRendererProps, 'enableGutter' | 'wrapperClassName'>): string {
   return cx(
-    centered && 'mx-2 sm:mx-4 md:mx-6 lg:mx-8',
+    'w-full mx-0',
     enableGutter && 'px-5 sm:px-6 lg:px-8',
     wrapperClassName,
   )
@@ -131,7 +175,6 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
     mergeMarkdownConfigs(resolveScopedDefaults(scope, collectionSlug), rawProps) ?? rawProps
 
   const {
-    centered = true,
     className,
     enableGutter = false,
     fullBleedCode = false,
@@ -148,7 +191,6 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   if (result.warnings.length > 0 && errorFallback) return errorFallback
 
   const resolvedWrapperClassName = buildWrapperClassName({
-    centered,
     enableGutter,
     wrapperClassName,
   })

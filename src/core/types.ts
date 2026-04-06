@@ -98,13 +98,6 @@ export type MarkdownSize = 'lg' | 'md' | 'sm'
  */
 export type MarkdownConfig = {
   /**
-   * Whether to center the rendered markdown container within its wrapper.
-   *
-   * Defaults to `false`.
-   */
-  centered?: boolean
-
-  /**
    * Additional classes applied to the rendered markdown element itself.
    */
   className?: string

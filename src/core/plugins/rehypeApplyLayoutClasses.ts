@@ -92,16 +92,13 @@ export const rehypeApplyLayoutClasses: Plugin<[MarkdownConfig?], Root> = ({
 
       if (marker === 'section') {
         node.properties.className = mergeClassNames(
-          'bg-black/50',
-          'w-full',
+          'bg-black/10 dark:bg-white/10',
+          'w-full mx-0 my-12 p-6',
           'backdrop-blur-2xl',
           'rounded-xl',
-          'p-6',
-          'my-8',
-          'space-y-6',
-          '[&>h1]:my-2',
-          '[&>h1]:text-4xl',
-          '[&>h1]:font-semibold',
+          '[&>h1]:my-2 [&>h1]:text-4xl [&>h1]:font-semibold',
+          '[&>h2]:my-2 [&>h2]:text-4xl [&>h2]:font-semibold',
+          'border-none',
           sectionClassName,
         )
         return

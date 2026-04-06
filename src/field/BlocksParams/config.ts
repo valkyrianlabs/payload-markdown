@@ -103,14 +103,6 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
             type: 'row',
             fields: [
               {
-                name: 'centered',
-                type: 'checkbox',
-                admin: {
-                  description: 'Whether to center the block content within its wrapper.',
-                },
-                label: 'Centered',
-              },
-              {
                 name: 'enableGutter',
                 type: 'checkbox',
                 admin: {
@@ -118,11 +110,6 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
                 },
                 label: 'Enable Gutter',
               },
-            ],
-          },
-          {
-            type: 'row',
-            fields: [
               {
                 name: 'fullBleedCode',
                 type: 'checkbox',
