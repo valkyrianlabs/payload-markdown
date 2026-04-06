@@ -4,12 +4,11 @@ import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig } from '../types.js'
-
 type DirectiveChild = ContainerDirective['children'][number]
-type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
+type GridDirectiveName = '2col' | '3col'
+type LayoutDirectiveName = 'cell' | 'section' | GridDirectiveName
 
-const GRID_DIRECTIVES = new Set<LayoutDirectiveName>(['2col', '3col'])
+const GRID_DIRECTIVES = new Set<GridDirectiveName>(['2col', '3col'])
 const SUPPORTED_DIRECTIVES = new Set<LayoutDirectiveName>(['2col', '3col', 'cell', 'section'])
 
 function isContainerDirective(node: unknown): node is ContainerDirective {
@@ -21,94 +20,107 @@ function isContainerDirective(node: unknown): node is ContainerDirective {
   )
 }
 
-function isSupportedDirective(name: string): name is LayoutDirectiveName {
-  return SUPPORTED_DIRECTIVES.has(name as LayoutDirectiveName)
-}
-
-function isGridDirective(name: string): name is Extract<LayoutDirectiveName, '2col' | '3col'> {
-  return GRID_DIRECTIVES.has(name as LayoutDirectiveName)
-}
-
 function isHeading(node: DirectiveChild): node is Heading {
   return node.type === 'heading'
 }
 
-function makeCell(children: DirectiveChild[]): ContainerDirective {
-  return {
-    name: 'cell',
-    type: 'containerDirective',
-    attributes: {},
-    children,
-    data: {
-      hName: 'div',
-      hProperties: {
-        className: ['flex', 'flex-col', 'gap-2', '[&>h2]:text-2xl', '[&>h2]:my-4'],
-      },
-    },
+function isSupportedDirective(name: string): name is LayoutDirectiveName {
+  return SUPPORTED_DIRECTIVES.has(name as LayoutDirectiveName)
+}
+
+function isGridDirective(name: string): name is GridDirectiveName {
+  return GRID_DIRECTIVES.has(name as GridDirectiveName)
+}
+
+function isStructuralDirectiveChild(node: DirectiveChild): node is ContainerDirective {
+  return isContainerDirective(node) && isSupportedDirective(node.name)
+}
+
+function setDirectiveRenderData(
+  node: ContainerDirective,
+  tagName: 'div' | 'section',
+  layout: LayoutDirectiveName,
+  extraProperties?: Record<string, unknown>,
+) {
+  const data = (node.data ??= {})
+  data.hName = tagName
+  data.hProperties = {
+    ...(data.hProperties ?? {}),
+    dataVlLayout: layout,
+    ...(extraProperties ?? {}),
   }
 }
 
-function groupGridChildren(children: DirectiveChild[]): DirectiveChild[] {
-  const out: DirectiveChild[] = []
-  let cell: DirectiveChild[] = []
+function makeCell(children: DirectiveChild[]): ContainerDirective {
+  const node: ContainerDirective = {
+    type: 'containerDirective',
+    name: 'cell',
+    attributes: {},
+    children,
+    data: {},
+  }
 
-  const flush = () => {
-    if (cell.length === 0) return
-    out.push(makeCell(cell))
-    cell = []
+  setDirectiveRenderData(node, 'div', 'cell')
+  return node
+}
+
+function resolveCellHeadingDepth(node: ContainerDirective): number {
+  return typeof node.data?.vlCellHeadingDepth === 'number' ? node.data.vlCellHeadingDepth : 3
+}
+
+function groupGridChildren(children: DirectiveChild[], cellHeadingDepth: number): DirectiveChild[] {
+  const grouped: DirectiveChild[] = []
+  let currentCell: DirectiveChild[] = []
+
+  const flushCell = () => {
+    if (currentCell.length === 0) return
+    grouped.push(makeCell(currentCell))
+    currentCell = []
   }
 
   for (const child of children) {
-    if (isHeading(child) && child.depth === 2) {
-      flush()
-      cell.push(child)
+    if (isStructuralDirectiveChild(child)) {
+      flushCell()
+      grouped.push(child)
       continue
     }
 
-    if (cell.length > 0) {
-      cell.push(child)
-      continue
-    }
+    if (isHeading(child) && child.depth === cellHeadingDepth) flushCell()
 
-    out.push(child)
+    currentCell.push(child)
   }
 
-  flush()
-  return out
+  flushCell()
+  return grouped
 }
 
-export const remarkLayoutDirectives: Plugin<[MarkdownConfig?], Root> = () => {
+function transformDirective(node: ContainerDirective) {
+  if (node.name === 'section') {
+    setDirectiveRenderData(node, 'section', 'section')
+    return
+  }
+
+  if (node.name === 'cell') {
+    setDirectiveRenderData(node, 'div', 'cell')
+    return
+  }
+
+  if (isGridDirective(node.name)) {
+    const cellHeadingDepth = resolveCellHeadingDepth(node)
+    node.children = groupGridChildren(node.children, cellHeadingDepth)
+
+    setDirectiveRenderData(node, 'div', node.name, {
+      dataVlCellHeadingDepth: cellHeadingDepth,
+    })
+  }
+}
+
+export const remarkLayoutDirectives: Plugin<[], Root> = () => {
   return (tree: Root) => {
     visit(tree, (node) => {
       if (!isContainerDirective(node)) return
       if (!isSupportedDirective(node.name)) return
-
-      const data = (node.data ??= {})
-
-      if (node.name === 'section') {
-        data.hName = 'section'
-        data.hProperties = {
-          dataVlLayout: 'section',
-        }
-        return
-      }
-
-      if (node.name === 'cell') {
-        data.hName = 'div'
-        data.hProperties = {
-          dataVlLayout: 'cell',
-        }
-        return
-      }
-
-      if (isGridDirective(node.name)) {
-        node.children = groupGridChildren(node.children)
-
-        data.hName = 'div'
-        data.hProperties = {
-          dataVlLayout: node.name,
-        }
-      }
+      transformDirective(node)
     })
   }
 }

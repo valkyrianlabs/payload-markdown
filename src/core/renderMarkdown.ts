@@ -5,7 +5,6 @@ import { fromHtml } from 'hast-util-from-html'
 import { toString } from 'hast-util-to-string'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
-import remarkDirective from 'remark-directive'
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -17,12 +16,17 @@ import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
+import { remarkLayoutSentinels } from './plugins/remarkLayoutSentinels.js'
 
 function normalizeLayoutSyntax(input: string): string {
   return input
-    .replace(/^[ \t]*:::endcol[ \t]*$/gim, ':::')
-    .replace(/^[ \t]*:::end[ \t]*$/gim, ':::')
-    .replace(/^[ \t]*:::endsection[ \t]*$/gim, ':::')
+    .replace(/^[ \t]*:::section[ \t]*$/gim, '%%VL_OPEN:section%%')
+    .replace(/^[ \t]*:::2col[ \t]*$/gim, '%%VL_OPEN:2col%%')
+    .replace(/^[ \t]*:::3col[ \t]*$/gim, '%%VL_OPEN:3col%%')
+    .replace(/^[ \t]*:::endcol[ \t]*$/gim, '%%VL_CLOSE_GRID%%')
+    .replace(/^[ \t]*:::endsection[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
+    .replace(/^[ \t]*:::end[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
+    .replace(/^[ \t]*:::[ \t]*$/gim, '%%VL_CLOSE%%')
 }
 
 function extractCodeLanguage(
@@ -111,14 +115,14 @@ const sanitizeSchema: Schema = {
   attributes: {
     ...(defaultSchema.attributes ?? {}),
     code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
-    div: [...getAttributeDefinitions(defaultSchema.attributes?.div ?? []), 'dataVlLayout'],
+    div: [...getAttributeDefinitions(defaultSchema.attributes?.div ?? []), 'dataVlLayout', 'dataVlCellHeadingDepth'],
     pre: [
       ...getAttributeDefinitions(defaultSchema.attributes?.pre ?? []),
       'className',
       'style',
       'tabindex',
     ],
-    section: [...getAttributeDefinitions(defaultSchema.attributes?.section ?? []), 'dataVlLayout'],
+    section: [...getAttributeDefinitions(defaultSchema.attributes?.section ?? []), 'dataVlLayout', 'dataVlCellHeadingDepth'],
     span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
   },
   tagNames: [...(defaultSchema.tagNames ?? []), 'span', 'section'],
@@ -136,7 +140,7 @@ export async function compileMarkdown(
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkDirective)
+      .use(remarkLayoutSentinels)
       .use(remarkLayoutDirectives)
       .use(remarkRehype, { allowDangerousHtml: false })
       .use(rehypeShikiCodeBlocks, config.options)
