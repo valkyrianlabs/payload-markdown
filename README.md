@@ -160,7 +160,8 @@ export const Pages = {
 
 ### Render the block
 
-> `vlMdBlock` is the generated block type key used by Payload typings.
+> `vlMdBlock` is the generated block type key used by Payload typings.  
+> Always pass `collectionSlug` to ensure scoped config (collection + block) resolves correctly.
 
 ```tsx
 import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
@@ -186,6 +187,80 @@ export function RenderBlocks({
   })
 }
 ```
+
+#### Example usage
+
+```tsx
+<RenderBlocks blocks={layout} collectionSlug="pages" />
+```
+
+---
+
+### ⚠️ Collection scoping & overrides
+
+When using collection-level or scoped config overrides:
+
+- `collectionSlug` **must not be undefined**
+- otherwise, collection-specific styles and behavior will not apply
+
+This affects:
+
+- `config.collections[slug]`
+- scoped overrides (`fields` vs `blocks`)
+- layout behavior tied to collection context
+
+---
+
+### Field usage (MarkdownRenderer)
+
+When rendering Markdown directly (non-block usage), you must also pass `collectionSlug`:
+
+```tsx
+<MarkdownRenderer
+  collectionSlug="posts"
+  markdown={post.content}
+/>
+```
+
+---
+
+### ⚠️ Scope behavior
+
+The `MarkdownBlockComponent` automatically uses:
+
+```ts
+scope = 'block'
+```
+
+So you do **not** need to set it manually when using blocks.
+
+However, when using `MarkdownRenderer` directly with scoped config, you should explicitly set:
+
+```tsx
+<MarkdownRenderer
+  collectionSlug="posts"
+  scope="field"
+  markdown={post.content}
+/>
+```
+
+---
+
+### Scope rules
+
+- `block` → used internally by block renderer
+- `field` → required for direct renderer usage when using scoped config
+- unset → falls back to global / collection defaults
+
+---
+
+### TL;DR
+
+If you're using scoped config:
+
+- always pass `collectionSlug`
+- use `scope="field"` for direct renderer usage
+- let block components handle their own scope automatically
 
 ---
 
