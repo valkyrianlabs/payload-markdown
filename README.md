@@ -4,19 +4,54 @@
 ![downloads](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)
 ![license](https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown)
 
+Layout-aware Markdown for Payload CMS with live preview, Shiki-powered code blocks, and deeply composable Tailwind-native styling.
+
+Write structured, production-ready content directly in Markdown. Keep Markdown as the source of truth while the plugin handles rendering, layout directives, syntax highlighting, and scoped styling across globals, collections, fields, and blocks.
+
+Built for blogs, docs, changelogs, and content-heavy apps that want control without fighting a bloated editor.
+
 ```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 
-Markdown for Payload CMS — with clean rendering, Shiki-powered code blocks, and layout-aware directives.
+---
 
-Write structured, production-ready content directly in Markdown — no MDX, no custom components, no bloated editors.
+## Why this exists
 
-Markdown stays the source of truth. Layout, styling, and structure are handled for you.
+Most content systems force you into one of two bad options:
 
-Built for blogs, docs, and content-heavy apps.
+- a heavy rich text editor with JSON-shaped content and inconsistent rendering
+- a bare Markdown field with almost no structure and a pile of frontend cleanup work
 
-You should be able to write a complete blog post without touching the mouse.
+`@valkyrianlabs/payload-markdown` takes the better path:
+
+- plain Markdown storage
+- structured layout directives
+- production-ready rendering
+- syntax-highlighted code blocks
+- centralized styling control with local escape hatches
+
+The goal is simple:
+
+**write fast, render cleanly, keep control.**
+
+---
+
+## Highlights
+
+- Drop-in Markdown support for Payload collections
+- Markdown field and block support
+- Layout-aware directives for sections and columns
+- Relative heading-aware grid grouping
+- Shiki-powered syntax highlighting
+- Live preview-friendly renderer workflow
+- Tailwind-native defaults with deep override support
+- Config layering across:
+    - global
+    - collection
+    - field vs block
+    - direct component props
+- Plain Markdown storage for portability and AI-assisted workflows
 
 ---
 
@@ -28,136 +63,21 @@ Write simple Markdown → get structured layouts instantly.
 
 ---
 
-## Features
-
-- Drop-in Markdown support for Payload CMS
-- Layout-aware Markdown with sections and columns
-- Shiki-powered syntax highlighting
-- Clean, Tailwind-friendly rendered output
-- Lightweight editor workflow without heavy WYSIWYG overhead
-- Plain Markdown storage for portability and AI collaboration
-- Extensible remark / rehype pipeline
-
----
-
-## Layout-Aware Markdown
-
-Write structured content directly in Markdown with simple block directives.
-
-Supported opening directives:
-
-- `:::section`
-- `:::2col`
-- `:::3col`
-
-Close blocks with:
-
-- `:::`
-- `:::end`
-- `:::endsection`
-- `:::endcol`
-
-### Section example
-
-```markdown
-:::
-
-# My content here
-
-:::
-```
-
-### Column example
-
-```markdown
-:::
-
-## Column 1
-
-Some content for the first column.
-
-## Column 2
-
-Some content for the second column.
-
-:::
-```
-
-### Full example
-
-```markdown
-:::
-
-# My Blog Post
-
-This is a blog post with a two-column layout.
-
-:::
-
-## Column 1
-
-Some content for the first column.
-
-## Column 2
-
-Some content for the second column.
-
-:::
-```
-
-Structured layouts without switching formats, wiring up custom MDX components, or forcing authors into a visual editor.
-
----
-
-## Code Blocks & Syntax Highlighting
-
-![code blocks example](https://project-media.cooperhlarson.com/payload-markdown_code_blocks_example.png)
-
-Markdown code blocks are rendered with high-fidelity syntax highlighting powered by Shiki — the same engine used by VS Code.
-
-That gives you:
-
-- accurate tokenization
-- broad language support
-- consistent theming
-- zero client-side highlighting overhead
-
-Unlike browser highlighters that parse code at runtime, Shiki generates styled HTML during rendering. You get IDE-grade output without shipping extra JavaScript.
-
-Whether you're publishing blog posts, tutorials, API documentation, or internal guides, code blocks stay sharp, readable, and production-ready.
-
----
-
-## AI-Friendly by Design
-
-Content is stored as plain Markdown.
-
-That makes it naturally compatible with AI workflows:
-
-- copy content into ChatGPT, Claude, or other tools
-- rewrite, expand, summarize, or refactor it
-- paste it back without schema conversion or formatting loss
-
-No proprietary document format. No JSON lock-in. Just Markdown.
-
----
-
 ## Installation
 
 ```bash
-npm install @valkyrianlabs/payload-markdown
+pnpm add @valkyrianlabs/payload-markdown
 ```
 
 ---
 
-## Usage
-
-### Register the plugin
+## Register the plugin
 
 ```ts
 import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import type { Config } from 'payload'
 
-export default {
+const config: Config = {
   plugins: [
     payloadMarkdown({
       collections: {
@@ -166,39 +86,51 @@ export default {
     }),
   ],
 }
+
+export default config
 ```
 
-That’s it.
+When enabled for a collection, the plugin can automatically install:
 
-- Adds a Markdown field or block automatically
-- Handles rendering defaults internally
-- No extra wiring required
+- a Markdown field when no blocks field is present
+- the Markdown block into existing blocks-based layouts
 
 ---
 
-## Rendering Markdown
+## Render Markdown
 
 ```tsx
 import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
 
-<MarkdownRenderer markdown={post.content} />
+export function PostBody({ content }: { content?: string | null }) {
+  if (!content) return null
+
+  return <MarkdownRenderer markdown={content} />
+}
 ```
 
-You can optionally pass renderer options:
+### Local overrides
 
 ```tsx
 <MarkdownRenderer
   markdown={post.content}
+  collectionSlug="posts"
+  scope="field"
   variant="blog"
   size="lg"
+  className="[&_.prose a]:text-cyan-300"
+  wrapperClassName="max-w-4xl"
+  fullBleedCode
 />
 ```
 
+Direct component props are the final override layer.
+
 ---
 
-## Using Blocks
+## Blocks
 
-### Auto-install (recommended)
+### Auto-install into blocks collections
 
 ```ts
 payloadMarkdown({
@@ -209,9 +141,7 @@ payloadMarkdown({
 })
 ```
 
----
-
-### Manual install
+### Manual block registration
 
 ```ts
 import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
@@ -228,13 +158,10 @@ export const Pages = {
 }
 ```
 
----
+### Render the block
 
-### Render blocks
+> `vlMdBlock` is the generated block type key used by Payload typings.
 
-Note: you must register using the 'vlMdBlock' key for the block renderer to work out of the box as this is what payload-types generates the block type as. More to come on this in the future as we expand block support and configuration options.
-
-`/blocks/RenderBlocks.tsx`
 ```tsx
 import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
 
@@ -242,32 +169,208 @@ const blockComponents = {
   vlMdBlock: MarkdownBlockComponent,
 }
 
-export function RenderBlocks({ blocks, collectionSlug }) {
+export function RenderBlocks({
+  blocks,
+  collectionSlug,
+}: {
+  blocks?: any[]
+  collectionSlug?: string
+}) {
   if (!blocks?.length) return null
 
   return blocks.map((block, i) => {
     const Block = blockComponents[block.blockType]
     if (!Block) return null
 
-    return (
-      <div key={i} className="my-16">
-        <Block block={block} collectionSlug={collectionSlug} />
-      </div>
-    )
+    return <Block key={i} block={block} collectionSlug={collectionSlug} />
   })
 }
 ```
 
 ---
 
-## Styling
+## Layout-aware Markdown
 
-Out of the box, the renderer produces clean HTML with sensible defaults.
+The plugin supports structural layout directives directly in Markdown.
 
-For best results, use Tailwind Typography:
+### Opening directives
+
+- `:::section`
+- `:::2col`
+- `:::3col`
+
+### Closing directives
+
+- `:::` closes the current layout scope
+- `:::endcol` explicitly closes the active grid
+- `:::end` closes the current section and any nested grids
+- `:::endsection` closes the current section and any nested grids
+
+### Example
+
+```markdown
+:::section
+
+# Interfaces Without Friction
+
+Short intro text here.
+
+:::3col
+
+## Native CLI
+
+Scriptable. Fast. Lives where you work.
+
+## WebSocket Core
+
+Real-time by design. Not bolted on later.
+
+## Web UI
+
+Clean, responsive, API-first.
+
+:::
+
+# Synchronization That Makes Sense
+
+More section-level content here.
+
+:::3col
+
+## Cache
+
+Pull what you need. Drop what you don’t.
+
+## Sync
+
+Two-way. Conflict-aware.
+
+## Mirror
+
+One-way truth. Perfect for backups.
+
+## Close the section with (option 1)
+:::  <-- this will close the column grid -->
+
+:::  <-- this will close the section -->
+
+## Close the section with (option 2)
+:::end  <-- this will close the section and any open grids -->
+```
+
+### Layout rules
+
+Grids are heading-aware relative to where they open.
+
+If a grid opens under a heading of depth `N`, then:
+
+- headings at depth `N + 1` are treated as cell boundaries
+- deeper headings stay nested inside the current cell
+- grids can be explicitly closed with `:::endcol`
+- a section can close all nested grids with `:::end` or `:::endsection`
+
+### Current recommendation
+
+Keep grid opens explicit.
+
+Open a new `:::2col` or `:::3col` when you want a new grid region. This keeps layout intent obvious and avoids over-inference in long-form content.
+
+---
+
+## Code Blocks & Syntax Highlighting
+
+![code blocks example](https://project-media.cooperhlarson.com/payload-markdown_code_blocks_example.png)
+
+Code fences are rendered with Shiki, the same high-fidelity highlighting engine used by VS Code.
+
+That gives you:
+
+- accurate tokenization
+- broad language support
+- stable themed output
+- no client-side syntax highlighter overhead
+
+Shiki rendering happens during the markdown compile pipeline, so code blocks ship as finished HTML instead of requiring runtime highlighting in the browser.
+
+---
+
+## Styling Model
+
+The renderer ships with strong default styling and can be customized at multiple layers.
+
+### Override order
+
+```text
+global → collection → scope (field/block) → direct component props
+```
+
+Later layers win.
+
+### Styling surfaces
+
+- `className` → applied to the rendered markdown element itself
+- `wrapperClassName` → applied to the outer wrapper
+- `sectionClassName` → applied to rendered section containers
+- `columnClassName` → applied to generated cell containers inside grids
+
+### Example global config
+
+```ts
+payloadMarkdown({
+  config: {
+    variant: 'blog',
+    size: 'lg',
+    enableGutter: true,
+    fullBleedCode: true,
+    mutedHeadings: true,
+
+    className: '[& li::marker]:text-foreground/55',
+    wrapperClassName: 'max-w-4xl',
+    sectionClassName: 'bg-white/10 backdrop-blur-xl rounded-2xl p-6 my-10',
+    columnClassName: 'gap-8 md:gap-12',
+
+    options: {
+      theme: 'github-dark',
+    },
+  },
+})
+```
+
+### Fully scoped config
+
+```ts
+payloadMarkdown({
+  config: {
+    fields: {
+      variant: 'blog',
+      size: 'lg',
+    },
+    blocks: {
+      variant: 'compact',
+      size: 'md',
+    },
+  },
+  collections: {
+    posts: {
+      config: {
+        fields: {
+          wrapperClassName: 'max-w-3xl',
+        },
+        blocks: {
+          sectionClassName: 'border border-white/10 bg-white/5 rounded-2xl p-6',
+        },
+      },
+    },
+  },
+})
+```
+
+### Tailwind Typography
+
+For best results, enable Tailwind Typography and scan the package output:
 
 ```bash
-npm install @tailwindcss/typography
+pnpm add @tailwindcss/typography
 ```
 
 ```css
@@ -279,247 +382,95 @@ npm install @tailwindcss/typography
 
 ---
 
-## Configuration
-
-### Global config
-
-```ts
-payloadMarkdown({
-  config: {
-    variant: 'blog',
-    size: 'lg',
-
-    centered: true,
-    enableGutter: true,
-
-    className: 'prose prose-lg max-w-none dark:prose-invert',
-    wrapperClassName: 'mx-auto max-w-4xl px-4',
-
-    sectionClassName: 'bg-white/20 backdrop-blur-xl rounded-2xl p-6 my-10',
-    columnClassName: 'gap-8 md:gap-12',
-
-    options: {
-      theme: 'github-dark',
-    },
-  },
-})
-```
-
-This applies to everything:
-
-- fields
-- blocks
-- all collections
-
----
-
-## Scoped Configuration
-
-You can override config at different levels:
-
-### 1. Global
-
-```ts
-config: { ... }
-```
-
----
-
-### 2. Split global (fields vs blocks)
-
-```ts
-config: {
-  fields: { ... },
-  blocks: { ... },
-}
-```
-
----
-
-### 3. Per collection
-
-```ts
-collections: {
-  posts: {
-    config: { ... }
-  }
-}
-```
-
----
-
-### 4. Fully scoped
-
-```ts
-collections: {
-  posts: {
-    config: {
-      fields: { ... },
-      blocks: { ... },
-    },
-  },
-}
-```
-
----
-
-### Mental model
-
-```
-global → collection → scope (field/block)
-```
-
-Later overrides win.
-
----
-
-## Layout Styling
-
-Layout directives (`:::section`, `:::2col`, etc.) are:
-
-1. parsed in remark
-2. converted to structured nodes
-3. sanitized
-4. styled after sanitize (rehype pass)
-
-This means:
-
-- classes are not stripped
-- overrides are applied last
-- layout stays predictable
-
----
-
-## Example: Custom layout styling
-
-```ts
-payloadMarkdown({
-  config: {
-    sectionClassName:
-      'bg-white/20 backdrop-blur-xl rounded-2xl p-6 my-10 border border-white/10',
-
-    columnClassName:
-      'gap-8 md:gap-12 [&>h2]:text-blue-500',
-  },
-})
-```
-
----
-
 ## Renderer Options
 
 ```tsx
 <MarkdownRenderer
   markdown={content}
+  collectionSlug="posts"
+  scope="field"
   variant="blog"
   size="lg"
-  centered
   enableGutter
   fullBleedCode
+  mutedHeadings
 />
 ```
 
----
+### Common props
 
-## Under the hood
-
-This plugin treats Markdown as a compile pipeline:
-
-- remark → structure
-- rehype → HTML transform
-- sanitize → safety
-- post-pass → styling + layout injection
-
-This enables:
-
-- layout-aware Markdown
-- safe HTML output
-- predictable styling overrides
-- zero client-side hacks
+- `markdown`
+- `collectionSlug`
+- `scope`
+- `variant`
+- `size`
+- `className`
+- `wrapperClassName`
+- `enableGutter`
+- `fullBleedCode`
+- `mutedHeadings`
 
 ---
 
-## Custom Styling Templates
+## Compile Pipeline
 
-Markdown Block ships with a complete set of overrides for all the major Markdown elements, so you can customize the look and feel of your content with Tailwind.
+Under the hood, the renderer uses a structured compile pipeline:
 
-Aside from the default styles, you can define a global base template that applies to all Markdown content, and/or collection-specific templates for more granular control.
+- normalize layout syntax
+- parse Markdown
+- apply layout sentinels
+- transform layout directives
+- convert remark → rehype
+- render code blocks with Shiki
+- sanitize output
+- apply layout and style classes
+- stringify HTML
 
-### In your `payload.config.ts`:
-
-```ts
-plugins: [
-  payloadMarkdown({
-    config: {
-      size: 'lg',
-      variant: 'blog',
-
-      centered: true,
-      enableGutter: true,
-      fullBleedCode: true,
-      mutedHeadings: true,
-
-      className: 'prose prose-lg max-w-none dark:prose-invert',
-      wrapperClassName: 'mx-auto max-w-4xl px-4',
-
-      sectionClassName: 'bg-white/20 backdrop-blur-xl rounded-2xl p-6 my-10 border border-white/10',
-      columnClassName: 'gap-8 md:gap-12 text-red-500 [&>h2]:text-2xl [&>h2]:my-4 [&>h2]:text-blue-500',
-
-      // shiki / renderer options
-      options: {
-        theme: 'github-dark',
-        lineNumbers: true,
-        highlightLines: false,
-      },
-    },
-  }),
-]
-```
-
-### This can be overridden on a per-collection and per use case basis:
-
-Note: collection specific overrides depend on collectionSlug and scope injection to determine which template to apply. Please see the 'register the block renderer' section above for more details.
-
-```ts
-plugins: [
-  payloadMarkdown({
-    config: { /* global solo override (applys to both use cases) */ },
-    // OR
-    config: {
-      fields: { /* global field override (applies to markdown fields) */ },
-      blocks: { /* global block override (applies to markdown blocks) */ },
-    },
-    collections: {
-        posts: {
-            config: { /* collection solo override (applies to both use cases) */ },
-            // OR
-            config: {
-              fields: { /* collection field override (applies to markdown fields) */ },
-              blocks: { /* collection block override (applies to markdown blocks) */ },
-            },
-        },
-    },
-  }),
-]
-```
+That architecture keeps layout handling explicit, HTML safe, and styling predictable.
 
 ---
 
-## Why not MDX?
+## AI-Friendly by Design
 
-MDX is powerful, but it also introduces more complexity, tighter React coupling, and more authoring surface area than many content-driven sites actually need.
+Content stays stored as plain Markdown.
 
-This package is intentionally Markdown-first.
+That makes it naturally compatible with AI workflows:
 
-The goal is not to recreate MDX prematurely, but to push Markdown further through carefully designed extensions that preserve portability, readability, and simplicity.
+- rewrite or expand drafts in ChatGPT or Claude
+- summarize or restructure long content
+- move content between tools without schema conversion
+- keep diffs clean and portable
 
-If future use cases emerge that genuinely require capabilities beyond what can be expressed cleanly through extended Markdown, they can be evaluated then. Until that point, this package is opinionated about keeping Markdown as the source of truth.
+No proprietary editor format. No giant rich text JSON payloads. Just Markdown.
+
+---
+
+## Why teams like this model
+
+- content stays readable in raw form
+- styling can be managed centrally
+- collection-specific presentation is easy to control
+- one-off render tweaks do not require rewriting global defaults
+- content authors do not have to fight a bloated WYSIWYG editor
 
 ---
 
 ## Roadmap
 
-- Expanded layout and formatting directives
-- Custom remark / rehype plugin pipeline
-- Optional editor enhancements
-- Continued refinement of Markdown-first authoring ergonomics
+- continued ergonomics work around layout authoring
+- further documentation and examples
+- more polished editor workflow
+- continued stabilization toward a major release
+
+---
+
+## Philosophy
+
+This package is opinionated about a few things:
+
+- Markdown should stay the source of truth
+- layout should be structured, not improvised in the frontend
+- defaults should look good without becoming hard to override
+- the renderer should respect its container instead of secretly owning page layout
+
+If that sounds like your kind of system, this plugin was built for you.
