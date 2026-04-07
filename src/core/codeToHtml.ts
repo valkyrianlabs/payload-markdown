@@ -65,10 +65,12 @@ function buildTransformers({
           : ''
 
       node.properties.style = mergeStyle(existing, [
-        'background: transparent',
+        'background: #18191c',
         'padding: 0',
         'overflow-x: auto',
         'position: relative',
+        'border: 1px solid rgba(255,255,255,0.06)',
+        'box-shadow: 0 2px 12px rgba(0,0,0,0.35)'
       ])
     },
 
