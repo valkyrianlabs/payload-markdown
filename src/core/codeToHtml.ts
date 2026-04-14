@@ -140,7 +140,7 @@ function buildTransformers(
           },
           tagName: 'span',
         })
-      }
+      } else styleBits.push('padding-left: .75rem')
 
       if (isEmptyLine) {
         node.children.push({
