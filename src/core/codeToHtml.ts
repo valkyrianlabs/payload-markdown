@@ -37,23 +37,46 @@ function stripBackgroundStyles(style: string): string {
     .join('; ')
 }
 
+function getLineNumberMetrics(totalLines: number) {
+  const digits = Math.max(1, String(totalLines).length)
+
+  // Width reserved for the number column itself.
+  // 1 digit: 1.25rem
+  // 2 digits: 1.75rem
+  // 3 digits: 2.25rem
+  // etc.
+  const numberWidthRem = 1.25 + (digits - 1) * 0.5
+
+  // Small gap between line numbers and code text.
+  const gapRem = 0.75
+
+  // Total left inset for each rendered line.
+  const paddingLeftRem = numberWidthRem + gapRem
+
+  return {
+    digits,
+    gapRem,
+    numberWidthRem,
+    paddingLeftRem,
+  }
+}
+
+
+function countLines(code: string): number {
+  return code.length === 0 ? 1 : code.split('\n').length
+}
+
 /**
  * Builds the Shiki transformer pipeline used to normalize and enhance
  * rendered fenced code blocks.
- *
- * This is responsible for optional features such as:
- * - line numbers
- * - per-line highlight stripping
- * - empty-line layout preservation
- * - pretty code block structural cleanup
  */
-function buildTransformers({
-  highlightLines = false,
-  lineNumbers = true,
-  prettyCodeBlocks = true,
-}: CodeBlockOptions): ShikiTransformer[] {
+function buildTransformers(
+  { highlightLines = false, lineNumbers = true, prettyCodeBlocks = true }: CodeBlockOptions,
+  totalLines: number,
+): ShikiTransformer[] {
   const transformers: ShikiTransformer[] = []
   const usePrettyCodeBlocks = prettyCodeBlocks || highlightLines || lineNumbers
+  const metrics = getLineNumberMetrics(totalLines)
 
   transformers.push({
     pre(node) {
@@ -70,7 +93,7 @@ function buildTransformers({
         'overflow-x: auto',
         'position: relative',
         'border: 1px solid rgba(255,255,255,0.06)',
-        'box-shadow: 0 2px 12px rgba(0,0,0,0.35)'
+        'box-shadow: 0 2px 12px rgba(0,0,0,0.35)',
       ])
     },
 
@@ -95,7 +118,7 @@ function buildTransformers({
       const styleBits = ['display: block', 'position: relative', 'white-space: pre']
 
       if (lineNumbers) {
-        styleBits.push('padding-left: 3rem')
+        styleBits.push(`padding-left: ${metrics.paddingLeftRem}rem`)
 
         node.children.unshift({
           type: 'element',
@@ -105,17 +128,19 @@ function buildTransformers({
             style: [
               'position: absolute',
               'left: 0',
-              'width: 2rem',
+              `width: ${metrics.numberWidthRem}rem`,
               'text-align: right',
-              'color: #6b7280',
-              'opacity: 0.65',
+              'color: #7c8596',
+              'opacity: 0.8',
               'user-select: none',
               'pointer-events: none',
+              'font-variant-numeric: tabular-nums',
+              'font-feature-settings: "tnum"',
             ].join('; '),
           },
           tagName: 'span',
         })
-      }
+      } else styleBits.push('padding-left: .75rem')
 
       if (isEmptyLine) {
         node.children.push({
@@ -162,16 +187,18 @@ export async function codeToHtml(code: string, options: CodeBlockOptions = {}) {
   const theme = options.theme?.trim() || DEFAULT_CODE_THEME
 
   const highlighter = await getHighlighter(theme)
-  const transformers = buildTransformers(options)
+  const normalizedCode = code.replace(/\n+$/, '')
+  const totalLines = countLines(normalizedCode)
+  const transformers = buildTransformers(options, totalLines)
 
   try {
-    return highlighter.codeToHtml(code, {
+    return highlighter.codeToHtml(normalizedCode, {
       lang,
       theme,
       transformers,
     })
   } catch {
-    return highlighter.codeToHtml(code, {
+    return highlighter.codeToHtml(normalizedCode, {
       lang: DEFAULT_CODE_LANG,
       theme,
       transformers,

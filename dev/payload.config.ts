@@ -69,6 +69,9 @@ const buildConfigWithMemoryDB = async () => {
           posts: {
             config: {
               className: '[&_li::marker]:!text-cyan-200/90',
+              options: {
+                lineNumbers: false
+              },
             },
           },
         },
