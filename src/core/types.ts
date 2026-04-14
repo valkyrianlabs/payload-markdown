@@ -19,55 +19,70 @@ export type MarkdownRendererScope = 'blocks' | 'field'
  * Options that control how fenced code blocks are rendered inside markdown content.
  *
  * By default, code blocks use the plugin's enhanced rendering mode:
- * - `highlightLines` defaults to `false`
+ * - `enhancedCodeBlocks` defaults to `true`
  * - `lineNumbers` defaults to `true`
- * - `prettyCodeBlocks` defaults to `true`
  * - `theme` defaults to `'github-dark'`
+ *
+ * When enhanced rendering is enabled, the plugin applies its normalized code block
+ * pipeline on top of Shiki output. This includes layout cleanup, background
+ * normalization, and support for features like line numbers.
+ *
+ * When enhanced rendering is disabled, code blocks are rendered closer to raw
+ * Shiki output and plugin-specific enhancements are bypassed.
  *
  * These options are passed through the markdown rendering pipeline and primarily
  * affect Shiki-rendered code fences.
  */
 export type RenderMarkdownOptions = {
   /**
-   * Whether to preserve Shiki-provided per-line background highlighting.
+   * Whether to apply the plugin's enhanced code block rendering pipeline.
    *
-   * Defaults to `false`.
+   * Defaults to `true`.
    *
-   * When disabled, background styles are stripped from highlighted lines and token
-   * spans so code blocks integrate more cleanly with the surrounding site design.
+   * When enabled, the renderer performs structural and visual normalization on
+   * Shiki output to produce a consistent, content-focused appearance.
+   *
+   * When disabled, code blocks are rendered closer to raw Shiki output.
    */
-  highlightLines?: boolean
+  enhancedCodeBlocks?: boolean
+
+  /**
+   * An optional list of language identifiers to load for Shiki syntax highlighting.
+   *
+   * By default, the plugin loads a core set of popular languages. You can replace
+   * that set entirely or extend it using spread syntax:
+   *
+   * ```ts
+   * options: {
+   *   langs: [...DEFAULT_CODE_LANGS, 'latex']
+   * }
+   * ```
+   */
+  langs?: string[]
 
   /**
    * Whether to show line numbers for fenced code blocks.
    *
-   * Defaults to `true`.
+   * Defaults to `true` when `enhancedCodeBlocks` is enabled.
+   *
+   * Line numbers require the enhanced rendering pipeline and are automatically
+   * disabled when `enhancedCodeBlocks` is set to `false`.
    */
   lineNumbers?: boolean
-
-  /**
-   * Whether to apply the plugin's enhanced code block formatting.
-   *
-   * Defaults to `true`.
-   *
-   * When enabled, the renderer normalizes Shiki output for better integration with
-   * markdown prose styling. This includes adjustments such as background removal,
-   * spacing cleanup, line layout normalization, and other structural fixes needed
-   * for features like line numbers and consistent empty-line rendering.
-   *
-   * Set this to `false` if you want to preserve raw Shiki block styling as much as
-   * possible.
-   */
-  prettyCodeBlocks?: boolean
 
   /**
    * The Shiki theme to use for syntax highlighting.
    *
    * Defaults to `'github-dark'`.
    *
-   * Note that this plugin is optimized around themes that still look good when block
-   * backgrounds are removed or reduced. Some light themes may require additional
-   * customization to maintain good contrast and readability.
+   * The plugin's enhanced renderer is tuned around its default theme. When using a
+   * non-default theme:
+   *
+   * - `enhancedCodeBlocks: true` opts into the plugin's normalized rendering pipeline
+   * - `enhancedCodeBlocks: false` preserves the theme's native appearance more closely
+   *
+   * This allows you to choose between a more controlled presentation and a more
+   * theme-faithful rendering mode.
    */
   theme?: string
 }
