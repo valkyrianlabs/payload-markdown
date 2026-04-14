@@ -31,7 +31,6 @@
     "./src/**/*.ts",
     "./src/**/*.tsx",
     "./dev/next-env.d.ts",
-    ".next/dev/types/**/*.ts",
-    "knip.config.ts"
+    ".next/dev/types/**/*.ts"
   ]
 }
