@@ -19,6 +19,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 }) => {
   return (
     <>
+      {/* eslint-disable-next-line @typescript-eslint/no-base-to-string */}
       <div style={{ margin: '1rem 0' }}>{String(label)}</div>
       <MarkdownCodeMirror onChangeAction={onChangeAction} placeholder={placeholder} value={value} />
     </>
