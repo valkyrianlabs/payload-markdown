@@ -26,7 +26,7 @@ function normalizeLayoutSyntax(input: string): string {
     .replace(/^[ \t]*:::endcol[ \t]*$/gim, '%%VL_CLOSE_GRID%%')
     .replace(/^[ \t]*:::endsection[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
     .replace(/^[ \t]*:::end[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
-    .replace(/^[ \t]*:::[ \t]*$/gim, '%%VL_CLOSE%%')
+    .replace(/^[ \t]*:::[ \t]*$/gm, '%%VL_CLOSE%%')
 }
 
 function extractCodeLanguage(

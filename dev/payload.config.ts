@@ -1,6 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -70,7 +70,8 @@ const buildConfigWithMemoryDB = async () => {
             config: {
               className: '[&_li::marker]:!text-cyan-200/90',
               options: {
-                lineNumbers: false
+                langs: [...DEFAULT_CODE_LANGS, 'latex', 'r'],
+                lineNumbers: false,
               },
             },
           },

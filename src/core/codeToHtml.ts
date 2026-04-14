@@ -4,19 +4,39 @@ import type { CodeBlockOptions } from './types.js'
 
 export const DEFAULT_CODE_LANG = 'text'
 export const DEFAULT_CODE_THEME = 'github-dark'
+export const DEFAULT_CODE_LANGS: readonly string[] = [
+  'cpp',
+  'java',
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'json',
+  'python',
+  'rust',
+  'html',
+  'css',
+  'yaml',
+  'sql',
+]
 
 const highlighterCache = new Map<string, ReturnType<typeof createHighlighter>>()
 
-function getHighlighter(theme: string) {
-  const existing = highlighterCache.get(theme)
+function getHighlighterCacheKey(theme: string, langs: readonly string[]) {
+  return `${theme}::${[...langs].sort().join(',')}`
+}
+
+function getHighlighter(theme: string, langs: readonly string[]) {
+  const cacheKey = getHighlighterCacheKey(theme, langs)
+  const existing = highlighterCache.get(cacheKey)
   if (existing) return existing
 
   const created = createHighlighter({
-    langs: ['cpp', 'java', 'js', 'ts', 'json', 'python', 'rust', 'html', 'css', 'yaml', 'sql'],
+    langs: [...langs],
     themes: [theme],
   })
 
-  highlighterCache.set(theme, created)
+  highlighterCache.set(cacheKey, created)
   return created
 }
 
@@ -39,18 +59,8 @@ function stripBackgroundStyles(style: string): string {
 
 function getLineNumberMetrics(totalLines: number) {
   const digits = Math.max(1, String(totalLines).length)
-
-  // Width reserved for the number column itself.
-  // 1 digit: 1.25rem
-  // 2 digits: 1.75rem
-  // 3 digits: 2.25rem
-  // etc.
   const numberWidthRem = 1.25 + (digits - 1) * 0.5
-
-  // Small gap between line numbers and code text.
   const gapRem = 0.75
-
-  // Total left inset for each rendered line.
   const paddingLeftRem = numberWidthRem + gapRem
 
   return {
@@ -61,9 +71,20 @@ function getLineNumberMetrics(totalLines: number) {
   }
 }
 
-
 function countLines(code: string): number {
   return code.length === 0 ? 1 : code.split('\n').length
+}
+
+function resolveCodeBlockOptions(
+  options: CodeBlockOptions,
+): CodeBlockOptions & Required<Pick<CodeBlockOptions, 'enhancedCodeBlocks' | 'lineNumbers'>> {
+  const enhancedCodeBlocks = options.enhancedCodeBlocks ?? true
+
+  return {
+    ...options,
+    enhancedCodeBlocks,
+    lineNumbers: enhancedCodeBlocks ? (options.lineNumbers ?? true) : false,
+  }
 }
 
 /**
@@ -71,16 +92,19 @@ function countLines(code: string): number {
  * rendered fenced code blocks.
  */
 function buildTransformers(
-  { highlightLines = false, lineNumbers = true, prettyCodeBlocks = true }: CodeBlockOptions,
+  {
+    enhancedCodeBlocks,
+    lineNumbers,
+  }: Required<Pick<CodeBlockOptions, 'enhancedCodeBlocks' | 'lineNumbers'>>,
   totalLines: number,
 ): ShikiTransformer[] {
   const transformers: ShikiTransformer[] = []
-  const usePrettyCodeBlocks = prettyCodeBlocks || highlightLines || lineNumbers
+  const useEnhanced = enhancedCodeBlocks
   const metrics = getLineNumberMetrics(totalLines)
 
   transformers.push({
     pre(node) {
-      if (!usePrettyCodeBlocks) return
+      if (!useEnhanced) return
 
       const existing =
         typeof node.properties.style === 'string'
@@ -98,7 +122,7 @@ function buildTransformers(
     },
 
     code(node) {
-      if (!usePrettyCodeBlocks) return
+      if (!useEnhanced) return
 
       node.properties.style = mergeStyle(node.properties.style, [
         'display: block',
@@ -114,6 +138,8 @@ function buildTransformers(
     },
 
     line(node, line) {
+      if (!useEnhanced && !lineNumbers) return
+
       const isEmptyLine = node.children.length === 0
       const styleBits = ['display: block', 'position: relative', 'white-space: pre']
 
@@ -140,7 +166,9 @@ function buildTransformers(
           },
           tagName: 'span',
         })
-      } else styleBits.push('padding-left: .75rem')
+      } else if (useEnhanced) {
+        styleBits.push('padding-left: .75rem')
+      }
 
       if (isEmptyLine) {
         node.children.push({
@@ -162,17 +190,17 @@ function buildTransformers(
         })
       }
 
-      if (usePrettyCodeBlocks || lineNumbers)
+      if (useEnhanced || lineNumbers)
         node.properties.style = mergeStyle(node.properties.style, styleBits)
 
-      if (!highlightLines && typeof node.properties.style === 'string') {
+      if (useEnhanced && typeof node.properties.style === 'string') {
         const cleaned = stripBackgroundStyles(node.properties.style)
         node.properties.style = cleaned || undefined
       }
     },
 
     span(node) {
-      if (!highlightLines && typeof node.properties.style === 'string') {
+      if (useEnhanced && typeof node.properties.style === 'string') {
         const cleaned = stripBackgroundStyles(node.properties.style)
         node.properties.style = cleaned || undefined
       }
@@ -183,13 +211,16 @@ function buildTransformers(
 }
 
 export async function codeToHtml(code: string, options: CodeBlockOptions = {}) {
-  const lang = options.lang?.trim() || DEFAULT_CODE_LANG
-  const theme = options.theme?.trim() || DEFAULT_CODE_THEME
+  const resolvedOptions = resolveCodeBlockOptions(options)
 
-  const highlighter = await getHighlighter(theme)
+  const lang = resolvedOptions.lang?.trim() || DEFAULT_CODE_LANG
+  const langs = resolvedOptions.langs ?? DEFAULT_CODE_LANGS
+  const theme = resolvedOptions.theme?.trim() || DEFAULT_CODE_THEME
+
+  const highlighter = await getHighlighter(theme, langs)
   const normalizedCode = code.replace(/\n+$/, '')
   const totalLines = countLines(normalizedCode)
-  const transformers = buildTransformers(options, totalLines)
+  const transformers = buildTransformers(resolvedOptions, totalLines)
 
   try {
     return highlighter.codeToHtml(normalizedCode, {
