@@ -53,8 +53,8 @@ function setDirectiveRenderData(
 
 function makeCell(children: DirectiveChild[]): ContainerDirective {
   const node: ContainerDirective = {
-    type: 'containerDirective',
     name: 'cell',
+    type: 'containerDirective',
     attributes: {},
     children,
     data: {},

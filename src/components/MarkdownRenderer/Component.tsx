@@ -76,9 +76,9 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   // fenced code
   'prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950',
   'prose-pre:px-0 prose-pre:py-0',
-  '[&_pre]:m-0 [&_pre]:p-0',
+  '[&_pre]:my-8 [&_pre]:p-0',
   '[&_pre_code]:m-0 [&_pre_code]:bg-[#18191c]',
-  '[&_pre_.shiki]:m-0 [&_pre_.shiki]:rounded-xl',
+  '[&_pre_.shiki]:my-8 [&_pre_.shiki]:rounded-xl',
   '[&_pre_.shiki]:px-4 [&_pre_.shiki]:py-3.5',
 )
 
