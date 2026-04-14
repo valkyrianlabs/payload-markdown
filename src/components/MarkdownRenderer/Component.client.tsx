@@ -45,8 +45,8 @@ export function MarkdownRendererClient({ containerId }: MarkdownRendererClientPr
       button.textContent = 'Copy'
 
       button.style.position = 'absolute'
-      button.style.top = '0.75rem'
-      button.style.right = '0.75rem'
+      button.style.top = '0.6rem'
+      button.style.right = '0.6rem'
       button.style.zIndex = '1'
       button.style.border = '1px solid rgba(255,255,255,0.12)'
       button.style.borderRadius = '0.5rem'

@@ -76,10 +76,9 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   // fenced code
   'prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950',
   'prose-pre:px-0 prose-pre:py-0',
-  '[&_pre]:my-8 [&_pre]:p-0',
-  '[&_pre_code]:m-0 [&_pre_code]:bg-[#18191c]',
-  '[&_pre_.shiki]:my-8 [&_pre_.shiki]:rounded-xl',
-  '[&_pre_.shiki]:px-4 [&_pre_.shiki]:py-3.5',
+  '[&_pre]:my-6 [&_pre]:p-0',
+  '[&_pre_code]:block [&_pre_code]:m-0 [&_pre_code]:py-2.5 [&_pre_code]:bg-[#18191c]',
+  '[&_pre_.shiki]:my-6 [&_pre_.shiki]:rounded-xl [&_pre_.shiki]:px-4',
 )
 
 const MARKDOWN_VARIANT_CLASS_NAMES: Record<MarkdownVariant, string> = {
