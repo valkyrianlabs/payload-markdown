@@ -70,6 +70,32 @@ Powered by Shiki — the same high-fidelity engine used by VS Code.
 
 ---
 
+## Real examples (v1)
+
+### Layout directives in practice
+
+![blocks demo](https://docs-media.valkyrianlabs.com/payload-markdown%20v1.0.0%20blocks%20demo.png)
+
+Real v1 output using `:::section`, `:::2col`, and `:::3col`.
+
+- structure defined directly in Markdown  
+- no builder UI, no hidden schema  
+- predictable layout from plain text  
+
+---
+
+### Code blocks in practice
+
+![code blocks demo](https://docs-media.valkyrianlabs.com/payload-markdown%20v1%20code%20blocks%20demo.png)
+
+Production-ready code rendering with zero configuration.
+
+- Shiki (VS Code engine)  
+- consistent themes  
+- clean, readable defaults  
+
+---
+
 ## Quick setup
 
 ### Register the plugin
@@ -97,6 +123,24 @@ import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
   markdown={content}
   collectionSlug="posts"
 />
+```
+
+---
+
+## Tailwind setup (recommended)
+
+For best rendering defaults, enable Tailwind Typography and scan the plugin output:
+
+```bash
+pnpm add @tailwindcss/typography
+```
+
+```css
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Ensure Tailwind scans plugin output */
+@source "../node_modules/@valkyrianlabs/payload-markdown/dist";
 ```
 
 ---
