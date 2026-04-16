@@ -1,8 +1,12 @@
 ![@valkyrianlabs/payload-markdown](https://docs-media.valkyrianlabs.com/Payload%20Markdown%20-%20Cleaner%20defaults%2C%20zero%20fight%20release%20social-size.jpg)
 
-![npm](https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown)
-![downloads](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)
-![license](https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown)
+<a href="https://github.com/valkyrianlabs/payload-markdown/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml"></a>
+&nbsp;
+<a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"><img alt="npm" src="https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown" /></a>
+&nbsp;
+<a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"><img alt="npm" src="https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown" /></a>
+&nbsp;
+<a href="https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file"><img alt="license" src="https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown" /></a>
 
 Layout-aware Markdown for Payload CMS.
 
