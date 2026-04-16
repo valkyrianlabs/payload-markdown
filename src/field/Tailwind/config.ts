@@ -8,7 +8,7 @@ export type TailwindFieldOptions = {
   required?: boolean
 }
 
-export function tailwindField(options: TailwindFieldOptions = {}): Field {
+export function vlMdTailwindField(options: TailwindFieldOptions = {}): Field {
   const {
     name = 'vlTailwindsField',
     admin,

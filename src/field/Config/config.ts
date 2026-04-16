@@ -1,7 +1,7 @@
 import type { Field, GroupField } from 'payload'
 
-import { codeBlockParams } from '../CodeBlockParams/config.js'
-import { tailwindField } from '../TailwindField/config.js'
+import { vlMdCodeBlockConfig } from '../CodeBlock/config.js'
+import { vlMdTailwindField } from '../Tailwind/config.js'
 
 export type BlocksParamsOptions = {
   admin?: Partial<GroupField['admin']>
@@ -9,7 +9,7 @@ export type BlocksParamsOptions = {
   name?: string
 }
 
-export function blocksParams(options: BlocksParamsOptions = {}): Field {
+export function vlMdConfig(options: BlocksParamsOptions = {}): Field {
   const { name = 'md-params', admin, label = 'Markdown Blocks Params' } = options
 
   return {
@@ -35,28 +35,28 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
           condition: (_, siblingData) => !!siblingData?.enable,
         },
         fields: [
-          tailwindField({
+          vlMdTailwindField({
             name: 'wrapperClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block wrapper element.',
             },
             label: 'Tailwind Wrapper Classes',
           }),
-          tailwindField({
+          vlMdTailwindField({
             name: 'className',
             admin: {
               description: 'Additional Tailwind classes to apply to the block element itself.',
             },
             label: 'Tailwind Markdown Element Classes',
           }),
-          tailwindField({
+          vlMdTailwindField({
             name: 'sectionClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block section element.',
             },
             label: 'Tailwind Markdown Section Classes',
           }),
-          tailwindField({
+          vlMdTailwindField({
             name: 'columnClassName',
             admin: {
               description: 'Additional Tailwind classes to apply to the block column element.',
@@ -129,7 +129,7 @@ export function blocksParams(options: BlocksParamsOptions = {}): Field {
               },
             ],
           },
-          codeBlockParams({ name: 'options' }),
+          vlMdCodeBlockConfig({ name: 'options' }),
         ],
       },
     ],

@@ -6,7 +6,7 @@ export type CodeBlockParams = {
   name?: string
 }
 
-export function codeBlockParams(options: CodeBlockParams = {}): Field {
+export function vlMdCodeBlockConfig(options: CodeBlockParams = {}): Field {
   const {
     name = 'code_params',
     admin,

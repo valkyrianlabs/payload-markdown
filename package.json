@@ -1,6 +1,6 @@
 {
   "name": "@valkyrianlabs/payload-markdown",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Beautiful, production-ready Markdown rendering and editor support for Payload CMS, with Tailwind styling and extensible parsing (MDX, plugins, and custom formatting coming soon).",
   "repository": {
     "url": "https://github.com/valkyrianlabs/payload-markdown"
@@ -24,6 +24,11 @@
       "import": "./dist/exports/server.js",
       "types": "./dist/exports/server.d.ts",
       "default": "./dist/exports/server.js"
+    },
+    "./advanced": {
+      "import": "./dist/exports/advanced.js",
+      "types": "./dist/exports/advanced.d.ts",
+      "default": "./dist/exports/advanced.js"
     }
   },
   "files": [
@@ -113,6 +118,11 @@
         "import": "./dist/exports/server.js",
         "types": "./dist/exports/server.d.ts",
         "default": "./dist/exports/server.js"
+      },
+      "./advanced": {
+        "import": "./dist/exports/advanced.js",
+        "types": "./dist/exports/advanced.d.ts",
+        "default": "./dist/exports/advanced.js"
       }
     },
     "main": "./dist/index.js",
