@@ -2,6 +2,8 @@
 @plugin "@tailwindcss/typography";
 @source "../../dist";
 
+@source inline("flex inline-flex items-center gap-1 gap-2 gap-3 gap-4 flex-wrap");
+
 /* Base reset / polish */
 :root {
     color-scheme: dark;

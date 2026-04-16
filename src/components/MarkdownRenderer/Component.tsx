@@ -14,6 +14,7 @@ import {
   resolveMarkdownFieldDefaults,
 } from '../../runtime/index.js'
 import { MarkdownRendererClient } from './Component.client.js'
+import './index.css'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
 

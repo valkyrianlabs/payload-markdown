@@ -1,0 +1,83 @@
+pre.shiki.md-code-enhanced {
+  background: #18191c;
+  padding: 0;
+  overflow-x: auto;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+
+  code {
+    span.md-line {
+      display: block;
+      position: relative;
+      white-space: pre;
+
+      &.md-line-no-numbers {
+        padding-left: .75rem;
+      }
+
+      &.md-line-digits-1 {
+        padding-left: 2rem;
+
+        .md-line-number {
+          width: 1.25rem;
+        }
+      }
+
+      &.md-line-digits-2 {
+        padding-left: 2.5rem;
+
+        .md-line-number {
+          width: 1.75rem;
+        }
+      }
+
+      &.md-line-digits-3 {
+        padding-left: 3rem;
+
+        .md-line-number {
+          width: 2.25rem;
+        }
+      }
+
+      &.md-line-digits-4 {
+        padding-left: 3.5rem;
+
+        .md-line-number {
+          width: 2.75rem;
+        }
+      }
+
+      &.md-line-digits-5 {
+        padding-left: 4rem;
+
+        .md-line-number {
+          width: 3.25rem;
+        }
+      }
+
+      .md-line-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        text-align: right;
+        color: #7c8596;
+        opacity: 0.8;
+        user-select: none;
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+        line-height: inherit;
+      }
+
+      .md-empty-line {
+        display: inline-block;
+        min-height: 1em;
+        line-height: inherit;
+        visibility: hidden;
+        user-select: none;
+        pointer-events: none;
+      }
+    }
+  }
+}
