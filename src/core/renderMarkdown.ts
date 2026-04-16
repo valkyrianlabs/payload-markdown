@@ -3,6 +3,7 @@ import type { Schema } from 'hast-util-sanitize'
 
 import { fromHtml } from 'hast-util-from-html'
 import { toString } from 'hast-util-to-string'
+import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
@@ -15,6 +16,7 @@ import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from
 
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
+import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
@@ -104,18 +106,40 @@ const sanitizeSchema: Schema = {
   ...defaultSchema,
   attributes: {
     ...(defaultSchema.attributes ?? {}),
+    a: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.a ?? []),
+      'href',
+      'target',
+      'rel',
+      'title',
+    ],
     code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
-    div: [...getAttributeDefinitions(defaultSchema.attributes?.div ?? []), 'dataVlLayout', 'dataVlCellHeadingDepth'],
+    div: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.div ?? []),
+      'dataVlLayout',
+      'dataVlCellHeadingDepth',
+    ],
+    img: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.img ?? []),
+      'src',
+      'alt',
+      'title',
+      'width',
+      'height',
+    ],
     pre: [
       ...getAttributeDefinitions(defaultSchema.attributes?.pre ?? []),
       'className',
-      'style',
       'tabindex',
     ],
-    section: [...getAttributeDefinitions(defaultSchema.attributes?.section ?? []), 'dataVlLayout', 'dataVlCellHeadingDepth'],
+    section: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.section ?? []),
+      'dataVlLayout',
+      'dataVlCellHeadingDepth',
+    ],
     span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
   },
-  tagNames: [...(defaultSchema.tagNames ?? []), 'span', 'section'],
+  tagNames: [...(defaultSchema.tagNames ?? []), 'a', 'img', 'span', 'section', 'br'],
 }
 
 export async function compileMarkdown(
@@ -131,7 +155,9 @@ export async function compileMarkdown(
       .use(remarkLiftLayoutDirectives)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
-      .use(remarkRehype, { allowDangerousHtml: false })
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(rehypeStripAuthoredInlineStyles)
       .use(rehypeShikiCodeBlocks, config.options)
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)

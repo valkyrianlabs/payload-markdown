@@ -42,37 +42,6 @@ function getHighlighter(theme: string, langs: readonly string[]) {
   return created
 }
 
-function mergeStyle(existing: unknown, additions: string[]): string {
-  const existingStyle = typeof existing === 'string' ? existing.trim() : ''
-  return [existingStyle, ...additions.filter(Boolean)].filter(Boolean).join('; ')
-}
-
-function stripBackgroundStyles(style: string): string {
-  return style
-    .split(';')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .filter((part) => {
-      const lower = part.toLowerCase()
-      return !lower.startsWith('background:') && !lower.startsWith('background-color:')
-    })
-    .join('; ')
-}
-
-function getLineNumberMetrics(totalLines: number) {
-  const digits = Math.max(1, String(totalLines).length)
-  const numberWidthRem = 1.25 + (digits - 1) * 0.5
-  const gapRem = 0.75
-  const paddingLeftRem = numberWidthRem + gapRem
-
-  return {
-    digits,
-    gapRem,
-    numberWidthRem,
-    paddingLeftRem,
-  }
-}
-
 function countLines(code: string): number {
   return code.length === 0 ? 1 : code.split('\n').length
 }
@@ -120,6 +89,36 @@ function isVisuallyEmptyLine(node: Element): boolean {
   })
 }
 
+function mergeClassNames(existing: unknown, additions: string[]): string[] {
+  const current =
+    typeof existing === 'string'
+      ? existing.split(/\s+/).filter(Boolean)
+      : Array.isArray(existing)
+        ? existing.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        : []
+
+  return [...new Set([...additions, ...current])]
+}
+
+function setMergedClassNames(node: { properties: Record<string, unknown> }, additions: string[]) {
+  const merged = mergeClassNames(node.properties.className ?? node.properties.class, additions)
+
+  node.properties.className = merged
+  node.properties.class = merged.join(' ')
+}
+
+function makeClassElement(className: string, text: string): Element {
+  return {
+    type: 'element',
+    children: [{ type: 'text', value: text }],
+    properties: {
+      class: className,
+      className: [className],
+    },
+    tagName: 'span',
+  }
+}
+
 /**
  * Builds the Shiki transformer pipeline used to normalize and enhance
  * rendered fenced code blocks.
@@ -133,43 +132,23 @@ function buildTransformers(
 ): ShikiTransformer[] {
   const transformers: ShikiTransformer[] = []
   const useEnhanced = enhancedCodeBlocks
-  const metrics = getLineNumberMetrics(totalLines)
+  const digits = Math.max(1, String(totalLines).length)
 
   transformers.push({
     pre(node) {
       if (!useEnhanced) return
-
-      const existing =
-        typeof node.properties.style === 'string'
-          ? stripBackgroundStyles(node.properties.style)
-          : ''
-
-      node.properties.style = mergeStyle(existing, [
-        'background: #18191c',
-        'padding: 0',
-        'overflow-x: auto',
-        'position: relative',
-        'border: 1px solid rgba(255,255,255,0.06)',
-        'box-shadow: 0 2px 12px rgba(0,0,0,0.35)',
-      ])
+      setMergedClassNames(node, ['md-code-enhanced'])
     },
 
     code(node) {
       if (!useEnhanced) return
-
-      node.properties.style = mergeStyle(node.properties.style, [
-        'display: block',
-        'padding: 0',
-        'margin: 0',
-      ])
 
       if (node.children) {
         node.children = node.children.filter((child) => {
           if (child.type !== 'text') return true
 
           // Shiki inserts raw newline separator text nodes between rendered line spans.
-          // Those create fake blank rows once each line is display:block.
-          // Remove only those separators, not actual line content.
+          // Those create fake blank rows once line display is class-driven.
           return !/^\r?\n$/.test(child.value)
         })
       }
@@ -179,74 +158,19 @@ function buildTransformers(
       if (!useEnhanced && !lineNumbers) return
 
       const isEmptyLine = isVisuallyEmptyLine(node)
-      const styleBits = ['display: block', 'position: relative', 'white-space: pre']
 
-      if (lineNumbers) {
-        styleBits.push(`padding-left: ${metrics.paddingLeftRem}rem`)
+      if (lineNumbers) setMergedClassNames(node, ['md-line', `md-line-digits-${digits}`])
+      else if (useEnhanced) setMergedClassNames(node, ['md-line', 'md-line-no-numbers'])
 
-        node.children.unshift({
-          type: 'element',
-          children: [{ type: 'text', value: String(line) }],
-          properties: {
-            class: 'md-line-number',
-            style: [
-              'position: absolute',
-              'left: 0',
-              'top: 0',
-              `width: ${metrics.numberWidthRem}rem`,
-              'text-align: right',
-              'color: #7c8596',
-              'opacity: 0.8',
-              'user-select: none',
-              'pointer-events: none',
-              'font-variant-numeric: tabular-nums',
-              'font-feature-settings: "tnum"',
-              'line-height: inherit',
-            ].join('; '),
-          },
-          tagName: 'span',
-        })
-      } else if (useEnhanced) {
-        styleBits.push('padding-left: .75rem')
-      }
+      if (lineNumbers) node.children.unshift(makeClassElement('md-line-number', String(line)))
 
       if (isEmptyLine) {
         const lineNumberNode = lineNumbers ? node.children[0] : null
 
         node.children = [
           ...(lineNumberNode ? [lineNumberNode] : []),
-          {
-            type: 'element',
-            children: [{ type: 'text', value: '\u00A0' }],
-            properties: {
-              class: 'md-empty-line',
-              style: [
-                'display: inline-block',
-                'min-height: 1em',
-                'line-height: inherit',
-                'visibility: hidden',
-                'user-select: none',
-                'pointer-events: none',
-              ].join('; '),
-            },
-            tagName: 'span',
-          },
+          makeClassElement('md-empty-line', '\u00A0'),
         ]
-      }
-
-      if (useEnhanced || lineNumbers)
-        node.properties.style = mergeStyle(node.properties.style, styleBits)
-
-      if (useEnhanced && typeof node.properties.style === 'string') {
-        const cleaned = stripBackgroundStyles(node.properties.style)
-        node.properties.style = cleaned || undefined
-      }
-    },
-
-    span(node) {
-      if (useEnhanced && typeof node.properties.style === 'string') {
-        const cleaned = stripBackgroundStyles(node.properties.style)
-        node.properties.style = cleaned || undefined
       }
     },
   })
