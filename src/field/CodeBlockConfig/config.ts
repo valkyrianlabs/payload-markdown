@@ -98,23 +98,6 @@ export function vlMdCodeBlockConfig(options: CodeBlockParams = {}): Field {
         ],
       },
       {
-        name: 'langs',
-        type: 'array',
-        admin: {
-          description: 'The list of languages to load for syntax highlighting this code block. ' +
-            'Defaults to a common set of popular languages. ' +
-            'Note that loading many languages may impact performance, so it\'s best to only include the ones you need.',
-        },
-        fields: [
-          {
-            name: 'lang',
-            type: 'text',
-            label: 'Language',
-          }
-        ],
-        label: 'Shiki Languages'
-      },
-      {
         type: 'row',
         fields: [
           {

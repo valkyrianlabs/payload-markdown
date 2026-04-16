@@ -1,6 +1,6 @@
 import type { Field, GroupField } from 'payload'
 
-import { vlMdCodeBlockConfig } from '../CodeBlock/config.js'
+import { vlMdCodeBlockConfig } from '../CodeBlockConfig/config.js'
 import { vlMdTailwindField } from '../Tailwind/config.js'
 
 export type BlocksParamsOptions = {
