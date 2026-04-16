@@ -32,14 +32,14 @@ pnpm add @valkyrianlabs/payload-markdown
 
 Most CMS setups force you into one of two bad paths:
 
-- heavy rich text editors with fragile JSON output  
+- heavy rich text editors with fragile, JSON-shaped content  
 - bare Markdown fields with zero structure  
 
-This plugin takes the better route:
+This takes a different approach:
 
 - Markdown stays the source of truth  
-- layout is handled at the content layer  
-- rendering is production-ready out of the box  
+- layout lives in the content itself  
+- rendering is production-ready by default  
 - styling is centralized, but fully overridable  
 
 **Write fast. Render clean. Stay in control.**
@@ -48,13 +48,13 @@ This plugin takes the better route:
 
 ## What you get
 
-- Drop-in Markdown support for Payload  
+- Drop-in Markdown for Payload  
 - Layout directives (`:::section`, `:::2col`, `:::3col`)  
-- Shiki-powered syntax highlighting  
-- Live preview-friendly rendering  
+- Shiki-powered code blocks  
+- A fast, syntax-highlighted editor  
 - Tailwind-native styling with deep override control  
 - Config layering (global → collection → component)  
-- Clean, portable Markdown storage (AI-friendly by default)  
+- Clean, portable Markdown storage (AI-friendly)
 
 ---
 
