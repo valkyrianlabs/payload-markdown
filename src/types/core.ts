@@ -1,17 +1,4 @@
-/**
- * @import {} from 'mdast-util-directive'
- */
-
 import type { JSX, ReactNode } from 'react'
-
-import 'mdast-util-directive'
-
-declare module 'mdast-util-directive' {
-  interface ContainerDirectiveData {
-    vlCellHeadingDepth?: number
-    vlParentHeadingDepth?: number
-  }
-}
 
 export type MarkdownRendererScope = 'blocks' | 'field'
 

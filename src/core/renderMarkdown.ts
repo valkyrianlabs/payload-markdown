@@ -11,23 +11,13 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from './types.js'
+import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
 
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
+import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
-import { remarkLayoutSentinels } from './plugins/remarkLayoutSentinels.js'
-
-function normalizeLayoutSyntax(input: string): string {
-  return input
-    .replace(/^[ \t]*:::section[ \t]*$/gim, '%%VL_OPEN:section%%')
-    .replace(/^[ \t]*:::2col[ \t]*$/gim, '%%VL_OPEN:2col%%')
-    .replace(/^[ \t]*:::3col[ \t]*$/gim, '%%VL_OPEN:3col%%')
-    .replace(/^[ \t]*:::endcol[ \t]*$/gim, '%%VL_CLOSE_GRID%%')
-    .replace(/^[ \t]*:::endsection[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
-    .replace(/^[ \t]*:::end[ \t]*$/gim, '%%VL_CLOSE_SECTION%%')
-    .replace(/^[ \t]*:::[ \t]*$/gm, '%%VL_CLOSE%%')
-}
+import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string  ,
@@ -135,19 +125,18 @@ export async function compileMarkdown(
   const warnings: string[] = []
 
   try {
-    const normalizedMarkdown = normalizeLayoutSyntax(markdown)
-
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkLayoutSentinels)
+      .use(remarkLiftLayoutDirectives)
+      .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkRehype, { allowDangerousHtml: false })
       .use(rehypeShikiCodeBlocks, config.options)
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)
       .use(rehypeStringify)
-      .process(normalizedMarkdown)
+      .process(markdown)
 
     return {
       html: String(file),

@@ -1,9 +1,17 @@
-import type { Content, Heading, Paragraph, Root, Text } from 'mdast'
+import type { Heading, Root, RootContent } from 'mdast'
 import type { ContainerDirective } from 'mdast-util-directive'
 import type { Plugin } from 'unified'
 
 type LayoutName = '2col' | '3col' | 'section'
 type LayoutNode = ContainerDirective | Root
+
+type LayoutToken =
+  | { action: 'close'; type: 'vlLayoutToken' }
+  | { action: 'closeGrid'; type: 'vlLayoutToken' }
+  | { action: 'closeSection'; type: 'vlLayoutToken' }
+  | { action: 'open'; name: LayoutName; type: 'vlLayoutToken' }
+
+type AppendableRootContent = Exclude<RootContent, LayoutToken>
 
 type LayoutFrame = {
   cellHeadingDepth?: number
@@ -12,46 +20,16 @@ type LayoutFrame = {
   parentHeadingDepth?: number
 }
 
-type Sentinel =
-  | { name: LayoutName; type: 'open' }
-  | { type: 'close' }
-  | { type: 'closeGrid' }
-  | { type: 'closeSection' }
-
-function isParagraph(node: Content): node is Paragraph {
-  return node.type === 'paragraph'
-}
-
-function isHeading(node: Content): node is Heading {
+function isHeading(node: RootContent): node is Heading {
   return node.type === 'heading'
 }
 
-function isText(node: Paragraph['children'][number]): node is Text {
-  return node.type === 'text'
+function isLayoutToken(node: RootContent): node is LayoutToken {
+  return node.type === 'vlLayoutToken'
 }
 
-function getParagraphText(node: Paragraph): null | string {
-  if (!node.children.every(isText)) return null
-  return node.children
-    .map((child) => child.value)
-    .join('')
-    .trim()
-}
-
-function getSentinel(node: Content): null | Sentinel {
-  if (!isParagraph(node)) return null
-
-  const text = getParagraphText(node)
-  if (!text) return null
-
-  if (text === '%%VL_OPEN:section%%') return { name: 'section', type: 'open' }
-  if (text === '%%VL_OPEN:2col%%') return { name: '2col', type: 'open' }
-  if (text === '%%VL_OPEN:3col%%') return { name: '3col', type: 'open' }
-  if (text === '%%VL_CLOSE%%') return { type: 'close' }
-  if (text === '%%VL_CLOSE_GRID%%') return { type: 'closeGrid' }
-  if (text === '%%VL_CLOSE_SECTION%%') return { type: 'closeSection' }
-
-  return null
+function isAppendableRootContent(node: RootContent): node is AppendableRootContent {
+  return node.type !== 'vlLayoutToken'
 }
 
 function makeDirective(
@@ -71,8 +49,8 @@ function makeDirective(
   }
 }
 
-function getChildren(node: LayoutNode): Content[] {
-  return node.children as Content[]
+function getChildren(node: LayoutNode): AppendableRootContent[] {
+  return node.children as AppendableRootContent[]
 }
 
 function top<T>(arr: T[]): T {
@@ -129,8 +107,8 @@ function closeThroughSection(stack: LayoutFrame[]): boolean {
   return true
 }
 
-export const remarkLayoutSentinels: Plugin<[], Root> = () => {
-  return (tree: Root, file) => {
+export const remarkCompileLayouts: Plugin<[], Root> = () => {
+  return (tree, file) => {
     const input = [...tree.children]
     const rebuiltRoot: Root = { ...tree, children: [] }
     const stack: LayoutFrame[] = [{ name: 'root', node: rebuiltRoot }]
@@ -138,31 +116,27 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
 
     let currentHeadingDepth: number | undefined
 
-    const append = (node: Content) => getChildren(top(stack).node).push(node)
+    const append = (node: AppendableRootContent) => getChildren(top(stack).node).push(node)
 
     for (const node of input) {
-      const sentinel = getSentinel(node)
-
-      if (sentinel) {
-        if (sentinel.type === 'open') {
-          if (sentinel.name === 'section') {
+      if (isLayoutToken(node)) {
+        if (node.action === 'open') {
+          if (node.name === 'section') {
             const next = makeDirective('section')
             append(next)
             stack.push({ name: 'section', node: next })
             continue
           }
 
-          // Opening a new grid while already inside a grid inside a section
-          // rolls over to a sibling grid automatically.
           closeActiveGridInsideSection(stack)
 
           const parentDepth = currentHeadingDepth ?? 1
           const cellDepth = parentDepth + 1
-          const next = makeDirective(sentinel.name, parentDepth, cellDepth)
+          const next = makeDirective(node.name, parentDepth, cellDepth)
 
           append(next)
           stack.push({
-            name: sentinel.name,
+            name: node.name,
             cellHeadingDepth: cellDepth,
             node: next,
             parentHeadingDepth: parentDepth,
@@ -170,7 +144,7 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
           continue
         }
 
-        if (sentinel.type === 'close') {
+        if (node.action === 'close') {
           if (stack.length === 1) {
             warnings.push('Encountered ::: with no open layout block.')
             continue
@@ -180,7 +154,7 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
           continue
         }
 
-        if (sentinel.type === 'closeGrid') {
+        if (node.action === 'closeGrid') {
           if (!closeActiveGrid(stack)) {
             warnings.push('Encountered :::endcol with no open grid.')
             continue
@@ -189,7 +163,7 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
           continue
         }
 
-        if (sentinel.type === 'closeSection') {
+        if (node.action === 'closeSection') {
           if (!closeThroughSection(stack))
             warnings.push('Encountered :::end or :::endsection with no open section.')
 
@@ -203,11 +177,7 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
         if (isGridName(currentFrame.name)) {
           const parentDepth = currentFrame.parentHeadingDepth
 
-          // Same-level heading as the parent section remains inside the grid.
-          // Only a true ascent above the parent depth auto-closes the grid.
-          if (typeof parentDepth === 'number' && node.depth < parentDepth) {
-            closeTop(stack)
-          }
+          if (typeof parentDepth === 'number' && node.depth < parentDepth) closeTop(stack)
         }
 
         currentHeadingDepth = node.depth
@@ -215,7 +185,7 @@ export const remarkLayoutSentinels: Plugin<[], Root> = () => {
         continue
       }
 
-      append(node)
+      if (isAppendableRootContent(node)) append(node)
     }
 
     while (stack.length > 1) {
