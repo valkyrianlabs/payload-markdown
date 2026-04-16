@@ -3,7 +3,7 @@ import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig } from '../types.js'
+import type { MarkdownConfig } from '../../types/core.js'
 
 function compactClassNames(...values: Array<string | undefined>): string[] {
   return values.flatMap((value) => value?.split(/\s+/).filter(Boolean) ?? [])

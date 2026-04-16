@@ -1,6 +1,8 @@
+import type { Element, ElementContent, Text } from 'hast'
+
 import { createHighlighter, type ShikiTransformer } from 'shiki'
 
-import type { CodeBlockOptions } from './types.js'
+import type { CodeBlockOptions } from '../types/core.js'
 
 export const DEFAULT_CODE_LANG = 'text'
 export const DEFAULT_CODE_THEME = 'github-dark'
@@ -87,6 +89,37 @@ function resolveCodeBlockOptions(
   }
 }
 
+function isText(node: ElementContent): node is Text {
+  return node.type === 'text'
+}
+
+function isElement(node: ElementContent): node is Element {
+  return node.type === 'element'
+}
+
+function isEmptyText(node: Text): boolean {
+  return node.value === ''
+}
+
+function isVisuallyEmptyLine(node: Element): boolean {
+  if (node.children.length === 0) return true
+
+  return node.children.every((child) => {
+    if (isText(child)) return isEmptyText(child)
+
+    if (isElement(child)) {
+      if (child.children.length === 0) return true
+
+      return child.children.every((grandchild) => {
+        if (isText(grandchild)) return isEmptyText(grandchild)
+        return false
+      })
+    }
+
+    return false
+  })
+}
+
 /**
  * Builds the Shiki transformer pipeline used to normalize and enhance
  * rendered fenced code blocks.
@@ -130,17 +163,22 @@ function buildTransformers(
         'margin: 0',
       ])
 
-      if (node.children)
+      if (node.children) {
         node.children = node.children.filter((child) => {
           if (child.type !== 'text') return true
-          return child.value.trim().length > 0
+
+          // Shiki inserts raw newline separator text nodes between rendered line spans.
+          // Those create fake blank rows once each line is display:block.
+          // Remove only those separators, not actual line content.
+          return !/^\r?\n$/.test(child.value)
         })
+      }
     },
 
     line(node, line) {
       if (!useEnhanced && !lineNumbers) return
 
-      const isEmptyLine = node.children.length === 0
+      const isEmptyLine = isVisuallyEmptyLine(node)
       const styleBits = ['display: block', 'position: relative', 'white-space: pre']
 
       if (lineNumbers) {
@@ -154,6 +192,7 @@ function buildTransformers(
             style: [
               'position: absolute',
               'left: 0',
+              'top: 0',
               `width: ${metrics.numberWidthRem}rem`,
               'text-align: right',
               'color: #7c8596',
@@ -162,6 +201,7 @@ function buildTransformers(
               'pointer-events: none',
               'font-variant-numeric: tabular-nums',
               'font-feature-settings: "tnum"',
+              'line-height: inherit',
             ].join('; '),
           },
           tagName: 'span',
@@ -171,23 +211,27 @@ function buildTransformers(
       }
 
       if (isEmptyLine) {
-        node.children.push({
-          type: 'element',
-          children: [{ type: 'text', value: '' }],
-          properties: {
-            class: 'md-empty-line',
-            style: [
-              'display: inline-block',
-              'width: 0',
-              'height: 1em',
-              'overflow: hidden',
-              'vertical-align: top',
-              'user-select: none',
-              'pointer-events: none',
-            ].join('; '),
+        const lineNumberNode = lineNumbers ? node.children[0] : null
+
+        node.children = [
+          ...(lineNumberNode ? [lineNumberNode] : []),
+          {
+            type: 'element',
+            children: [{ type: 'text', value: '\u00A0' }],
+            properties: {
+              class: 'md-empty-line',
+              style: [
+                'display: inline-block',
+                'min-height: 1em',
+                'line-height: inherit',
+                'visibility: hidden',
+                'user-select: none',
+                'pointer-events: none',
+              ].join('; '),
+            },
+            tagName: 'span',
           },
-          tagName: 'span',
-        })
+        ]
       }
 
       if (useEnhanced || lineNumbers)

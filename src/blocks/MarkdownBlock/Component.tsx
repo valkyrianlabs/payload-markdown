@@ -1,4 +1,4 @@
-import type { MarkdownBlockProps } from '../../core/types.js'
+import type { MarkdownBlockProps } from '../../types/core.js'
 
 import { MarkdownRenderer } from '../../components/MarkdownRenderer/Component.js'
 import { resolveMarkdownBlockDefaults } from '../../runtime/index.js'

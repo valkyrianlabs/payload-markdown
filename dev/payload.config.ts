@@ -71,7 +71,7 @@ const buildConfigWithMemoryDB = async () => {
               className: '[&_li::marker]:!text-cyan-200/90',
               options: {
                 langs: [...DEFAULT_CODE_LANGS, 'latex', 'r'],
-                lineNumbers: false,
+                lineNumbers: true,
               },
             },
           },

@@ -6,7 +6,7 @@ export type CodeBlockParams = {
   name?: string
 }
 
-export function codeBlockParams(options: CodeBlockParams = {}): Field {
+export function vlMdCodeBlockConfig(options: CodeBlockParams = {}): Field {
   const {
     name = 'code_params',
     admin,
@@ -110,7 +110,7 @@ export function codeBlockParams(options: CodeBlockParams = {}): Field {
             label: 'Show Line Numbers'
           },
           {
-            name: 'prettyCodeBlocks',
+            name: 'enhancedCodeBlocks',
             type: 'checkbox',
             admin: {
               description: 'Whether to apply the plugin\'s enhanced code block formatting. ' +
@@ -121,19 +121,8 @@ export function codeBlockParams(options: CodeBlockParams = {}): Field {
                 'Set this to false if you want to preserve raw Shiki block styling as much as possible.',
             },
             defaultValue: true,
-            label: 'Pretty Code Blocks',
+            label: 'Enhanced Code Blocks',
           },
-          {
-            name: 'highlightLines',
-            type: 'checkbox',
-            admin: {
-              description: 'Whether to enable line highlighting for the code block. ' +
-                'When enabled, you can specify lines to highlight by including a line number list in the code block\'s language declaration. ' +
-                'For example, a declaration of "js{1,4-5}" would highlight lines 1, 4, and 5 in the block.',
-            },
-            defaultValue: false,
-            label: 'Highlight Lines',
-          }
         ]
       }
     ],

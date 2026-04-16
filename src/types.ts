@@ -1,6 +1,6 @@
 import type { CollectionSlug, TextField } from 'payload'
 
-import type { MarkdownConfig } from './core/types.js'
+import type { MarkdownConfig } from './types/core.js'
 
 export type DualMarkdownFieldConfig = {
   blocks?: MarkdownConfig
