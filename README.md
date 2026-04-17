@@ -58,22 +58,6 @@ This takes a different approach:
 
 ---
 
-## Example
-
-![payload-markdown example](https://docs-media.valkyrianlabs.com/%40valkyrianlabspayload-markdown%20Editor%20Columns%20Example.png)
-
-Write simple Markdown → get structured layouts instantly.
-
----
-
-## Code blocks
-
-![code blocks example](https://docs-media.valkyrianlabs.com/%40valkyrianlabspayload-markdown%20Code%20Blocks%20Example.png)
-
-Powered by Shiki — the same high-fidelity engine used by VS Code.
-
----
-
 ## Real examples (v1)
 
 ### Layout directives in practice
