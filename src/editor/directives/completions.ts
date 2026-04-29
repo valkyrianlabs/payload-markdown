@@ -6,14 +6,29 @@ import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getDirectiveThemeNames } from '../../directives/themes.js'
 
 export function getDirectiveCompletionOptions() {
-  return layoutDirectiveRegistry.getPublicDefinitions().map((definition) =>
-    snippetCompletion(definition.editor.snippet, {
-      type: 'keyword',
-      detail: definition.editor.detail,
-      info: definition.description,
-      label: `:::${definition.name}`,
-    }),
-  )
+  return layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => {
+    const snippets = [
+      {
+        detail: definition.editor.detail,
+        label: `:::${definition.name}`,
+        snippet: definition.editor.snippet,
+      },
+      ...(definition.editor.snippets ?? []).map((snippet) => ({
+        detail: snippet.detail ?? definition.editor.detail,
+        label: snippet.label,
+        snippet: snippet.snippet,
+      })),
+    ]
+
+    return snippets.map((snippet) =>
+      snippetCompletion(snippet.snippet, {
+        type: 'keyword',
+        detail: snippet.detail,
+        info: definition.description,
+        label: snippet.label,
+      }),
+    )
+  })
 }
 
 export function getDirectiveAttributeCompletionOptions(name: string): Completion[] {
@@ -36,7 +51,12 @@ export function getDirectiveThemeValueCompletionOptions(
   const definition = layoutDirectiveRegistry.get(name)
   const groupName = definition?.themeAttributes?.[attribute]
 
-  if (!groupName) return []
+  if (!groupName)
+    return (definition?.attributeValues?.[attribute] ?? []).map((value) => ({
+      type: 'constant',
+      detail: `:::${name} ${attribute}`,
+      label: value,
+    }))
 
   return getDirectiveThemeNames(groupName).map((themeName) => ({
     type: 'constant',

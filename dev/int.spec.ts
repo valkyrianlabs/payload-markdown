@@ -489,13 +489,16 @@ describe('layout directive registry', () => {
       ':::details',
       ':::toc',
       ':::steps',
+      'Steps cards stack',
+      'Steps cards grid',
       ':::cards',
       ':::card',
     ])
 
-    const snippets = layoutDirectiveRegistry
-      .getPublicDefinitions()
-      .map((definition) => definition.editor.snippet)
+    const snippets = layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => [
+      definition.editor.snippet,
+      ...(definition.editor.snippets ?? []).map((snippet) => snippet.snippet),
+    ])
 
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
@@ -509,7 +512,7 @@ describe('layout directive registry', () => {
     expect(getDirectiveAttributeCompletionOptions('cards').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
-      .toEqual(expect.arrayContaining(['stepTheme', 'theme', 'variant']))
+      .toEqual(expect.arrayContaining(['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant']))
 
     expect(getDirectiveThemeValueCompletionOptions('card', 'theme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
@@ -517,6 +520,12 @@ describe('layout directive registry', () => {
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
     expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
+    expect(getDirectiveThemeValueCompletionOptions('steps', 'layout').map((completion) => completion.label))
+      .toEqual(['stack', 'grid'])
+    expect(getDirectiveThemeValueCompletionOptions('steps', 'columns').map((completion) => completion.label))
+      .toEqual(['1', '2', '3', '4', 'auto'])
+    expect(getDirectiveThemeValueCompletionOptions('steps', 'variant').map((completion) => completion.label))
+      .toEqual(['default', 'cards'])
   })
 })
 
@@ -913,10 +922,106 @@ Add it to \`payload.config.ts\`.
     expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('data-variant="cards"')
+    expect(result.html).toContain('data-layout="stack"')
+    expect(result.html).toContain('data-numbered="true"')
     expect(result.html).toContain('data-step-card')
+    expect(result.html).toContain('data-step-number="1"')
+    expect(result.html).toContain('data-step-number="2"')
     expect(result.html).toContain('data-step="1"')
+    expect(result.html).toContain('flex list-none flex-col gap-4')
+    expect(result.html).not.toContain('md:grid-cols-2')
     expect(result.html).toContain('pnpm install')
     expect(result.html).toContain('<code>payload.config.ts</code>')
+  })
+
+  it('renders card-variant steps as an explicit grid with columns', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="cards" layout="grid" columns="3" stepTheme="glass"}
+
+### First
+
+One.
+
+### Second
+
+Two.
+
+### Third
+
+Three.
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-variant="cards"')
+    expect(result.html).toContain('data-layout="grid"')
+    expect(result.html).toContain('data-columns="3"')
+    expect(result.html).toContain('data-numbered="true"')
+    expect(result.html).toContain('md:grid-cols-3')
+    expect(result.html).toContain('data-step-card')
+    expect(result.html).toContain('data-step-number="3"')
+    expect(result.html).toContain('vl-md-card--theme-glass')
+  })
+
+  it('suppresses visible numbers for card steps when numbered is false', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="cards" layout="grid" columns="2" numbered="false"}
+
+### First
+
+One.
+
+### Second
+
+Two.
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-numbered="false"')
+    expect(result.html).toContain('data-layout="grid"')
+    expect(result.html).not.toContain('data-step-number')
+  })
+
+  it('falls back invalid card-step layout columns and numbered values', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="cards" layout="diagonal" columns="wide" numbered="maybe"}
+
+### Install
+
+Content.
+
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Unsupported steps layout "diagonal"')).toBe(true)
+    expect(hasWarning(result.warnings, 'Invalid steps columns "wide"')).toBe(true)
+    expect(hasWarning(result.warnings, 'Invalid steps numbered value "maybe"')).toBe(true)
+    expect(result.html).toContain('data-layout="stack"')
+    expect(result.html).toContain('data-numbered="true"')
+    expect(result.html).toContain('data-step-number="1"')
+  })
+
+  it('preserves nested callouts inside numbered card steps', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="cards" layout="stack"}
+
+### Review
+
+:::callout {variant="tip" title="Check"}
+Nested callout.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'steps')).toBe(1)
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(result.html).toContain('data-step-number="1"')
+    expect(result.html).toContain('Nested callout.')
   })
 
   it('falls back unsupported steps variants and reports diagnostics', async () => {
@@ -1261,7 +1366,7 @@ Body.
 :::toc {depth="bad"}
 :::
 
-:::steps {mode="bad" variant="timeline"}
+:::steps {mode="bad" variant="timeline" layout="diagonal" columns="wide" numbered="maybe"}
 ### Step
 Body.
 :::
@@ -1286,10 +1391,13 @@ Body.
       'Invalid toc depth "bad". Falling back to "3".',
       'Unknown attribute "mode" on "steps".',
       'Unsupported steps variant "timeline". Falling back to "default".',
+      'Unsupported steps layout "diagonal". Falling back to "stack".',
+      'Invalid steps columns "wide". Falling back to "2".',
+      'Invalid steps numbered value "maybe". Falling back to "true".',
       'Unknown attribute "gap" on "cards".',
       'Invalid cards columns "bad". Falling back to "3".',
-      'Unknown theme "missing" on "cards". Falling back to "default".',
       'Unknown cardTheme "ghost" on "cards". Falling back to "default".',
+      'Unknown theme "missing" on "cards". Falling back to "default".',
       'Unknown attribute "bad" on "card".',
       'Unknown theme "missing" on "card". Falling back to "default".',
       'Unknown directive "not-real".',

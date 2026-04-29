@@ -44,16 +44,37 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(fixture.locator('[data-directive="card"][data-href="/docs/markdown-field"]')).toContainText(
     'Portable Markdown content',
   )
-  await expect(fixture.locator('[data-directive="steps"]')).toHaveCount(2)
-  await expect(fixture.locator('[data-directive="steps"][data-variant="cards"]')).toHaveCount(1)
-  await expect(fixture.locator('[data-directive="steps"][data-theme="cyan"]')).toHaveCount(1)
-  await expect(fixture.locator('[data-step]')).toHaveCount(5)
-  await expect(fixture.locator('[data-step-card]')).toHaveCount(2)
-  await expect(fixture.locator('[data-step-card][data-theme="cyan"]')).toHaveCount(2)
+  await expect(fixture.locator('[data-directive="steps"]')).toHaveCount(6)
+  await expect(fixture.locator('[data-directive="steps"][data-variant="cards"]')).toHaveCount(4)
+  const defaultCardSteps = fixture
+    .locator('[data-directive="steps"][data-variant="cards"][data-layout="stack"][data-numbered="true"]')
+    .filter({ hasText: 'Create content' })
+  const themedStackSteps = fixture
+    .locator('[data-directive="steps"][data-variant="cards"][data-layout="stack"][data-numbered="true"]')
+    .filter({ hasText: 'Plan the content' })
+  const gridSteps = fixture
+    .locator('[data-directive="steps"][data-variant="cards"][data-layout="grid"][data-columns="2"][data-numbered="true"]')
+    .filter({ hasText: 'Add nested callout' })
+  const unnumberedGridSteps = fixture
+    .locator('[data-directive="steps"][data-variant="cards"][data-layout="grid"][data-columns="2"][data-numbered="false"]')
+    .filter({ hasText: 'Optional first step' })
+
+  await expect(fixture.locator('[data-step]')).toHaveCount(12)
+  await expect(fixture.locator('[data-step-card]')).toHaveCount(8)
+  await expect(defaultCardSteps).toHaveCount(1)
+  await expect(defaultCardSteps.locator('[data-step-number]')).toHaveCount(3)
+  await expect(themedStackSteps.locator('[data-step-card][data-theme="cyan"]')).toHaveCount(1)
+  await expect(gridSteps).toHaveCount(1)
+  await expect(gridSteps.locator('[data-step-number]')).toHaveCount(2)
+  await expect(gridSteps.locator('[data-directive="callout"]')).toContainText('Nested step callout')
+  await expect(gridSteps.locator('pre code')).toContainText('pnpm build')
+  await expect(unnumberedGridSteps).toHaveCount(1)
+  await expect(unnumberedGridSteps.locator('[data-step-card]')).toHaveCount(2)
+  await expect(unnumberedGridSteps.locator('[data-step-number]')).toHaveCount(0)
   await expect(fixture.locator('[data-directive="steps"]:not([data-variant])')).toContainText(
     'Install the package',
   )
-  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(7)
+  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(8)
   await expect(
     fixture
       .locator('[data-directive="callout"][data-theme="soft"]')
@@ -94,7 +115,7 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(edgeCases.locator('[data-directive="cards"][data-theme="default"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="card"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="card"][data-theme="default"]')).toHaveCount(1)
-  await expect(edgeCases.locator('[data-directive="steps"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-directive="steps"][data-layout="stack"]')).toHaveCount(1)
   await expect(edgeCases.locator('pre code')).toContainText("const marker = ':::section'")
   await expect(edgeCases.locator('[data-vl-layout="2col"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-vl-layout="cell"]')).toHaveCount(2)

@@ -107,17 +107,63 @@ Use the server renderer.
 
 :::
 
-:::steps {variant="cards" theme="cyan" stepTheme="cyan"}
+:::steps {variant="default"}
+
+### Confirm default rendering
+
+Explicit default variant keeps the ordered docs flow.
+
+:::
+
+:::steps {variant="cards"}
+
+### Create content
+
+Write the Markdown source.
+
+### Preview output
+
+Check the rendered preview.
+
+### Publish
+
+Publish the page.
+
+:::
+
+:::steps {variant="cards" layout="stack" stepTheme="cyan"}
 
 ### Plan the content
 
 Map the docs flow before writing.
+
+:::
+
+:::steps {variant="cards" layout="grid" columns="2" stepTheme="glass"}
+
+### Add nested callout
+
+:::callout {variant="tip" title="Nested step callout"}
+Nested callouts remain readable inside numbered step cards.
+:::
 
 ### Publish the page
 
 \`\`\`bash
 pnpm build
 \`\`\`
+
+:::
+
+:::steps {variant="cards" layout="grid" columns="2" numbered="false"}
+
+### Optional first step
+
+Number markers can be suppressed.
+
+### Optional second step
+
+Grid layout still works without visible numbers.
 
 :::
 
@@ -182,7 +228,7 @@ Invalid columns and unknown card attributes should not crash.
 
 :::
 
-:::steps {mode="bad"}
+:::steps {mode="bad" variant="cards" layout="diagonal" columns="wide" numbered="maybe"}
 ### Safe malformed steps
 Unknown attributes should not crash.
 :::

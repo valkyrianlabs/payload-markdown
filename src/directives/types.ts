@@ -67,6 +67,11 @@ export type LayoutDirectiveEditorMetadata = {
   detail?: string
   label: string
   snippet: string
+  snippets?: Array<{
+    detail?: string
+    label: string
+    snippet: string
+  }>
 }
 
 export type DirectiveValidationContext = {
@@ -81,6 +86,7 @@ export type LayoutDirectiveDefinition = {
     config: MarkdownRenderConfig,
     helpers: LayoutDirectiveClassHelpers,
   ) => void
+  attributeValues?: Partial<Record<string, readonly string[]>>
   defaultAttributes?: Record<string, string>
   description?: string
   editor: LayoutDirectiveEditorMetadata
