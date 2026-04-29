@@ -19,7 +19,7 @@ payloadMarkdown({
       items: [
         {
           name: 'forge',
-          classes: 'rounded-2xl border border-cyan-400/40 bg-cyan-950/30 p-5 shadow-xl',
+          classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.24)]',
         },
       ],
     },
@@ -40,7 +40,7 @@ payloadMarkdown({
       items: [
         {
           name: 'forge',
-          classes: 'rounded-2xl border border-cyan-400/40 bg-cyan-950/30 p-5',
+          classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5',
         },
       ],
     },
@@ -60,7 +60,7 @@ payloadMarkdown({
       items: [
         {
           name: 'default',
-          classes: 'rounded-xl border border-border p-4',
+          classes: 'rounded-xl border border-white/[0.06] bg-[#18191c] p-4',
         },
       ],
     },
@@ -79,7 +79,7 @@ payloadMarkdown({
           items: [
             {
               name: 'postHeroCard',
-              classes: 'rounded-2xl border border-cyan-300/40 bg-cyan-950/30 p-5',
+              classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5',
             },
           ],
         },
@@ -103,6 +103,8 @@ Collection themes merge after plugin-level themes.
 - `:::cards`
 - `:::card`
 - `:::steps`
+- `:::tabs`
+- `:::tab`
 
 ## Parent-Child Defaults
 
@@ -168,6 +170,8 @@ import {
   DEFAULT_DETAILS_THEMES,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
+  DEFAULT_TAB_THEMES,
+  DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
 } from '@valkyrianlabs/payload-markdown'
 ```

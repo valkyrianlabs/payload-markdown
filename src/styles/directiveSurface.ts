@@ -34,3 +34,9 @@ export const DIRECTIVE_SURFACE_RENDERER_PRE_CLASS = [
   'prose-pre:border-white/[0.06]',
   'prose-pre:bg-[#18191c]',
 ].join(' ')
+
+export const DIRECTIVE_SURFACE_NESTED_CODE_CLASS = [
+  '[&_pre]:my-4',
+  '[&_pre]:rounded-lg',
+  '[&_pre_code]:rounded-lg',
+].join(' ')

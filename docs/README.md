@@ -54,6 +54,8 @@ pnpm add @valkyrianlabs/payload-markdown
 
 #### [Cards](/plugins/payload-markdown/cards)
 
+#### [Tabs](/plugins/payload-markdown/tabs)
+
 ### Authoring
 
 #### [Editor Autocomplete and Diagnostics](/plugins/payload-markdown/editor)
@@ -100,7 +102,7 @@ export function PostBody({ content }: { content?: string | null }) {
 - Payload field and block support.
 - CodeMirror editing with directive autocomplete, snippets, placeholders, and lightweight diagnostics.
 - Server-rendered Markdown with Shiki code highlighting.
-- Registry-backed directives for callouts, details, TOCs, steps, cards, and layout.
+- Registry-backed directives for callouts, details, TOCs, steps, cards, tabs, and layout.
 - Heading anchors with deterministic duplicate slugs.
 - Top-level and collection-scoped `code`, `themes`, and `config`.
 - Directive theme registry with stable `vl-md-*` hook classes and `data-theme` attributes.

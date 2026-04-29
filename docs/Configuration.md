@@ -51,7 +51,7 @@ payloadMarkdown({
           items: [
             {
               name: 'postHeroCard',
-              classes: 'rounded-2xl border border-cyan-300/40 bg-cyan-950/30 p-5',
+              classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5',
             },
           ],
         },
@@ -68,7 +68,7 @@ payloadMarkdown({
       items: [
         {
           name: 'forge',
-          classes: 'rounded-2xl border border-cyan-400/40 bg-cyan-950/30 p-5',
+          classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5',
         },
       ],
     },
@@ -110,7 +110,7 @@ payloadMarkdown({
       items: [
         {
           name: 'cyan',
-          classes: 'rounded-2xl border border-cyan-400/40 bg-cyan-950/30 p-5',
+          classes: 'rounded-2xl border border-white/[0.06] bg-cyan-950/15 p-5',
         },
       ],
     },
@@ -157,7 +157,7 @@ payloadMarkdown({
           items: [
             {
               name: 'postSidebar',
-              classes: 'rounded-xl border border-border/70 bg-muted/30 px-4 py-3',
+              classes: 'rounded-xl border border-white/[0.06] bg-[#18191c] px-4 py-3',
             },
           ],
         },

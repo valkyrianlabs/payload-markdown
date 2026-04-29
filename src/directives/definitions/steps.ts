@@ -3,6 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { DIRECTIVE_SURFACE_NESTED_CODE_CLASS } from '../../styles/directiveSurface.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { CARD_BODY_CLASS_NAMES } from './card.js'
 
@@ -66,7 +67,10 @@ function makeStep(children: ElementContent[], index: number): Element {
     type: 'element',
     children,
     properties: {
-      className: ['relative pl-4 [&>:first-child]:mt-0 [&>:last-child]:mb-0'],
+      className: [
+        'relative pl-4 [&>:first-child]:mt-0 [&>:last-child]:mb-0',
+        DIRECTIVE_SURFACE_NESTED_CODE_CLASS,
+      ],
       dataStep: String(index + 1),
     },
     tagName: 'li',
@@ -108,6 +112,7 @@ function makeCardStep(
             stepTheme.modifierClassName,
             stepTheme.classes,
             CARD_BODY_CLASS_NAMES,
+            DIRECTIVE_SURFACE_NESTED_CODE_CLASS,
           ],
           dataStepCard: '',
           dataTheme: stepTheme.name,

@@ -10,6 +10,8 @@ Directives are Markdown containers powered by the plugin directive registry. The
 - `:::steps`
 - `:::cards`
 - `:::card`
+- `:::tabs`
+- `:::tab`
 - `:::section`
 - `:::2col`
 - `:::3col`
@@ -67,5 +69,6 @@ The table of contents directive uses those same heading IDs.
 - [Table of Contents](/plugins/payload-markdown/table-of-contents)
 - [Steps](/plugins/payload-markdown/steps)
 - [Cards](/plugins/payload-markdown/cards)
+- [Tabs](/plugins/payload-markdown/tabs)
 - [Layout Directives](/plugins/payload-markdown/layout)
 - [Directive Themes](/plugins/payload-markdown/directive-themes)

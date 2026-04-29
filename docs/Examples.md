@@ -62,6 +62,22 @@ Use `MarkdownRenderer` from the server export.
 :::callout {variant="warning" title="Remember collectionSlug"}
 Pass `collectionSlug` when collection-scoped config should apply.
 :::
+
+:::tabs {default="pnpm" theme="glass"}
+
+:::tab {label="pnpm" value="pnpm"}
+```bash
+pnpm add @valkyrianlabs/payload-markdown
+```
+:::
+
+:::tab {label="npm" value="npm"}
+```bash
+npm install @valkyrianlabs/payload-markdown
+```
+:::
+
+:::
 ````
 
 ## Landing Page

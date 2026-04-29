@@ -12,6 +12,8 @@ Typing or invoking completion around `:::` offers public directives from the dir
 - `:::steps`
 - `:::cards`
 - `:::card`
+- `:::tabs`
+- `:::tab`
 - layout directives
 
 Snippets insert useful directive skeletons and use CodeMirror placeholders/tabstops, so placeholder content such as `Content` can be overwritten immediately.
@@ -30,6 +32,7 @@ Theme-aware attributes include:
 - `cardTheme`
 - `cellTheme`
 - `stepTheme`
+- `tabTheme`
 
 Known attribute values are suggested for supported attributes such as:
 
@@ -40,6 +43,7 @@ Known attribute values are suggested for supported attributes such as:
 - steps `columns`
 - steps `numbered`
 - card and container theme names
+- tabs and tab panel theme names
 
 ## Theme Completion Limits
 
@@ -58,7 +62,8 @@ The editor provides lightweight, non-fatal directive diagnostics for issues such
 - invalid TOC depth
 - invalid steps variant, layout, columns, or numbered value
 - invalid cards columns
-- unknown theme, `cardTheme`, `cellTheme`, or `stepTheme`
+- invalid tabs defaults or duplicate tab values
+- unknown theme, `cardTheme`, `cellTheme`, `stepTheme`, or `tabTheme`
 - obvious unclosed directives
 
 Diagnostics do not block rendering. The renderer falls back to safe defaults where possible.

@@ -7,6 +7,7 @@ import {
   layoutDirectiveRegistry,
   parseDirectiveAttributes,
   parseDirectiveLine,
+  resolveDirectiveTheme,
 } from '../src/directives'
 import { lintMarkdownDirectives } from '../src/directives/diagnostics'
 import {
@@ -169,6 +170,79 @@ describe('payloadMarkdown', () => {
         Array.isArray(layoutField.blocks) &&
         layoutField.blocks.some((block) => block.slug === 'vlMdBlock'),
     ).toBe(false)
+  })
+
+  it('preserves custom markdown field options when installing a field', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      collections: {
+        posts: {
+          field: {
+            admin: {
+              description: 'Author-facing Markdown body',
+            },
+            defaultValue: '# Draft',
+            label: 'Body Markdown',
+            localized: true,
+            required: true,
+          },
+          fieldName: 'body',
+          installField: true,
+        },
+      },
+    })
+
+    const result = await plugin(config)
+    const posts = result.collections?.find((collection) => collection.slug === 'posts')
+    const bodyField = posts?.fields.find((field) => 'name' in field && field.name === 'body')
+
+    expect(bodyField).toMatchObject({
+      name: 'body',
+      type: 'text',
+      admin: expect.objectContaining({
+        description: 'Author-facing Markdown body',
+      }),
+      defaultValue: '# Draft',
+      label: 'Body Markdown',
+      localized: true,
+      required: true,
+    })
+  })
+
+  it('respects installField false for standalone collections', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      collections: {
+        posts: {
+          fieldName: 'body',
+          installField: false,
+        },
+      },
+    })
+
+    const result = await plugin(config)
+    const posts = result.collections?.find((collection) => collection.slug === 'posts')
+
+    expect(posts?.fields.some((field) => 'name' in field && field.name === 'body')).toBe(false)
+    expect(posts?.fields.some((field) => 'name' in field && field.name === 'content')).toBe(false)
   })
 
   it('does not duplicate injected markdown field or markdown block', async () => {
@@ -342,6 +416,67 @@ describe('payloadMarkdown', () => {
       lineNumbers: true,
       shikiTheme: 'github-dark',
     })
+  })
+
+  it('merges collection config and lets collection themes override top-level theme names', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      collections: {
+        posts: {
+          config: {
+            className: 'posts-markdown',
+            size: 'sm',
+            variant: 'docs',
+          },
+          themes: {
+            card: {
+              items: [
+                {
+                  name: 'brand',
+                  classes: 'posts-brand-card',
+                },
+              ],
+            },
+          },
+        },
+      },
+      config: {
+        className: 'global-markdown',
+        size: 'lg',
+        variant: 'blog',
+      },
+      themes: {
+        card: {
+          items: [
+            {
+              name: 'brand',
+              classes: 'global-brand-card',
+            },
+          ],
+        },
+      },
+    })
+
+    await plugin(config)
+
+    const defaults = resolveMarkdownFieldDefaults('posts')
+    const resolvedBrandTheme = resolveDirectiveTheme('card', 'brand', defaults?.themes)
+
+    expect(defaults).toMatchObject({
+      className: 'global-markdown posts-markdown',
+      size: 'sm',
+      variant: 'docs',
+    })
+    expect(resolvedBrandTheme.classes).toBe('posts-brand-card')
   })
 })
 
