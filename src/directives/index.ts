@@ -3,6 +3,7 @@ export {
   type DirectiveAttributeValue,
   type ParsedDirectiveLine,
   parseDirectiveAttributes,
+  parseDirectiveAttributesDetailed,
   parseDirectiveLine,
 } from './attributes.js'
 export { layoutDirectiveRegistry } from './registry.js'
@@ -13,4 +14,6 @@ export type {
   LayoutDirectiveName,
   LayoutName,
   LayoutToken,
+  MarkdownDirectiveName,
+  StaticDirectiveName,
 } from './types.js'

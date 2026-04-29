@@ -23,11 +23,19 @@ function isHeading(node: DirectiveChild): node is Heading {
   return node.type === 'heading'
 }
 
+function isLayoutBoundaryDirective(name: string): boolean {
+  return name === 'section' || name === '2col' || name === '3col' || name === 'cell'
+}
+
 function isStructuralDirectiveChild(
   node: DirectiveChild,
   context: LayoutDirectiveTransformContext,
 ): node is ContainerDirective {
-  return isContainerDirective(node) && context.isSupportedDirectiveName(node.name)
+  return (
+    isContainerDirective(node) &&
+    context.isSupportedDirectiveName(node.name) &&
+    isLayoutBoundaryDirective(node.name)
+  )
 }
 
 function resolveCellHeadingDepth(node: ContainerDirective): number {
@@ -86,8 +94,12 @@ function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutD
         node.children = groupChildrenIntoCells(node.children, config.columnClassName)
     },
     editor: {
+      detail: 'Layout directive',
       label: `${columns}-column layout`,
-      snippet: `:::${name}\n\n:::endcol\n`,
+      snippet:
+        columns === 2
+          ? `:::${name}\n\n### ${'${First column}'}\n\n${'${Content}'}\n\n### ${'${Second column}'}\n\n${'${Content}'}\n:::endcol\n${'${}'}`
+          : `:::${name}\n\n### ${'${First column}'}\n\n${'${Content}'}\n\n### ${'${Second column}'}\n\n${'${Content}'}\n\n### ${'${Third column}'}\n\n${'${Content}'}\n:::endcol\n${'${}'}`,
     },
     getMdastRenderProperties(node) {
       return {
@@ -96,6 +108,7 @@ function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutD
     },
     kind: 'grid',
     openMarker: `:::${name}`,
+    public: true,
     tagName: 'div',
     transformMdast(node, context) {
       const cellHeadingDepth = resolveCellHeadingDepth(node)

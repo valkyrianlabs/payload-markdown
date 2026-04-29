@@ -8,6 +8,8 @@ import {
   parseDirectiveAttributes,
   parseDirectiveLine,
 } from '../src/directives'
+import { lintMarkdownDirectives } from '../src/directives/diagnostics'
+import { getDirectiveCompletionOptions } from '../src/editor/directives/completions'
 import { payloadMarkdown } from '../src/index.ts'
 import {
   clearPayloadMarkdownSettings,
@@ -18,6 +20,12 @@ import {
 
 const countLayout = (html: string, layout: string): number =>
   (html.match(new RegExp(`data-vl-layout="${layout}"`, 'g')) ?? []).length
+
+const countDirective = (html: string, directive: string): number =>
+  (html.match(new RegExp(`data-directive="${directive}"`, 'g')) ?? []).length
+
+const hasWarning = (warnings: string[], value: string): boolean =>
+  warnings.some((warning) => warning.includes(value))
 
 describe('payloadMarkdown', () => {
   beforeEach(() => {
@@ -226,6 +234,8 @@ describe('layout directive registry', () => {
       '2col',
       '3col',
       'cell',
+      'callout',
+      'details',
     ])
 
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::section')).toMatchObject({
@@ -244,6 +254,20 @@ describe('layout directive registry', () => {
       name: 'cell',
       action: 'open',
     })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::callout {variant="warning"}')).toMatchObject({
+      name: 'callout',
+      action: 'open',
+      attributes: {
+        variant: 'warning',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::details {title="Read more"}')).toMatchObject({
+      name: 'details',
+      action: 'open',
+      attributes: {
+        title: 'Read more',
+      },
+    })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::endcol')).toMatchObject({
       action: 'closeGrid',
     })
@@ -259,7 +283,7 @@ describe('layout directive registry', () => {
   })
 
   it('parses directive attributes without enabling attributed layout markers yet', () => {
-    expect(parseDirectiveLine(':::section {#hero .wide .dark tone="info" open}')).toEqual({
+    expect(parseDirectiveLine(':::section {#hero .wide .dark tone="info" open}')).toMatchObject({
       name: 'section',
       attributes: {
         id: 'hero',
@@ -268,6 +292,7 @@ describe('layout directive registry', () => {
         tone: 'info',
       },
       rawAttributes: '{#hero .wide .dark tone="info" open}',
+      warnings: [],
     })
 
     expect(parseDirectiveAttributes('{class="from-key" .from-dot title=\'A title\'}')).toEqual({
@@ -277,9 +302,129 @@ describe('layout directive registry', () => {
 
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::section {#hero}')).toBeNull()
   })
+
+  it('exposes public directive snippets from registry metadata', () => {
+    const publicNames = layoutDirectiveRegistry
+      .getPublicDefinitions()
+      .map((definition) => definition.name)
+
+    expect(publicNames).toEqual(['section', '2col', '3col', 'cell', 'callout', 'details'])
+
+    const completions = getDirectiveCompletionOptions()
+
+    expect(completions.map((completion) => completion.label)).toEqual([
+      ':::section',
+      ':::2col',
+      ':::3col',
+      ':::cell',
+      ':::callout',
+      ':::details',
+    ])
+  })
 })
 
 describe('compileMarkdown layout directives', () => {
+  it('renders callout with default variant and nested markdown', async () => {
+    const result = await compileMarkdown(`
+:::callout
+Default note with **strong text** and [a link](https://example.com).
+:::
+
+After callout.
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(result.html).toContain('data-variant="note"')
+    expect(result.html).toContain('<strong>strong text</strong>')
+    expect(result.html).toContain('href="https://example.com"')
+    expect(result.html).toContain('<p>After callout.</p>')
+    expect(result.html.indexOf('<p>After callout.</p>')).toBeGreaterThan(
+      result.html.indexOf('data-directive="callout"'),
+    )
+  })
+
+  it('renders callout variants and titles with stable semantic markers', async () => {
+    const result = await compileMarkdown(`
+:::callout {variant="info" title="Info Title"}
+Info body.
+:::
+
+:::callout {variant="tip" title="Tip Title"}
+Tip body.
+:::
+
+:::callout {variant="warning" title="Warning Title"}
+Warning body.
+:::
+
+:::callout {variant="danger" title="Danger Title"}
+Danger body.
+:::
+
+:::callout {variant="success" title="Success Title"}
+Success body.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'callout')).toBe(5)
+
+    for (const variant of ['info', 'tip', 'warning', 'danger', 'success'])
+      expect(result.html).toContain(`data-variant="${variant}"`)
+
+    expect(result.html).toContain('Info Title')
+    expect(result.html).toContain('data-directive-title="callout"')
+  })
+
+  it('falls back invalid callout variants and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::callout {variant="weird" title="Fallback"}
+Body.
+:::
+`)
+
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(result.html).toContain('data-variant="note"')
+    expect(hasWarning(result.warnings, 'Unsupported callout variant "weird"')).toBe(true)
+  })
+
+  it('renders details with default and explicit titles plus nested markdown', async () => {
+    const result = await compileMarkdown(`
+:::details
+Default title body with **markdown**.
+:::
+
+:::details {title="Advanced install notes"}
+1. Install dependencies.
+2. Run tests.
+
+:::
+
+After details.
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'details')).toBe(2)
+    expect(result.html).toContain('>Details</summary>')
+    expect(result.html).toContain('>Advanced install notes</summary>')
+    expect(result.html).toContain('<strong>markdown</strong>')
+    expect(result.html).toContain('<ol>')
+    expect(result.html).toContain('<p>After details.</p>')
+  })
+
+  it('reports malformed static directive attributes without crashing rendering', async () => {
+    const result = await compileMarkdown(`
+:::details {title="Broken"
+Body still renders.
+:::
+`)
+
+    expect(countDirective(result.html, 'details')).toBe(1)
+    expect(result.html).toContain('Body still renders.')
+    expect(hasWarning(result.warnings, 'Malformed directive attributes')).toBe(true)
+  })
+
   it('renders section directives without swallowing unrelated markdown', async () => {
     const result = await compileMarkdown(`
 Before section.
@@ -400,7 +545,7 @@ Regular **markdown** still works.
 - two
 `)
 
-    expect(result.warnings).toEqual([])
+    expect(hasWarning(result.warnings, 'Unknown directive "unknown"')).toBe(true)
     expect(result.html).toContain('<p>:::unknown</p>')
     expect(result.html).toContain('<strong>markdown</strong>')
     expect(result.html).toContain('<li>one</li>')
@@ -422,6 +567,7 @@ Beta
     expect(result.html).toContain('data-vl-layout="2col"')
     expect(countLayout(result.html, 'cell')).toBe(2)
     expect(result.html).toContain('<p>Beta</p>')
+    expect(hasWarning(result.warnings, 'Auto-closing unclosed layout block: 2col')).toBe(true)
   })
 
   it('does not lift directive-looking text inside fenced code blocks', async () => {
@@ -463,5 +609,30 @@ Beta
     expect(result.html).toContain('custom-section-class')
     expect(result.html).toContain('custom-column-class')
     expect(result.html).toContain('gap-10')
+  })
+
+  it('provides basic registry-powered directive diagnostics', () => {
+    const diagnostics = lintMarkdownDirectives(`
+:::callout {variant="weird" unexpected="true"}
+Body.
+
+:::details {title="Broken"
+Body.
+:::
+
+:::not-real
+
+\`\`\`md
+:::not-a-directive-in-code
+\`\`\`
+`)
+
+    expect(diagnostics.map((diagnostic) => diagnostic.message)).toEqual([
+      'Unknown attribute "unexpected" on "callout".',
+      'Unsupported callout variant "weird". Falling back to "note".',
+      'Malformed directive attributes: braces must be balanced.',
+      'Unknown directive "not-real".',
+      'Unclosed directive "callout".',
+    ])
   })
 })

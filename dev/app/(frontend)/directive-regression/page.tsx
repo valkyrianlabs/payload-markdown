@@ -5,6 +5,40 @@ const layoutMarkdown = `
 
 Intro paragraph outside any directive.
 
+:::callout
+Default note callout with **strong Markdown** inside.
+:::
+
+:::callout {variant="info" title="Information"}
+Info callout body with a [link](https://example.com).
+:::
+
+:::callout {variant="tip" title="Tip"}
+- Keep directives small.
+- Keep tests semantic.
+
+:::
+
+:::callout {variant="warning" title="Read this first"}
+Do not skip the migration notes.
+:::
+
+:::callout {variant="danger" title="Danger"}
+Destructive operations need review.
+:::
+
+:::callout {variant="success" title="Success"}
+The static directive path rendered correctly.
+:::
+
+:::details {title="Advanced install notes"}
+These steps are only needed when running from source.
+
+1. Install dependencies.
+2. Start the dev server.
+
+:::
+
 :::section
 ## Section Scope
 
@@ -46,6 +80,14 @@ const edgeCaseMarkdown = `
 :::unknown
 
 Unknown directive should remain authored text.
+
+:::callout {variant="weird" title="Fallback"}
+Invalid variants should fall back safely.
+:::
+
+:::details {title="Broken"
+Malformed details attributes should warn without crashing.
+:::
 
 \`\`\`ts
 const marker = ':::section'

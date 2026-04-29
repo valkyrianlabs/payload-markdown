@@ -114,8 +114,20 @@ const sanitizeSchema: Schema = {
       'title',
     ],
     code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
+    details: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.details ?? []),
+      'dataDirective',
+      'dataTitle',
+      'dataVlLayout',
+      'open',
+    ],
     div: [
       ...getAttributeDefinitions(defaultSchema.attributes?.div ?? []),
+      'dataDirective',
+      'dataDirectiveBody',
+      'dataDirectiveTitle',
+      'dataTitle',
+      'dataVariant',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
     ],
@@ -138,8 +150,18 @@ const sanitizeSchema: Schema = {
       'dataVlCellHeadingDepth',
     ],
     span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
+    summary: [...getAttributeDefinitions(defaultSchema.attributes?.summary ?? []), 'className'],
   },
-  tagNames: [...(defaultSchema.tagNames ?? []), 'a', 'img', 'span', 'section', 'br'],
+  tagNames: [
+    ...(defaultSchema.tagNames ?? []),
+    'a',
+    'br',
+    'details',
+    'img',
+    'section',
+    'span',
+    'summary',
+  ],
 }
 
 export async function compileMarkdown(
@@ -166,7 +188,7 @@ export async function compileMarkdown(
 
     return {
       html: String(file),
-      warnings,
+      warnings: file.messages.map((message) => message.reason),
     }
   } catch (error) {
     warnings.push(error instanceof Error ? error.message : 'Failed to render markdown.')

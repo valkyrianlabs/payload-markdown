@@ -31,13 +31,16 @@ function isAppendableRootContent(node: RootContent): node is AppendableRootConte
 
 function makeDirective(
   name: LayoutName,
+  attributes: Record<string, boolean | string> = {},
   parentHeadingDepth?: number,
   cellHeadingDepth?: number,
 ): ContainerDirective {
   return {
     name,
     type: 'containerDirective',
-    attributes: {},
+    attributes: Object.fromEntries(
+      Object.entries(attributes).map(([key, value]) => [key, String(value)]),
+    ),
     children: [],
     data: {
       vlCellHeadingDepth: cellHeadingDepth,
@@ -118,17 +121,26 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
     for (const node of input) {
       if (isLayoutToken(node)) {
         if (node.action === 'open') {
-          if (node.name === 'section') {
-            const next = makeDirective('section')
+          const definition = layoutDirectiveRegistry.get(node.name)
+
+          if (definition?.kind === 'section') {
+            const next = makeDirective('section', node.attributes)
             append(next)
             stack.push({ name: 'section', node: next })
             continue
           }
 
-          if (node.name === 'cell') {
-            const next = makeDirective('cell')
+          if (definition?.kind === 'cell') {
+            const next = makeDirective('cell', node.attributes)
             append(next)
             stack.push({ name: 'cell', node: next })
+            continue
+          }
+
+          if (definition?.kind !== 'grid') {
+            const next = makeDirective(node.name, node.attributes)
+            append(next)
+            stack.push({ name: node.name, node: next })
             continue
           }
 
@@ -136,7 +148,7 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
           const parentDepth = currentHeadingDepth ?? 1
           const cellDepth = parentDepth + 1
-          const next = makeDirective(node.name, parentDepth, cellDepth)
+          const next = makeDirective(node.name, node.attributes, parentDepth, cellDepth)
 
           append(next)
           stack.push({

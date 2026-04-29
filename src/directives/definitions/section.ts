@@ -15,10 +15,12 @@ export const sectionDirective: LayoutDirectiveDefinition = {
     )
   },
   editor: {
+    detail: 'Layout directive',
     label: 'Layout section',
-    snippet: ':::section\n\n:::endsection\n',
+    snippet: ':::section\n${Content}\n:::endsection\n${}',
   },
   kind: 'section',
   openMarker: ':::section',
+  public: true,
   tagName: 'section',
 }

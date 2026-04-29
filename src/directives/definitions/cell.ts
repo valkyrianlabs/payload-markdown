@@ -22,11 +22,13 @@ export const cellDirective: LayoutDirectiveDefinition = {
     )
   },
   editor: {
+    detail: 'Layout directive',
     label: 'Layout cell',
-    snippet: ':::cell\n\n:::\n',
+    snippet: ':::cell\n${Content}\n:::\n${}',
   },
   kind: 'cell',
   openMarker: ':::cell',
+  public: true,
   tagName: 'div',
 }
 

@@ -9,6 +9,8 @@
 /.idea/*
 !/.idea/runConfigurations
 
+/.codex/scratch/
+
 # testing
 /coverage
 
