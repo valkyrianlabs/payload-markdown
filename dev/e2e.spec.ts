@@ -27,9 +27,11 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(fixture.locator('.vl-md-toc--theme-compact')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="toc"] a[href="#install"]')).toHaveCount(2)
   await expect(fixture.locator('[data-directive="cards"]')).toHaveCount(2)
+  const spaciousCards = fixture.locator('[data-directive="cards"][data-theme="spacious"]')
+
   await expect(fixture.locator('[data-directive="cards"][data-columns="3"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="cards"][data-columns="2"]')).toHaveCount(1)
-  await expect(fixture.locator('[data-directive="cards"][data-theme="spacious"]')).toHaveCount(1)
+  await expect(spaciousCards).toHaveCount(1)
   await expect(fixture.locator('[data-directive="cards"][data-theme="compact"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"]')).toHaveCount(6)
   await expect(fixture.locator('[data-directive="card"][data-theme="glass"]')).toHaveCount(1)
@@ -37,7 +39,7 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(fixture.locator('[data-directive="card"][data-theme="cyan"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-theme="violet"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-theme="emerald"]')).toHaveCount(1)
-  await expect(fixture.locator('.vl-md-card--theme-cyan')).toHaveCount(1)
+  await expect(spaciousCards.locator('.vl-md-card--theme-cyan')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"] a[href="/docs/markdown-field"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-href="/docs/markdown-field"]')).toContainText(
     'Portable Markdown content',
@@ -52,7 +54,11 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
     'Install the package',
   )
   await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(7)
-  await expect(fixture.locator('[data-directive="callout"][data-theme="soft"]')).toHaveCount(1)
+  await expect(
+    fixture
+      .locator('[data-directive="callout"][data-theme="soft"]')
+      .filter({ hasText: 'Default note callout with' }),
+  ).toHaveCount(1)
   await expect(fixture.locator('[data-directive="callout"][data-variant="warning"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="callout"][data-variant="danger"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="callout"][data-variant="success"]')).toHaveCount(1)
