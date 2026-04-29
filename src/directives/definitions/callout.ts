@@ -16,12 +16,12 @@ export const CALLOUT_VARIANTS = [
 export type CalloutVariant = (typeof CALLOUT_VARIANTS)[number]
 
 const calloutVariantClasses: Record<CalloutVariant, string> = {
-  danger: 'border-red-500/45 bg-red-500/10 text-red-50',
-  info: 'border-sky-500/45 bg-sky-500/10 text-sky-50',
-  note: 'border-slate-500/45 bg-slate-500/10 text-slate-50',
-  success: 'border-emerald-500/45 bg-emerald-500/10 text-emerald-50',
-  tip: 'border-cyan-500/45 bg-cyan-500/10 text-cyan-50',
-  warning: 'border-amber-500/45 bg-amber-500/10 text-amber-50',
+  danger: 'bg-red-500/10 text-red-50',
+  info: 'bg-sky-500/10 text-sky-50',
+  note: 'bg-slate-500/10 text-slate-50',
+  success: 'bg-emerald-500/10 text-emerald-50',
+  tip: 'bg-cyan-500/10 text-cyan-50',
+  warning: 'bg-amber-500/10 text-amber-50',
 }
 
 function isCalloutVariant(value: unknown): value is CalloutVariant {

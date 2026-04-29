@@ -21,6 +21,7 @@ import {
   resolveMarkdownBlockDefaults,
   resolveMarkdownFieldDefaults,
 } from '../src/runtime'
+import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../src/styles/directiveSurface'
 
 const countLayout = (html: string, layout: string): number =>
   (html.match(new RegExp(`data-vl-layout="${layout}"`, 'g')) ?? []).length
@@ -803,6 +804,64 @@ Step body.
     expect(result.html).toContain('vl-md-steps--theme-cyan')
     expect(result.html).toContain('data-step-card')
     expect(result.html).toContain('vl-md-card--theme-emerald')
+  })
+
+  it('uses the shared directive surface border class across visible directive panels', async () => {
+    const result = await compileMarkdown(`
+:::card {title="Card"}
+Card body.
+:::
+
+:::callout {variant="warning" title="Callout"}
+Callout body.
+:::
+
+:::details {title="Details"}
+Details body.
+:::
+
+:::toc
+:::
+
+## Heading
+
+:::section {theme="panel"}
+Section body.
+:::endsection
+
+:::tabs
+:::tab {label="One"}
+Tab body.
+:::
+:::
+
+:::2col {theme="panel" cellTheme="panel"}
+### First
+Alpha
+
+### Second
+Beta
+:::endcol
+
+:::cell {theme="panel"}
+Explicit cell panel.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('vl-md-card--theme-default')
+    expect(result.html).toContain('vl-md-callout--theme-soft')
+    expect(result.html).toContain('vl-md-details--theme-default')
+    expect(result.html).toContain('vl-md-toc--theme-default')
+    expect(result.html).toContain('vl-md-section--theme-panel')
+    expect(result.html).toContain('vl-md-tabs--theme-default')
+    expect(result.html).toContain('vl-md-tab--theme-default')
+    expect(result.html).toContain('vl-md-columns--theme-panel')
+    expect(result.html).toContain('vl-md-cell--theme-panel')
+    expect(result.html).toContain(DIRECTIVE_SURFACE_DIVIDER_CLASS)
+    expect(result.html).not.toContain('border-cyan-')
+    expect(result.html).not.toContain('border-amber-')
+    expect(result.html).not.toContain('border-red-')
   })
 
   it('renders tabs with triggers panels and first tab active by default', async () => {

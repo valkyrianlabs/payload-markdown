@@ -4,6 +4,16 @@ import type {
   MarkdownDirectiveThemes,
 } from '../types/core.js'
 
+import {
+  DIRECTIVE_SURFACE_BORDER_CLASS,
+  DIRECTIVE_SURFACE_DIVIDER_CLASS,
+  DIRECTIVE_SURFACE_GLASS_PANEL_CLASS,
+  DIRECTIVE_SURFACE_MUTED_PANEL_CLASS,
+  DIRECTIVE_SURFACE_PANEL_CLASS,
+  DIRECTIVE_SURFACE_SOFT_PANEL_CLASS,
+  DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS,
+} from '../styles/directiveSurface.js'
+
 export type DirectiveThemeGroupName = keyof MarkdownDirectiveThemes
 
 export type ResolvedDirectiveTheme = {
@@ -17,41 +27,40 @@ export const DEFAULT_CARD_THEMES: MarkdownDirectiveTheme[] = [
   {
     name: 'default',
     classes:
-      'group rounded-2xl border border-border/60 bg-black/5 p-5 shadow-sm transition-colors dark:bg-white/5',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_PANEL_CLASS} p-5 transition-colors`,
   },
   {
     name: 'muted',
-    classes: 'group rounded-2xl border border-border/50 bg-muted/35 p-5 shadow-sm',
+    classes: `group rounded-2xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-5`,
   },
   {
     name: 'glass',
-    classes:
-      'group rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg shadow-black/10 backdrop-blur-xl',
+    classes: `group rounded-2xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} p-5`,
   },
   {
     name: 'cyan',
     classes:
-      'group rounded-2xl border border-cyan-400/30 bg-cyan-950/25 p-5 shadow-lg shadow-cyan-500/10',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-cyan-950/15 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'violet',
     classes:
-      'group rounded-2xl border border-violet-400/30 bg-violet-950/25 p-5 shadow-lg shadow-violet-500/10',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-violet-950/15 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'emerald',
     classes:
-      'group rounded-2xl border border-emerald-400/30 bg-emerald-950/25 p-5 shadow-lg shadow-emerald-500/10',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-emerald-950/15 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'amber',
     classes:
-      'group rounded-2xl border border-amber-400/35 bg-amber-950/20 p-5 shadow-lg shadow-amber-500/10',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-amber-950/15 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'danger',
     classes:
-      'group rounded-2xl border border-red-400/35 bg-red-950/20 p-5 shadow-lg shadow-red-500/10',
+      `group rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-red-950/15 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
 ]
 
@@ -64,74 +73,77 @@ export const DEFAULT_CARDS_THEMES: MarkdownDirectiveTheme[] = [
 
 export const DEFAULT_STEPS_THEMES: MarkdownDirectiveTheme[] = [
   { name: 'default', classes: 'my-8' },
-  { name: 'muted', classes: 'my-8 rounded-2xl border border-border/50 bg-muted/25 p-5' },
+  {
+    name: 'muted',
+    classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_SOFT_PANEL_CLASS} p-5`,
+  },
   {
     name: 'glass',
-    classes: 'my-8 rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl',
+    classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} p-5`,
   },
   {
     name: 'cyan',
-    classes: 'my-8 rounded-2xl border border-cyan-400/25 bg-cyan-950/15 p-5',
+    classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_BORDER_CLASS} bg-cyan-950/10 p-5`,
   },
 ]
 
 export const DEFAULT_TABS_THEMES: MarkdownDirectiveTheme[] = [
-  { name: 'default', classes: 'my-8 rounded-2xl border border-border/60 bg-black/5 p-2 dark:bg-white/5' },
-  { name: 'muted', classes: 'my-8 rounded-2xl border border-border/50 bg-muted/30 p-2' },
+  { name: 'default', classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_PANEL_CLASS} p-2` },
+  { name: 'muted', classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-2` },
   {
     name: 'glass',
-    classes: 'my-8 rounded-2xl border border-white/10 bg-white/10 p-2 shadow-lg shadow-black/10 backdrop-blur-xl',
+    classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} p-2`,
   },
-  { name: 'underline', classes: 'my-8 border-b border-border/60 pb-4' },
-  { name: 'pills', classes: 'my-8 rounded-2xl border border-border/50 bg-black/5 p-2 dark:bg-white/5' },
+  { name: 'underline', classes: `my-8 border-b ${DIRECTIVE_SURFACE_DIVIDER_CLASS} pb-4` },
+  { name: 'pills', classes: `my-8 rounded-2xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-2` },
 ]
 
 export const DEFAULT_TAB_THEMES: MarkdownDirectiveTheme[] = [
-  { name: 'default', classes: 'mt-4 rounded-xl border border-border/50 bg-background/60 p-4' },
-  { name: 'muted', classes: 'mt-4 rounded-xl border border-border/40 bg-muted/25 p-4' },
+  { name: 'default', classes: `mt-4 rounded-xl ${DIRECTIVE_SURFACE_PANEL_CLASS} p-4` },
+  { name: 'muted', classes: `mt-4 rounded-xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-4` },
   {
     name: 'glass',
-    classes: 'mt-4 rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-xl',
+    classes: `mt-4 rounded-xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} p-4`,
   },
 ]
 
 export const DEFAULT_CALLOUT_THEMES: MarkdownDirectiveTheme[] = [
-  { name: 'soft', classes: 'my-6 rounded-xl border px-4 py-3' },
-  { name: 'solid', classes: 'my-6 rounded-xl border px-4 py-3 shadow-sm' },
+  { name: 'soft', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_SOFT_PANEL_CLASS} px-4 py-3` },
+  { name: 'solid', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_PANEL_CLASS} px-4 py-3` },
   {
     name: 'glass',
-    classes: 'my-6 rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-xl',
+    classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} px-4 py-3`,
   },
 ]
 
 export const DEFAULT_DETAILS_THEMES: MarkdownDirectiveTheme[] = [
-  { name: 'default', classes: 'my-6 rounded-xl border border-border bg-black/5 px-4 py-3 dark:bg-white/5' },
-  { name: 'muted', classes: 'my-6 rounded-xl border border-border/70 bg-muted/40 px-4 py-3' },
+  { name: 'default', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_PANEL_CLASS} px-4 py-3` },
+  { name: 'muted', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} px-4 py-3` },
   {
     name: 'glass',
-    classes: 'my-6 rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-xl',
+    classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_GLASS_PANEL_CLASS} px-4 py-3`,
   },
 ]
 
 export const DEFAULT_TOC_THEMES: MarkdownDirectiveTheme[] = [
-  { name: 'default', classes: 'my-6 rounded-xl border border-border bg-black/5 px-4 py-3 dark:bg-white/5' },
-  { name: 'compact', classes: 'my-4 rounded-lg border border-border/70 bg-black/5 px-3 py-2 text-sm dark:bg-white/5' },
-  { name: 'sidebar', classes: 'my-6 rounded-xl border border-border/70 bg-muted/30 px-4 py-3' },
+  { name: 'default', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_PANEL_CLASS} px-4 py-3` },
+  { name: 'compact', classes: `my-4 rounded-lg ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} px-3 py-2 text-sm` },
+  { name: 'sidebar', classes: `my-6 rounded-xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} px-4 py-3` },
 ]
 
 export const DEFAULT_SECTION_THEMES: MarkdownDirectiveTheme[] = [
   {
     name: 'default',
     classes:
-      'bg-black/10 dark:bg-white/10 w-full mx-0 my-12 p-6 backdrop-blur-2xl rounded-xl [&>h1]:my-2 [&>h1]:text-4xl [&>h1]:font-semibold [&>h2]:my-2 [&>h2]:text-4xl [&>h2]:font-semibold border-none',
+      `w-full mx-0 my-12 rounded-xl ${DIRECTIVE_SURFACE_SOFT_PANEL_CLASS} p-6 backdrop-blur-2xl [&>h1]:my-2 [&>h1]:text-4xl [&>h1]:font-semibold [&>h2]:my-2 [&>h2]:text-4xl [&>h2]:font-semibold`,
   },
-  { name: 'muted', classes: 'w-full mx-0 my-12 rounded-xl border border-border/60 bg-muted/30 p-6' },
-  { name: 'panel', classes: 'w-full mx-0 my-12 rounded-2xl border border-border bg-card/70 p-6 shadow-sm' },
+  { name: 'muted', classes: `w-full mx-0 my-12 rounded-xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-6` },
+  { name: 'panel', classes: `w-full mx-0 my-12 rounded-2xl ${DIRECTIVE_SURFACE_PANEL_CLASS} p-6` },
 ]
 
 export const DEFAULT_COLUMNS_THEMES: MarkdownDirectiveTheme[] = [
   { name: 'default', classes: 'grid grid-cols-1 gap-6 w-full' },
-  { name: 'panel', classes: 'grid grid-cols-1 gap-6 w-full rounded-2xl border border-border/60 bg-black/5 p-4 dark:bg-white/5' },
+  { name: 'panel', classes: `grid grid-cols-1 gap-6 w-full rounded-2xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-4` },
 ]
 
 export const DEFAULT_CELL_THEMES: MarkdownDirectiveTheme[] = [
@@ -143,7 +155,7 @@ export const DEFAULT_CELL_THEMES: MarkdownDirectiveTheme[] = [
   {
     name: 'panel',
     classes:
-      'flex flex-col w-full gap-2 rounded-xl border border-border/60 bg-black/5 p-4 dark:bg-white/5 [&>h2]:text-2xl [&>h2]:my-4 [&>h3]:text-xl [&>h3]:my-3 [&>h4]:text-lg [&>h4]:my-2',
+      `flex flex-col w-full gap-2 rounded-xl ${DIRECTIVE_SURFACE_MUTED_PANEL_CLASS} p-4 [&>h2]:text-2xl [&>h2]:my-4 [&>h3]:text-xl [&>h3]:my-3 [&>h4]:text-lg [&>h4]:my-2`,
   },
 ]
 

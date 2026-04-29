@@ -3,6 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
 import { resolveDirectiveTheme, slugThemeName } from '../themes.js'
 import { getTabValueFromAttributes } from './tab.js'
 
@@ -147,7 +148,7 @@ function makeTabList(tabs: TabModel[], activeValue: string): Element {
     type: 'element',
     children: tabs.map((tab) => makeTabTrigger(tab, tab.value === activeValue)),
     properties: {
-      className: ['vl-md-tabs-list flex flex-wrap gap-1 border-b border-border/50 pb-2'],
+      className: [`vl-md-tabs-list flex flex-wrap gap-1 border-b ${DIRECTIVE_SURFACE_DIVIDER_CLASS} pb-2`],
       dataTabsList: '',
       role: 'tablist',
     },

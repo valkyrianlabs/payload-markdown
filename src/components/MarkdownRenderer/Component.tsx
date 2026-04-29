@@ -14,6 +14,7 @@ import {
   resolveMarkdownBlockDefaults,
   resolveMarkdownFieldDefaults,
 } from '../../runtime/index.js'
+import { DIRECTIVE_SURFACE_RENDERER_PRE_CLASS } from '../../styles/directiveSurface.js'
 import { MarkdownRendererClient } from './Component.client.js'
 import './index.css'
 
@@ -76,7 +77,8 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   'prose-code:before:content-none prose-code:after:content-none',
 
   // fenced code
-  'prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-neutral-950',
+  'prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-xl',
+  DIRECTIVE_SURFACE_RENDERER_PRE_CLASS,
   'prose-pre:px-0 prose-pre:py-0',
   '[&_pre]:my-6 [&_pre]:p-0',
   '[&_pre_code]:block [&_pre_code]:m-0 [&_pre_code]:py-2.5 [&_pre_code]:bg-[#18191c]',
