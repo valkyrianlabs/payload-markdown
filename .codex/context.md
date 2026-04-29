@@ -8,7 +8,7 @@ This repository contains the `@valkyrianlabs/payload-markdown` plugin.
 - The editor uses CodeMirror through `src/editor/MarkdownCodeMirror`.
 - Markdown rendering is centralized in `src/core/renderMarkdown.ts`.
 - Custom Markdown directives are registry-backed under `src/directives`.
-- Current public directives include layout directives (`:::section`, `:::2col`, `:::3col`, `:::cell`), static directives (`:::callout`, `:::details`), and docs directives (`:::toc`, `:::steps`).
+- Current public directives include layout directives (`:::section`, `:::2col`, `:::3col`, `:::cell`), static directives (`:::callout`, `:::details`), docs directives (`:::toc`, `:::steps`), and card directives (`:::cards`, `:::card`).
 - Directive definitions should stay modular under `src/directives`; avoid adding future directives to one giant parser or renderer file.
 - Server rendering and editor behavior should stay aligned where practical. Directive snippets, autocomplete, and diagnostics should reuse registry metadata.
 

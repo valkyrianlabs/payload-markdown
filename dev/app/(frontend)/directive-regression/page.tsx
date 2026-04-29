@@ -53,6 +53,42 @@ These steps are only needed when running from source.
 
 :::
 
+:::cards {columns="3"}
+
+:::card {eyebrow="Field" title="Markdown Field" href="/docs/markdown-field"}
+Portable Markdown content with **live preview**.
+:::
+
+:::card {eyebrow="Layout" title="Layout Directives"}
+Use structured Markdown without turning content into JSON soup.
+:::
+
+:::card {eyebrow="Docs" title="Docs Mode"}
+TOC, anchors, callouts, details, steps, and cards.
+:::
+
+:::
+
+:::cards {columns="2"}
+
+:::card {title="Nested callout"}
+:::callout {variant="tip" title="Inside a card"}
+Nested directives render safely.
+:::
+:::
+
+:::card {title="Nested details" href="/docs/details"}
+:::details {title="Inside details"}
+Details inside card content.
+:::
+:::
+
+:::
+
+:::card {title="Standalone Card" href="/docs/standalone-card"}
+Standalone cards render safely outside a cards grid.
+:::
+
 :::steps
 
 ### Install the package
@@ -68,6 +104,20 @@ Add it to \`payload.config.ts\`.
 ### Render the field
 
 Use the server renderer.
+
+:::
+
+:::steps {variant="cards"}
+
+### Plan the content
+
+Map the docs flow before writing.
+
+### Publish the page
+
+\`\`\`bash
+pnpm build
+\`\`\`
 
 :::
 
@@ -122,6 +172,14 @@ Malformed details attributes should warn without crashing.
 :::
 
 :::toc {depth="bad"}
+:::
+
+:::cards {columns="invalid"}
+
+:::card {title="Fallback columns" unknown="true"}
+Invalid columns and unknown card attributes should not crash.
+:::
+
 :::
 
 :::steps {mode="bad"}

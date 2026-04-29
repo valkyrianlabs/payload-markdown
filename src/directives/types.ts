@@ -5,7 +5,7 @@ import type { Data } from 'unist'
 import type { MarkdownConfig } from '../types/core.js'
 
 export type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
-export type StaticDirectiveName = 'callout' | 'details' | 'steps' | 'toc'
+export type StaticDirectiveName = 'callout' | 'card' | 'cards' | 'details' | 'steps' | 'toc'
 export type MarkdownDirectiveName = LayoutDirectiveName | StaticDirectiveName
 export type GridDirectiveName = '2col' | '3col'
 export type LayoutName = MarkdownDirectiveName
@@ -36,9 +36,18 @@ export type LayoutToken =
 
 export type DirectiveChild = ContainerDirective['children'][number]
 
-export type LayoutDirectiveKind = 'callout' | 'cell' | 'details' | 'grid' | 'section' | 'steps' | 'toc'
+export type LayoutDirectiveKind =
+  | 'callout'
+  | 'card'
+  | 'cards'
+  | 'cell'
+  | 'details'
+  | 'grid'
+  | 'section'
+  | 'steps'
+  | 'toc'
 
-export type LayoutDirectiveRenderTagName = 'details' | 'div' | 'nav' | 'section'
+export type LayoutDirectiveRenderTagName = 'article' | 'details' | 'div' | 'nav' | 'section'
 
 export type LayoutDirectiveTransformContext = {
   isSupportedDirectiveName: (name: string) => name is MarkdownDirectiveName

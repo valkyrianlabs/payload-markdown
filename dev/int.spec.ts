@@ -238,6 +238,8 @@ describe('layout directive registry', () => {
       'details',
       'toc',
       'steps',
+      'cards',
+      'card',
     ])
 
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::section')).toMatchObject({
@@ -281,6 +283,20 @@ describe('layout directive registry', () => {
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::steps')).toMatchObject({
       name: 'steps',
       action: 'open',
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::cards {columns="2"}')).toMatchObject({
+      name: 'cards',
+      action: 'open',
+      attributes: {
+        columns: '2',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::card {title="Markdown Field"}')).toMatchObject({
+      name: 'card',
+      action: 'open',
+      attributes: {
+        title: 'Markdown Field',
+      },
     })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::endcol')).toMatchObject({
       action: 'closeGrid',
@@ -331,6 +347,8 @@ describe('layout directive registry', () => {
       'details',
       'toc',
       'steps',
+      'cards',
+      'card',
     ])
 
     const completions = getDirectiveCompletionOptions()
@@ -344,6 +362,8 @@ describe('layout directive registry', () => {
       ':::details',
       ':::toc',
       ':::steps',
+      ':::cards',
+      ':::card',
     ])
 
     const snippets = layoutDirectiveRegistry
@@ -352,11 +372,110 @@ describe('layout directive registry', () => {
 
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
     expect(snippets.every((snippet) => snippet.includes('${}'))).toBe(true)
   })
 })
 
 describe('compileMarkdown layout directives', () => {
+  it('renders cards with default columns and multiple card children', async () => {
+    const result = await compileMarkdown(`
+:::cards
+
+:::card {title="Markdown Field"}
+Portable Markdown content with **live preview**.
+:::
+
+:::card {title="Layout Directives"}
+Structured Markdown content.
+:::
+
+:::
+
+After cards.
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'cards')).toBe(1)
+    expect(countDirective(result.html, 'card')).toBe(2)
+    expect(result.html).toContain('data-columns="3"')
+    expect(result.html).toContain('data-directive-title="card"')
+    expect(result.html).toContain('<strong>live preview</strong>')
+    expect(result.html).toContain('<p>After cards.</p>')
+    expect(result.html.indexOf('<p>After cards.</p>')).toBeGreaterThan(
+      result.html.indexOf('data-directive="cards"'),
+    )
+  })
+
+  it('renders cards with explicit columns and linked card titles', async () => {
+    const result = await compileMarkdown(`
+:::cards {columns="2"}
+
+:::card {eyebrow="Docs" title="Docs Mode" href="/docs"}
+Read the docs.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-columns="2"')
+    expect(result.html).toContain('data-directive-eyebrow="card"')
+    expect(result.html).toContain('<a href="/docs">Docs Mode</a>')
+    expect(result.html).toContain('Read the docs.')
+  })
+
+  it('falls back invalid card columns and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::cards {columns="wide"}
+:::card {title="Fallback"}
+Body.
+:::
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Invalid cards columns "wide"')).toBe(true)
+    expect(result.html).toContain('data-columns="3"')
+    expect(countDirective(result.html, 'card')).toBe(1)
+  })
+
+  it('renders standalone card safely', async () => {
+    const result = await compileMarkdown(`
+:::card {title="Standalone" href="/standalone"}
+Standalone body with [a link](https://example.com).
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'card')).toBe(1)
+    expect(result.html).toContain('<a href="/standalone">Standalone</a>')
+    expect(result.html).toContain('href="https://example.com"')
+  })
+
+  it('preserves nested directives inside cards', async () => {
+    const result = await compileMarkdown(`
+:::cards {columns="1"}
+
+:::card {title="Nested"}
+:::callout {variant="tip" title="Tip"}
+Nested callout.
+:::
+
+:::details {title="More"}
+Nested details.
+:::
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'cards')).toBe(1)
+    expect(countDirective(result.html, 'card')).toBe(1)
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(countDirective(result.html, 'details')).toBe(1)
+  })
+
   it('renders stable heading anchors with deterministic duplicate slugs', async () => {
     const result = await compileMarkdown(`
 ## Install
@@ -458,6 +577,71 @@ Add it to \`payload.config.ts\` with **markdown** enabled.
     expect(result.html).toContain('id="install-the-package"')
     expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
     expect(result.html).toContain('<strong>markdown</strong>')
+  })
+
+  it('renders explicit default steps variant like the current ordered flow', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="default"}
+
+### Install
+
+Content.
+
+### Configure
+
+More content.
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'steps')).toBe(1)
+    expect(result.html).not.toContain('data-variant="cards"')
+    expect(result.html).toContain('list-decimal')
+    expect(result.html).toContain('data-step="1"')
+    expect(result.html).toContain('data-step="2"')
+  })
+
+  it('renders card-variant steps with card-like step wrappers and code fences', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="cards"}
+
+### Install
+
+\`\`\`bash
+pnpm install
+\`\`\`
+
+### Configure
+
+Add it to \`payload.config.ts\`.
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'steps')).toBe(1)
+    expect(result.html).toContain('data-variant="cards"')
+    expect(result.html).toContain('data-step-card')
+    expect(result.html).toContain('data-step="1"')
+    expect(result.html).toContain('pnpm install')
+    expect(result.html).toContain('<code>payload.config.ts</code>')
+  })
+
+  it('falls back unsupported steps variants and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::steps {variant="timeline"}
+
+### Install
+
+Content.
+
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Unsupported steps variant "timeline"')).toBe(true)
+    expect(result.html).not.toContain('data-variant="cards"')
+    expect(result.html).toContain('data-step="1"')
   })
 
   it('renders callout with default variant and nested markdown', async () => {
@@ -759,9 +943,15 @@ Body.
 :::toc {depth="bad"}
 :::
 
-:::steps {mode="bad"}
+:::steps {mode="bad" variant="timeline"}
 ### Step
 Body.
+:::
+
+:::cards {columns="bad" gap="wide"}
+:::card {title="Bad" bad="true"}
+Body.
+:::
 :::
 
 :::not-real
@@ -777,6 +967,10 @@ Body.
       'Malformed directive attributes: braces must be balanced.',
       'Invalid toc depth "bad". Falling back to "3".',
       'Unknown attribute "mode" on "steps".',
+      'Unsupported steps variant "timeline". Falling back to "default".',
+      'Unknown attribute "gap" on "cards".',
+      'Invalid cards columns "bad". Falling back to "3".',
+      'Unknown attribute "bad" on "card".',
       'Unknown directive "not-real".',
       'Unclosed directive "callout".',
     ])

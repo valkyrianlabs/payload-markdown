@@ -24,10 +24,22 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(fixture.locator('[data-directive="toc"]')).toHaveCount(2)
   await expect(fixture.locator('[data-directive="toc"]').first()).toContainText('On this page')
   await expect(fixture.locator('[data-directive="toc"] a[href="#install"]')).toHaveCount(2)
-  await expect(fixture.locator('[data-directive="steps"]')).toHaveCount(1)
-  await expect(fixture.locator('[data-step]')).toHaveCount(3)
-  await expect(fixture.locator('[data-directive="steps"]')).toContainText('Install the package')
-  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(6)
+  await expect(fixture.locator('[data-directive="cards"]')).toHaveCount(2)
+  await expect(fixture.locator('[data-directive="cards"][data-columns="3"]')).toHaveCount(1)
+  await expect(fixture.locator('[data-directive="cards"][data-columns="2"]')).toHaveCount(1)
+  await expect(fixture.locator('[data-directive="card"]')).toHaveCount(6)
+  await expect(fixture.locator('[data-directive="card"] a[href="/docs/markdown-field"]')).toHaveCount(1)
+  await expect(fixture.locator('[data-directive="card"][data-href="/docs/markdown-field"]')).toContainText(
+    'Portable Markdown content',
+  )
+  await expect(fixture.locator('[data-directive="steps"]')).toHaveCount(2)
+  await expect(fixture.locator('[data-directive="steps"][data-variant="cards"]')).toHaveCount(1)
+  await expect(fixture.locator('[data-step]')).toHaveCount(5)
+  await expect(fixture.locator('[data-step-card]')).toHaveCount(2)
+  await expect(fixture.locator('[data-directive="steps"]:not([data-variant])')).toContainText(
+    'Install the package',
+  )
+  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(7)
   await expect(fixture.locator('[data-directive="callout"][data-variant="warning"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="callout"][data-variant="danger"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="callout"][data-variant="success"]')).toHaveCount(1)
@@ -35,11 +47,11 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
 
   const details = fixture.locator('[data-directive="details"]')
 
-  await expect(details).toHaveCount(1)
-  await expect(details.locator('summary')).toContainText('Advanced install notes')
-  await details.locator('summary').click()
-  await expect(details).toHaveAttribute('open', '')
-  await expect(details.getByText('These steps are only needed when running from source.')).toBeVisible()
+  await expect(details).toHaveCount(2)
+  await expect(details.first().locator('summary')).toContainText('Advanced install notes')
+  await details.first().locator('summary').click()
+  await expect(details.first()).toHaveAttribute('open', '')
+  await expect(details.first().getByText('These steps are only needed when running from source.')).toBeVisible()
 
   await expect(fixture.locator('[data-vl-layout="section"]')).toHaveCount(1)
   await expect(fixture.locator('[data-vl-layout="2col"]')).toHaveCount(1)
@@ -57,6 +69,8 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(edgeCases.locator('[data-directive="callout"][data-variant="note"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="details"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="toc"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-directive="cards"][data-columns="3"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-directive="card"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="steps"]')).toHaveCount(1)
   await expect(edgeCases.locator('pre code')).toContainText("const marker = ':::section'")
   await expect(edgeCases.locator('[data-vl-layout="2col"]')).toHaveCount(1)

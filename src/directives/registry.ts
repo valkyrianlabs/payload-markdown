@@ -8,6 +8,8 @@ import type {
 
 import { parseDirectiveLine } from './attributes.js'
 import { calloutDirective } from './definitions/callout.js'
+import { cardDirective } from './definitions/card.js'
+import { cardsDirective } from './definitions/cards.js'
 import { cellDirective } from './definitions/cell.js'
 import { columnDirectives } from './definitions/columns.js'
 import { detailsDirective } from './definitions/details.js'
@@ -23,6 +25,8 @@ const directiveDefinitions = [
   detailsDirective,
   tocDirective,
   stepsDirective,
+  cardsDirective,
+  cardDirective,
 ] as const satisfies readonly LayoutDirectiveDefinition[]
 
 const closeMarkers = new Map<string, LayoutToken>([
