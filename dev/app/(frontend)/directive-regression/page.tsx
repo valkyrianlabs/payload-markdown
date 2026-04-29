@@ -5,6 +5,20 @@ const layoutMarkdown = `
 
 Intro paragraph outside any directive.
 
+:::toc
+:::
+
+:::toc {title="Guide contents" depth="2"}
+:::
+
+## Install
+
+Duplicate heading one.
+
+## Install
+
+Duplicate heading two.
+
 :::callout
 Default note callout with **strong Markdown** inside.
 :::
@@ -36,6 +50,24 @@ These steps are only needed when running from source.
 
 1. Install dependencies.
 2. Start the dev server.
+
+:::
+
+:::steps
+
+### Install the package
+
+\`\`\`bash
+pnpm add @valkyrianlabs/payload-markdown
+\`\`\`
+
+### Register the plugin
+
+Add it to \`payload.config.ts\`.
+
+### Render the field
+
+Use the server renderer.
 
 :::
 
@@ -87,6 +119,14 @@ Invalid variants should fall back safely.
 
 :::details {title="Broken"
 Malformed details attributes should warn without crashing.
+:::
+
+:::toc {depth="bad"}
+:::
+
+:::steps {mode="bad"}
+### Safe malformed steps
+Unknown attributes should not crash.
 :::
 
 \`\`\`ts

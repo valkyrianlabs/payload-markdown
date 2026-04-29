@@ -6,6 +6,7 @@ export {
   parseDirectiveAttributesDetailed,
   parseDirectiveLine,
 } from './attributes.js'
+export { applyHeadingAnchors, headingToText, slugifyHeading } from './headingAnchors.js'
 export { layoutDirectiveRegistry } from './registry.js'
 export type {
   GridDirectiveName,

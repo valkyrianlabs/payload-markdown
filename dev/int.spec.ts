@@ -236,6 +236,8 @@ describe('layout directive registry', () => {
       'cell',
       'callout',
       'details',
+      'toc',
+      'steps',
     ])
 
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::section')).toMatchObject({
@@ -267,6 +269,18 @@ describe('layout directive registry', () => {
       attributes: {
         title: 'Read more',
       },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::toc {title="Contents" depth="2"}')).toMatchObject({
+      name: 'toc',
+      action: 'open',
+      attributes: {
+        depth: '2',
+        title: 'Contents',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::steps')).toMatchObject({
+      name: 'steps',
+      action: 'open',
     })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::endcol')).toMatchObject({
       action: 'closeGrid',
@@ -308,7 +322,16 @@ describe('layout directive registry', () => {
       .getPublicDefinitions()
       .map((definition) => definition.name)
 
-    expect(publicNames).toEqual(['section', '2col', '3col', 'cell', 'callout', 'details'])
+    expect(publicNames).toEqual([
+      'section',
+      '2col',
+      '3col',
+      'cell',
+      'callout',
+      'details',
+      'toc',
+      'steps',
+    ])
 
     const completions = getDirectiveCompletionOptions()
 
@@ -319,11 +342,124 @@ describe('layout directive registry', () => {
       ':::cell',
       ':::callout',
       ':::details',
+      ':::toc',
+      ':::steps',
     ])
+
+    const snippets = layoutDirectiveRegistry
+      .getPublicDefinitions()
+      .map((definition) => definition.editor.snippet)
+
+    expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
+    expect(snippets.every((snippet) => snippet.includes('${}'))).toBe(true)
   })
 })
 
 describe('compileMarkdown layout directives', () => {
+  it('renders stable heading anchors with deterministic duplicate slugs', async () => {
+    const result = await compileMarkdown(`
+## Install
+
+## Install
+
+### Configure Payload!
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('id="install"')
+    expect(result.html).toContain('data-heading-anchor="install"')
+    expect(result.html).toContain('id="install-1"')
+    expect(result.html).toContain('data-heading-anchor="install-1"')
+    expect(result.html).toContain('id="configure-payload"')
+    expect(result.html).toContain('data-heading-anchor="configure-payload"')
+  })
+
+  it('renders toc links from generated heading anchors', async () => {
+    const result = await compileMarkdown(`
+:::toc
+:::
+
+# Guide
+
+## Install
+
+### Configure
+
+#### Hidden deeper heading
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'toc')).toBe(1)
+    expect(result.html).toContain('aria-label="On this page"')
+    expect(result.html).toContain('href="#guide"')
+    expect(result.html).toContain('href="#install"')
+    expect(result.html).toContain('href="#configure"')
+    expect(result.html).not.toContain('href="#hidden-deeper-heading"')
+  })
+
+  it('renders toc with custom title and depth', async () => {
+    const result = await compileMarkdown(`
+:::toc {title="Guide contents" depth="2"}
+:::
+
+# Overview
+
+## Install
+
+### Excluded
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('aria-label="Guide contents"')
+    expect(result.html).toContain('data-title="Guide contents"')
+    expect(result.html).toContain('href="#overview"')
+    expect(result.html).toContain('href="#install"')
+    expect(result.html).not.toContain('href="#excluded"')
+  })
+
+  it('falls back malformed toc depth and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::toc {depth="bad"}
+:::
+
+### Included by fallback depth
+
+#### Excluded by fallback depth
+`)
+
+    expect(hasWarning(result.warnings, 'Invalid toc depth "bad"')).toBe(true)
+    expect(result.html).toContain('href="#included-by-fallback-depth"')
+    expect(result.html).not.toContain('href="#excluded-by-fallback-depth"')
+  })
+
+  it('renders steps as an ordered flow with nested markdown', async () => {
+    const result = await compileMarkdown(`
+:::steps
+
+### Install the package
+
+\`\`\`bash
+pnpm add @valkyrianlabs/payload-markdown
+\`\`\`
+
+### Register the plugin
+
+Add it to \`payload.config.ts\` with **markdown** enabled.
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'steps')).toBe(1)
+    expect(result.html).toContain('<ol')
+    expect(result.html).toContain('data-step="1"')
+    expect(result.html).toContain('data-step="2"')
+    expect(result.html).toContain('id="install-the-package"')
+    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(result.html).toContain('<strong>markdown</strong>')
+  })
+
   it('renders callout with default variant and nested markdown', async () => {
     const result = await compileMarkdown(`
 :::callout
@@ -441,7 +577,7 @@ After section.
     expect(result.warnings).toEqual([])
     expect(countLayout(result.html, 'section')).toBe(1)
     expect(result.html).toContain('<p>Before section.</p>')
-    expect(result.html).toContain('<h2>Inside section</h2>')
+    expect(result.html).toContain('Inside section</h2>')
     expect(result.html).toContain('<p>After section.</p>')
     expect(result.html.indexOf('<p>After section.</p>')).toBeGreaterThan(
       result.html.indexOf('</section>'),
@@ -504,8 +640,8 @@ Beta
     expect(countLayout(result.html, '2col')).toBe(1)
     expect(countLayout(result.html, 'cell')).toBe(2)
     expect(result.html).not.toContain('<p>:::cell</p>')
-    expect(result.html).toContain('<h3>First explicit cell</h3>')
-    expect(result.html).toContain('<h3>Second explicit cell</h3>')
+    expect(result.html).toContain('First explicit cell</h3>')
+    expect(result.html).toContain('Second explicit cell</h3>')
   })
 
   it('supports nested section and grid rendering', async () => {
@@ -620,6 +756,14 @@ Body.
 Body.
 :::
 
+:::toc {depth="bad"}
+:::
+
+:::steps {mode="bad"}
+### Step
+Body.
+:::
+
 :::not-real
 
 \`\`\`md
@@ -631,6 +775,8 @@ Body.
       'Unknown attribute "unexpected" on "callout".',
       'Unsupported callout variant "weird". Falling back to "note".',
       'Malformed directive attributes: braces must be balanced.',
+      'Invalid toc depth "bad". Falling back to "3".',
+      'Unknown attribute "mode" on "steps".',
       'Unknown directive "not-real".',
       'Unclosed directive "callout".',
     ])

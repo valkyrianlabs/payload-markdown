@@ -12,6 +12,8 @@ import { cellDirective } from './definitions/cell.js'
 import { columnDirectives } from './definitions/columns.js'
 import { detailsDirective } from './definitions/details.js'
 import { sectionDirective } from './definitions/section.js'
+import { stepsDirective } from './definitions/steps.js'
+import { tocDirective } from './definitions/toc.js'
 
 const directiveDefinitions = [
   sectionDirective,
@@ -19,6 +21,8 @@ const directiveDefinitions = [
   cellDirective,
   calloutDirective,
   detailsDirective,
+  tocDirective,
+  stepsDirective,
 ] as const satisfies readonly LayoutDirectiveDefinition[]
 
 const closeMarkers = new Map<string, LayoutToken>([

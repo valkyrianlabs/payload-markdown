@@ -18,6 +18,7 @@ import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
+import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
 
@@ -131,6 +132,12 @@ const sanitizeSchema: Schema = {
       'dataVlLayout',
       'dataVlCellHeadingDepth',
     ],
+    h1: [...getAttributeDefinitions(defaultSchema.attributes?.h1 ?? []), 'dataHeadingAnchor', 'id'],
+    h2: [...getAttributeDefinitions(defaultSchema.attributes?.h2 ?? []), 'dataHeadingAnchor', 'id'],
+    h3: [...getAttributeDefinitions(defaultSchema.attributes?.h3 ?? []), 'dataHeadingAnchor', 'id'],
+    h4: [...getAttributeDefinitions(defaultSchema.attributes?.h4 ?? []), 'dataHeadingAnchor', 'id'],
+    h5: [...getAttributeDefinitions(defaultSchema.attributes?.h5 ?? []), 'dataHeadingAnchor', 'id'],
+    h6: [...getAttributeDefinitions(defaultSchema.attributes?.h6 ?? []), 'dataHeadingAnchor', 'id'],
     img: [
       ...getAttributeDefinitions(defaultSchema.attributes?.img ?? []),
       'src',
@@ -139,6 +146,13 @@ const sanitizeSchema: Schema = {
       'width',
       'height',
     ],
+    li: [...getAttributeDefinitions(defaultSchema.attributes?.li ?? []), 'dataStep'],
+    nav: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.nav ?? []),
+      'ariaLabel',
+      'dataDirective',
+      'dataTitle',
+    ],
     pre: [
       ...getAttributeDefinitions(defaultSchema.attributes?.pre ?? []),
       'className',
@@ -146,18 +160,21 @@ const sanitizeSchema: Schema = {
     ],
     section: [
       ...getAttributeDefinitions(defaultSchema.attributes?.section ?? []),
+      'dataDirective',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
     ],
     span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
     summary: [...getAttributeDefinitions(defaultSchema.attributes?.summary ?? []), 'className'],
   },
+  clobberPrefix: '',
   tagNames: [
     ...(defaultSchema.tagNames ?? []),
     'a',
     'br',
     'details',
     'img',
+    'nav',
     'section',
     'span',
     'summary',
@@ -177,6 +194,7 @@ export async function compileMarkdown(
       .use(remarkLiftLayoutDirectives)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
+      .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
       .use(rehypeStripAuthoredInlineStyles)
