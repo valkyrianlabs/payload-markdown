@@ -17,41 +17,41 @@ export const DEFAULT_CARD_THEMES: MarkdownDirectiveTheme[] = [
   {
     name: 'default',
     classes:
-      'group rounded-2xl border border-border bg-black/5 p-5 shadow-sm transition-colors dark:bg-white/5',
+      'group rounded-2xl border border-border/60 bg-black/5 p-5 shadow-sm transition-colors dark:bg-white/5',
   },
   {
     name: 'muted',
-    classes: 'group rounded-2xl border border-border/70 bg-muted/40 p-5 shadow-sm',
+    classes: 'group rounded-2xl border border-border/50 bg-muted/35 p-5 shadow-sm',
   },
   {
     name: 'glass',
     classes:
-      'group rounded-2xl border border-white/15 bg-white/10 p-5 shadow-lg shadow-black/10 backdrop-blur-xl',
+      'group rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg shadow-black/10 backdrop-blur-xl',
   },
   {
     name: 'cyan',
     classes:
-      'group rounded-2xl border border-cyan-400/40 bg-cyan-950/30 p-5 shadow-lg shadow-cyan-500/10',
+      'group rounded-2xl border border-cyan-400/30 bg-cyan-950/25 p-5 shadow-lg shadow-cyan-500/10',
   },
   {
     name: 'violet',
     classes:
-      'group rounded-2xl border border-violet-400/40 bg-violet-950/30 p-5 shadow-lg shadow-violet-500/10',
+      'group rounded-2xl border border-violet-400/30 bg-violet-950/25 p-5 shadow-lg shadow-violet-500/10',
   },
   {
     name: 'emerald',
     classes:
-      'group rounded-2xl border border-emerald-400/40 bg-emerald-950/30 p-5 shadow-lg shadow-emerald-500/10',
+      'group rounded-2xl border border-emerald-400/30 bg-emerald-950/25 p-5 shadow-lg shadow-emerald-500/10',
   },
   {
     name: 'amber',
     classes:
-      'group rounded-2xl border border-amber-400/45 bg-amber-950/25 p-5 shadow-lg shadow-amber-500/10',
+      'group rounded-2xl border border-amber-400/35 bg-amber-950/20 p-5 shadow-lg shadow-amber-500/10',
   },
   {
     name: 'danger',
     classes:
-      'group rounded-2xl border border-red-400/45 bg-red-950/25 p-5 shadow-lg shadow-red-500/10',
+      'group rounded-2xl border border-red-400/35 bg-red-950/20 p-5 shadow-lg shadow-red-500/10',
   },
 ]
 
@@ -64,14 +64,34 @@ export const DEFAULT_CARDS_THEMES: MarkdownDirectiveTheme[] = [
 
 export const DEFAULT_STEPS_THEMES: MarkdownDirectiveTheme[] = [
   { name: 'default', classes: 'my-8' },
-  { name: 'muted', classes: 'my-8 rounded-2xl border border-border/60 bg-muted/30 p-5' },
+  { name: 'muted', classes: 'my-8 rounded-2xl border border-border/50 bg-muted/25 p-5' },
   {
     name: 'glass',
-    classes: 'my-8 rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-xl',
+    classes: 'my-8 rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl',
   },
   {
     name: 'cyan',
-    classes: 'my-8 rounded-2xl border border-cyan-400/30 bg-cyan-950/20 p-5',
+    classes: 'my-8 rounded-2xl border border-cyan-400/25 bg-cyan-950/15 p-5',
+  },
+]
+
+export const DEFAULT_TABS_THEMES: MarkdownDirectiveTheme[] = [
+  { name: 'default', classes: 'my-8 rounded-2xl border border-border/60 bg-black/5 p-2 dark:bg-white/5' },
+  { name: 'muted', classes: 'my-8 rounded-2xl border border-border/50 bg-muted/30 p-2' },
+  {
+    name: 'glass',
+    classes: 'my-8 rounded-2xl border border-white/10 bg-white/10 p-2 shadow-lg shadow-black/10 backdrop-blur-xl',
+  },
+  { name: 'underline', classes: 'my-8 border-b border-border/60 pb-4' },
+  { name: 'pills', classes: 'my-8 rounded-2xl border border-border/50 bg-black/5 p-2 dark:bg-white/5' },
+]
+
+export const DEFAULT_TAB_THEMES: MarkdownDirectiveTheme[] = [
+  { name: 'default', classes: 'mt-4 rounded-xl border border-border/50 bg-background/60 p-4' },
+  { name: 'muted', classes: 'mt-4 rounded-xl border border-border/40 bg-muted/25 p-4' },
+  {
+    name: 'glass',
+    classes: 'mt-4 rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-xl',
   },
 ]
 
@@ -136,6 +156,8 @@ export const DEFAULT_DIRECTIVE_THEMES: Record<DirectiveThemeGroupName, MarkdownD
   details: DEFAULT_DETAILS_THEMES,
   section: DEFAULT_SECTION_THEMES,
   steps: DEFAULT_STEPS_THEMES,
+  tab: DEFAULT_TAB_THEMES,
+  tabs: DEFAULT_TABS_THEMES,
   toc: DEFAULT_TOC_THEMES,
 }
 

@@ -89,6 +89,36 @@ Details inside card content.
 Standalone cards render safely outside a cards grid.
 :::
 
+:::tabs {default="npm" theme="glass" tabTheme="muted"}
+
+:::tab {label="pnpm" value="pnpm"}
+\`\`\`bash
+pnpm add @valkyrianlabs/payload-markdown
+\`\`\`
+:::
+
+:::tab {label="npm" value="npm"}
+\`\`\`bash
+npm install @valkyrianlabs/payload-markdown
+\`\`\`
+:::
+
+:::tab {label="Nested content" value="nested" theme="glass"}
+:::callout {variant="tip" title="Inside tabs"}
+Nested callouts render inside tab panels.
+:::
+
+:::details {title="Tab details"}
+Native details still work inside tabs.
+:::
+
+:::card {title="Tab card" theme="cyan"}
+Cards also render inside tab panels.
+:::
+:::
+
+:::
+
 :::steps
 
 ### Install the package
@@ -231,6 +261,18 @@ Invalid columns and unknown card attributes should not crash.
 :::steps {mode="bad" variant="cards" layout="diagonal" columns="wide" numbered="maybe"}
 ### Safe malformed steps
 Unknown attributes should not crash.
+:::
+
+:::tabs {default="missing" theme="not-real"}
+
+:::tab {label="Duplicate" value="same"}
+First duplicate value.
+:::
+
+:::tab {label="Duplicate again" value="same"}
+Second duplicate value.
+:::
+
 :::
 
 \`\`\`ts

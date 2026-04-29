@@ -13,6 +13,8 @@ import {
   DEFAULT_DETAILS_THEMES,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
+  DEFAULT_TAB_THEMES,
+  DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
 } from './directives/themes.js'
 import { markdownField } from './field/MarkdownField/config.js'
@@ -156,6 +158,8 @@ export {
   DEFAULT_DETAILS_THEMES,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
+  DEFAULT_TAB_THEMES,
+  DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
   MarkdownBlock,
   markdownField,

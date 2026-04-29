@@ -33,16 +33,45 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(fixture.locator('[data-directive="cards"][data-columns="2"]')).toHaveCount(1)
   await expect(spaciousCards).toHaveCount(1)
   await expect(fixture.locator('[data-directive="cards"][data-theme="compact"]')).toHaveCount(1)
-  await expect(fixture.locator('[data-directive="card"]')).toHaveCount(6)
+  await expect(fixture.locator('[data-directive="card"]')).toHaveCount(7)
   await expect(fixture.locator('[data-directive="card"][data-theme="glass"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-theme="muted"]')).toHaveCount(2)
-  await expect(fixture.locator('[data-directive="card"][data-theme="cyan"]')).toHaveCount(1)
+  await expect(fixture.locator('[data-directive="card"][data-theme="cyan"]')).toHaveCount(2)
   await expect(fixture.locator('[data-directive="card"][data-theme="violet"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-theme="emerald"]')).toHaveCount(1)
   await expect(spaciousCards.locator('.vl-md-card--theme-cyan')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"] a[href="/docs/markdown-field"]')).toHaveCount(1)
   await expect(fixture.locator('[data-directive="card"][data-href="/docs/markdown-field"]')).toContainText(
     'Portable Markdown content',
+  )
+  const tabs = fixture.locator('[data-directive="tabs"]').filter({ hasText: 'pnpm' })
+
+  await expect(tabs).toHaveCount(1)
+  await expect(tabs).toHaveAttribute('data-theme', 'glass')
+  await expect(tabs.locator('[role="tab"]')).toHaveCount(3)
+  await expect(tabs.locator('[role="tabpanel"]')).toHaveCount(3)
+  await expect(tabs.locator('[data-tab-trigger][data-tab-value="npm"]')).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="npm"]')).toBeVisible()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="pnpm"]')).toBeHidden()
+  await tabs.locator('[data-tab-trigger][data-tab-value="pnpm"]').click()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="pnpm"]')).toBeVisible()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="npm"]')).toBeHidden()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="pnpm"] pre code')).toContainText(
+    'pnpm add @valkyrianlabs/payload-markdown',
+  )
+  await tabs.locator('[data-tab-trigger][data-tab-value="nested"]').click()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="nested"]')).toBeVisible()
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="nested"] [data-directive="callout"]')).toContainText(
+    'Inside tabs',
+  )
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="nested"] [data-directive="details"]')).toContainText(
+    'Tab details',
+  )
+  await expect(tabs.locator('[data-tab-panel][data-tab-value="nested"] [data-directive="card"]')).toContainText(
+    'Tab card',
   )
   await expect(fixture.locator('[data-directive="steps"]')).toHaveCount(6)
   await expect(fixture.locator('[data-directive="steps"][data-variant="cards"]')).toHaveCount(4)
@@ -71,10 +100,12 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(unnumberedGridSteps).toHaveCount(1)
   await expect(unnumberedGridSteps.locator('[data-step-card]')).toHaveCount(2)
   await expect(unnumberedGridSteps.locator('[data-step-number]')).toHaveCount(0)
-  await expect(fixture.locator('[data-directive="steps"]:not([data-variant])')).toContainText(
-    'Install the package',
-  )
-  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(8)
+  await expect(
+    fixture
+      .locator('[data-directive="steps"]:not([data-variant])')
+      .filter({ hasText: 'Install the package' }),
+  ).toHaveCount(1)
+  await expect(fixture.locator('[data-directive="callout"]')).toHaveCount(9)
   await expect(
     fixture
       .locator('[data-directive="callout"][data-theme="soft"]')
@@ -87,7 +118,7 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
 
   const details = fixture.locator('[data-directive="details"]')
 
-  await expect(details).toHaveCount(2)
+  await expect(details).toHaveCount(3)
   await expect(details.first()).toHaveAttribute('data-theme', 'glass')
   await expect(details.first().locator('summary')).toContainText('Advanced install notes')
   await details.first().locator('summary').click()
@@ -116,6 +147,9 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(edgeCases.locator('[data-directive="card"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="card"][data-theme="default"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-directive="steps"][data-layout="stack"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-directive="tabs"][data-theme="default"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-tab-panel][data-tab-value="same"]')).toHaveCount(1)
+  await expect(edgeCases.locator('[data-tab-panel][data-tab-value="same-1"]')).toHaveCount(1)
   await expect(edgeCases.locator('pre code')).toContainText("const marker = ':::section'")
   await expect(edgeCases.locator('[data-vl-layout="2col"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-vl-layout="cell"]')).toHaveCount(2)

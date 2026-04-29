@@ -357,6 +357,8 @@ describe('layout directive registry', () => {
       'steps',
       'cards',
       'card',
+      'tabs',
+      'tab',
     ])
 
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::section')).toMatchObject({
@@ -413,6 +415,20 @@ describe('layout directive registry', () => {
       action: 'open',
       attributes: {
         title: 'Markdown Field',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::tabs {default="pnpm"}')).toMatchObject({
+      name: 'tabs',
+      action: 'open',
+      attributes: {
+        default: 'pnpm',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::tab {label="pnpm"}')).toMatchObject({
+      name: 'tab',
+      action: 'open',
+      attributes: {
+        label: 'pnpm',
       },
     })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::endcol')).toMatchObject({
@@ -476,6 +492,8 @@ describe('layout directive registry', () => {
       'steps',
       'cards',
       'card',
+      'tabs',
+      'tab',
     ])
 
     const completions = getDirectiveCompletionOptions()
@@ -493,6 +511,8 @@ describe('layout directive registry', () => {
       'Steps cards grid',
       ':::cards',
       ':::card',
+      ':::tabs',
+      ':::tab',
     ])
 
     const snippets = layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => [
@@ -503,6 +523,7 @@ describe('layout directive registry', () => {
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes(':::tabs {default="${pnpm}"}'))).toBe(true)
     expect(snippets.every((snippet) => snippet.includes('${}'))).toBe(true)
   })
 
@@ -513,6 +534,10 @@ describe('layout directive registry', () => {
       .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant']))
+    expect(getDirectiveAttributeCompletionOptions('tabs').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'tabTheme', 'theme']))
+    expect(getDirectiveAttributeCompletionOptions('tab').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['disabled', 'label', 'theme', 'value']))
 
     expect(getDirectiveThemeValueCompletionOptions('card', 'theme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
@@ -526,6 +551,10 @@ describe('layout directive registry', () => {
       .toEqual(['1', '2', '3', '4', 'auto'])
     expect(getDirectiveThemeValueCompletionOptions('steps', 'variant').map((completion) => completion.label))
       .toEqual(['default', 'cards'])
+    expect(getDirectiveThemeValueCompletionOptions('tabs', 'theme').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'glass', 'pills']))
+    expect(getDirectiveThemeValueCompletionOptions('tabs', 'tabTheme').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'muted', 'glass']))
   })
 })
 
@@ -774,6 +803,145 @@ Step body.
     expect(result.html).toContain('vl-md-steps--theme-cyan')
     expect(result.html).toContain('data-step-card')
     expect(result.html).toContain('vl-md-card--theme-emerald')
+  })
+
+  it('renders tabs with triggers panels and first tab active by default', async () => {
+    const result = await compileMarkdown(`
+:::tabs
+
+:::tab {label="First"}
+First tab **content**.
+:::
+
+:::tab {label="Second"}
+Second tab content.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'tabs')).toBe(1)
+    expect(result.html).toContain('role="tablist"')
+    expect(result.html).toContain('role="tab"')
+    expect(result.html).toContain('role="tabpanel"')
+    expect(result.html).toContain('data-tab-trigger')
+    expect(result.html).toContain('data-tab-panel')
+    expect(result.html).toContain('data-tab-value="first"')
+    expect(result.html).toContain('aria-selected="true"')
+    expect(result.html).toContain('hidden')
+    expect(result.html).toContain('<strong>content</strong>')
+  })
+
+  it('honors explicit tabs default and falls back invalid defaults with diagnostics', async () => {
+    const valid = await compileMarkdown(`
+:::tabs {default="npm"}
+
+:::tab {label="pnpm" value="pnpm"}
+pnpm content.
+:::
+
+:::tab {label="npm" value="npm"}
+npm content.
+:::
+
+:::
+`)
+
+    expect(valid.warnings).toEqual([])
+    expect(valid.html).toContain('data-default="npm"')
+    expect(valid.html).toContain('data-tab-value="npm"')
+    expect(valid.html).toContain('aria-selected="true"')
+
+    const invalid = await compileMarkdown(`
+:::tabs {default="missing"}
+
+:::tab {label="pnpm" value="pnpm"}
+pnpm content.
+:::
+
+:::
+`)
+
+    expect(hasWarning(invalid.warnings, 'Invalid tabs default "missing"')).toBe(true)
+    expect(invalid.html).toContain('data-default="pnpm"')
+  })
+
+  it('handles duplicate tab values safely and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::tabs
+
+:::tab {label="First" value="same"}
+First content.
+:::
+
+:::tab {label="Second" value="same"}
+Second content.
+:::
+
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Duplicate tab value "same"')).toBe(true)
+    expect(result.html).toContain('data-tab-value="same"')
+    expect(result.html).toContain('data-tab-value="same-1"')
+    expect(result.html).toContain('tabs-panel-same-1')
+  })
+
+  it('preserves code fences and nested directives inside tab panels', async () => {
+    const result = await compileMarkdown(`
+:::tabs {default="code" theme="glass" tabTheme="muted"}
+
+:::tab {label="Code" value="code"}
+\`\`\`bash
+pnpm add @valkyrianlabs/payload-markdown
+\`\`\`
+:::
+
+:::tab {label="Nested" value="nested" theme="glass"}
+:::callout {variant="tip" title="Inside tabs"}
+Nested callout.
+:::
+
+:::details {title="More"}
+Nested details.
+:::
+
+:::card {title="Nested card"}
+Nested card.
+:::
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('vl-md-tabs--theme-glass')
+    expect(result.html).toContain('vl-md-tab--theme-muted')
+    expect(result.html).toContain('vl-md-tab--theme-glass')
+    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(result.html).toContain('md-code-enhanced')
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(countDirective(result.html, 'details')).toBe(1)
+    expect(countDirective(result.html, 'card')).toBe(1)
+  })
+
+  it('renders empty tabs and standalone tabs safely', async () => {
+    const empty = await compileMarkdown(`
+:::tabs
+:::
+`)
+    const standalone = await compileMarkdown(`
+:::tab {label="Standalone"}
+Standalone body.
+:::
+`)
+
+    expect(hasWarning(empty.warnings, 'Directive "tabs" has no child "tab" directives.')).toBe(true)
+    expect(empty.html).toContain('No tabs configured.')
+    expect(standalone.warnings).toEqual([])
+    expect(countDirective(standalone.html, 'tab')).toBe(1)
+    expect(standalone.html).toContain('Standalone body.')
   })
 
   it('renders stable heading anchors with deterministic duplicate slugs', async () => {
@@ -1377,6 +1545,19 @@ Body.
 :::
 :::
 
+:::tabs {default="missing" theme="missing" tabTheme="ghost" extra="bad"}
+:::tab {label="One" value="same" bad="true"}
+One.
+:::
+:::tab {label="Two" value="same"}
+Two.
+:::
+:::
+
+:::tab {label="Standalone"}
+Standalone.
+:::
+
 :::not-real
 
 \`\`\`md
@@ -1400,6 +1581,13 @@ Body.
       'Unknown theme "missing" on "cards". Falling back to "default".',
       'Unknown attribute "bad" on "card".',
       'Unknown theme "missing" on "card". Falling back to "default".',
+      'Unknown attribute "extra" on "tabs".',
+      'Unknown tabTheme "ghost" on "tabs". Falling back to "default".',
+      'Unknown theme "missing" on "tabs". Falling back to "default".',
+      'Unknown attribute "bad" on "tab".',
+      'Duplicate tab value "same" in "tabs".',
+      'Invalid tabs default "missing". Falling back to the first tab.',
+      'Directive "tab" is usually intended inside "tabs".',
       'Unknown directive "not-real".',
       'Unclosed directive "callout".',
     ])

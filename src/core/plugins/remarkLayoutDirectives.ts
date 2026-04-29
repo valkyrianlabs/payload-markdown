@@ -16,10 +16,16 @@ function isContainerDirective(node: unknown): node is ContainerDirective {
   )
 }
 
-function transformDirective(node: ContainerDirective) {
+type WarningSink = {
+  message: (reason: string) => unknown
+}
+
+function transformDirective(node: ContainerDirective, file: WarningSink) {
   const definition = layoutDirectiveRegistry.get(node.name)
 
   if (!definition) return
+
+  for (const warning of definition.validateMdast?.(node) ?? []) file.message(warning)
 
   definition.transformMdast?.(node, {
     isSupportedDirectiveName: (name) => layoutDirectiveRegistry.isSupportedDirectiveName(name),
@@ -29,12 +35,12 @@ function transformDirective(node: ContainerDirective) {
 }
 
 export const remarkLayoutDirectives: Plugin<[], Root> = () => {
-  return (tree: Root) => {
+  return (tree: Root, file) => {
     visit(tree, (node) => {
       if (!isContainerDirective(node)) return
       if (!layoutDirectiveRegistry.isSupportedDirectiveName(node.name)) return
 
-      transformDirective(node)
+      transformDirective(node, file)
     })
   }
 }

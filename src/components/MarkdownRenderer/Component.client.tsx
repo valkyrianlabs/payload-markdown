@@ -14,15 +14,55 @@ function extractCodeText(pre: HTMLElement): string {
   if (lines.length === 0) return code.textContent ?? ''
 
   return lines
-  .map((line) => {
-    const clone = line.cloneNode(true) as HTMLElement
+    .map((line) => {
+      const clone = line.cloneNode(true) as HTMLElement
 
-    clone.querySelectorAll('.md-line-number').forEach((node) => node.remove())
-    clone.querySelectorAll('.md-empty-line').forEach((node) => node.remove())
+      clone.querySelectorAll('.md-line-number').forEach((node) => node.remove())
+      clone.querySelectorAll('.md-empty-line').forEach((node) => node.remove())
 
-    return clone.textContent ?? ''
-  })
-   .join('\n')
+      return clone.textContent ?? ''
+    })
+    .join('\n')
+}
+
+function getTabsContainer(element: HTMLElement | null): HTMLElement | null {
+  return element?.closest('[data-directive="tabs"]') as HTMLElement | null
+}
+
+function setActiveTab(tabs: HTMLElement, value: string) {
+  const triggers = Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-trigger]'))
+  const panels = Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-panel]'))
+
+  for (const trigger of triggers) {
+    const active = trigger.getAttribute('data-tab-value') === value
+
+    trigger.setAttribute('aria-selected', active ? 'true' : 'false')
+    trigger.setAttribute('tabindex', active ? '0' : '-1')
+    trigger.classList.toggle('vl-md-tabs-trigger--active', active)
+  }
+
+  for (const panel of panels) {
+    const active = panel.getAttribute('data-tab-value') === value
+
+    panel.toggleAttribute('hidden', !active)
+  }
+}
+
+function getEnabledTabTriggers(tabs: HTMLElement): HTMLElement[] {
+  return Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-trigger]')).filter(
+    (trigger) => !trigger.hasAttribute('disabled'),
+  )
+}
+
+function focusTabTrigger(triggers: HTMLElement[], index: number) {
+  const trigger = triggers[index]
+  if (!trigger) return
+
+  trigger.focus()
+}
+
+function getNextTabIndex(currentIndex: number, total: number, direction: -1 | 1): number {
+  return (currentIndex + direction + total) % total
 }
 
 export function MarkdownRendererClient({ containerId }: MarkdownRendererClientProps) {
@@ -98,10 +138,72 @@ export function MarkdownRendererClient({ containerId }: MarkdownRendererClientPr
       }
     }
 
+    const handleTabsClick = (event: Event) => {
+      const target = event.target as HTMLElement | null
+      const trigger = target?.closest('[data-tab-trigger]') as HTMLElement | null
+      if (!trigger || !root.contains(trigger) || trigger.hasAttribute('disabled')) return
+
+      const tabs = getTabsContainer(trigger)
+      const value = trigger.getAttribute('data-tab-value')
+      if (!tabs || !value) return
+
+      setActiveTab(tabs, value)
+      trigger.focus()
+    }
+
+    const handleTabsKeydown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const trigger = target?.closest('[data-tab-trigger]') as HTMLElement | null
+      if (!trigger || !root.contains(trigger) || trigger.hasAttribute('disabled')) return
+
+      const tabs = getTabsContainer(trigger)
+      if (!tabs) return
+
+      const triggers = getEnabledTabTriggers(tabs)
+      const currentIndex = triggers.indexOf(trigger)
+      if (currentIndex < 0) return
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        focusTabTrigger(triggers, getNextTabIndex(currentIndex, triggers.length, 1))
+        return
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        focusTabTrigger(triggers, getNextTabIndex(currentIndex, triggers.length, -1))
+        return
+      }
+
+      if (event.key === 'Home') {
+        event.preventDefault()
+        focusTabTrigger(triggers, 0)
+        return
+      }
+
+      if (event.key === 'End') {
+        event.preventDefault()
+        focusTabTrigger(triggers, triggers.length - 1)
+        return
+      }
+
+      if (event.key !== 'Enter' && event.key !== ' ') return
+
+      const value = trigger.getAttribute('data-tab-value')
+      if (!value) return
+
+      event.preventDefault()
+      setActiveTab(tabs, value)
+    }
+
     root.addEventListener('click', handleClick)
+    root.addEventListener('click', handleTabsClick)
+    root.addEventListener('keydown', handleTabsKeydown)
 
     return () => {
       root.removeEventListener('click', handleClick)
+      root.removeEventListener('click', handleTabsClick)
+      root.removeEventListener('keydown', handleTabsKeydown)
 
       timeoutIds.forEach((timeoutId) => {
         window.clearTimeout(timeoutId)

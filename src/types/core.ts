@@ -122,6 +122,8 @@ export type MarkdownDirectiveThemes = {
   details?: MarkdownDirectiveThemeGroup
   section?: MarkdownDirectiveThemeGroup
   steps?: MarkdownDirectiveThemeGroup
+  tab?: MarkdownDirectiveThemeGroup
+  tabs?: MarkdownDirectiveThemeGroup
   toc?: MarkdownDirectiveThemeGroup
 }
 
@@ -273,9 +275,9 @@ export type BaseMarkdownRendererProps = {
  * runtime-only rendering props required by the component itself.
  */
 export type MarkdownRendererProps = {
-    collectionSlug?: string
-    scope?: MarkdownRendererScope
-  } & BaseMarkdownRendererProps & MarkdownRenderConfig
+  collectionSlug?: string
+  scope?: MarkdownRendererScope
+} & BaseMarkdownRendererProps & MarkdownRenderConfig
 
 /**
  * Options available while rendering an individual fenced code block.

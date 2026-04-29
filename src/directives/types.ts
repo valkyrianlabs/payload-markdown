@@ -6,7 +6,15 @@ import type { MarkdownRenderConfig } from '../types/core.js'
 import type { DirectiveThemeGroupName, ResolvedDirectiveTheme } from './themes.js'
 
 export type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
-export type StaticDirectiveName = 'callout' | 'card' | 'cards' | 'details' | 'steps' | 'toc'
+export type StaticDirectiveName =
+  | 'callout'
+  | 'card'
+  | 'cards'
+  | 'details'
+  | 'steps'
+  | 'tab'
+  | 'tabs'
+  | 'toc'
 export type MarkdownDirectiveName = LayoutDirectiveName | StaticDirectiveName
 export type GridDirectiveName = '2col' | '3col'
 export type LayoutName = MarkdownDirectiveName
@@ -46,9 +54,16 @@ export type LayoutDirectiveKind =
   | 'grid'
   | 'section'
   | 'steps'
+  | 'tab'
+  | 'tabs'
   | 'toc'
 
-export type LayoutDirectiveRenderTagName = 'article' | 'details' | 'div' | 'nav' | 'section'
+export type LayoutDirectiveRenderTagName =
+  | 'article'
+  | 'details'
+  | 'div'
+  | 'nav'
+  | 'section'
 
 export type LayoutDirectiveTransformContext = {
   isSupportedDirectiveName: (name: string) => name is MarkdownDirectiveName
@@ -103,4 +118,5 @@ export type LayoutDirectiveDefinition = {
     context: LayoutDirectiveTransformContext,
   ) => void
   validateAttributes?: (context: DirectiveValidationContext) => string[]
+  validateMdast?: (node: ContainerDirective) => string[]
 }

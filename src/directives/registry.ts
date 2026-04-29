@@ -15,6 +15,8 @@ import { columnDirectives } from './definitions/columns.js'
 import { detailsDirective } from './definitions/details.js'
 import { sectionDirective } from './definitions/section.js'
 import { stepsDirective } from './definitions/steps.js'
+import { tabDirective } from './definitions/tab.js'
+import { tabsDirective } from './definitions/tabs.js'
 import { tocDirective } from './definitions/toc.js'
 
 const directiveDefinitions = [
@@ -27,6 +29,8 @@ const directiveDefinitions = [
   stepsDirective,
   cardsDirective,
   cardDirective,
+  tabsDirective,
+  tabDirective,
 ] as const satisfies readonly LayoutDirectiveDefinition[]
 
 const closeMarkers = new Map<string, LayoutToken>([
