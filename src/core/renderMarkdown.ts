@@ -12,14 +12,17 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
+import type { MarkdownRenderConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
 
+import { resolveRenderMarkdownOptions } from './codeConfig.js'
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
+import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
+import { remarkValidateDirectiveThemes } from './plugins/remarkValidateDirectiveThemes.js'
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string  ,
@@ -113,12 +116,88 @@ const sanitizeSchema: Schema = {
       'rel',
       'title',
     ],
+    article: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.article ?? []),
+      'className',
+      'dataDirective',
+      'dataEyebrow',
+      'dataHref',
+      'dataStepCard',
+      'dataTabPanel',
+      'dataTabValue',
+      'dataTheme',
+      'dataTitle',
+      'dataVlLayout',
+      'hidden',
+      'id',
+      'role',
+      'tabIndex',
+    ],
+    button: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.button ?? []),
+      'ariaControls',
+      'ariaSelected',
+      'className',
+      'dataTabTrigger',
+      'dataTabValue',
+      'disabled',
+      'id',
+      'role',
+      'tabIndex',
+      'type',
+    ],
     code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
+    details: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.details ?? []),
+      'dataDirective',
+      'dataTheme',
+      'dataTitle',
+      'dataVlLayout',
+      'open',
+    ],
     div: [
       ...getAttributeDefinitions(defaultSchema.attributes?.div ?? []),
+      'dataDirective',
+      'dataDirectiveBody',
+      'dataDirectiveTitle',
+      'dataEyebrow',
+      'dataHref',
+      'dataCellTheme',
+      'dataTabsList',
+      'dataTabPanel',
+      'dataTabTrigger',
+      'dataTabValue',
+      'dataTheme',
+      'dataTitle',
+      'dataVariant',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
+      'hidden',
+      'id',
+      'role',
+      'tabIndex',
     ],
+    h1: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.h1 ?? []),
+      'dataDirectiveTitle',
+      'dataHeadingAnchor',
+      'id',
+    ],
+    h2: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.h2 ?? []),
+      'dataDirectiveTitle',
+      'dataHeadingAnchor',
+      'id',
+    ],
+    h3: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.h3 ?? []),
+      'dataDirectiveTitle',
+      'dataHeadingAnchor',
+      'id',
+    ],
+    h4: [...getAttributeDefinitions(defaultSchema.attributes?.h4 ?? []), 'dataHeadingAnchor', 'id'],
+    h5: [...getAttributeDefinitions(defaultSchema.attributes?.h5 ?? []), 'dataHeadingAnchor', 'id'],
+    h6: [...getAttributeDefinitions(defaultSchema.attributes?.h6 ?? []), 'dataHeadingAnchor', 'id'],
     img: [
       ...getAttributeDefinitions(defaultSchema.attributes?.img ?? []),
       'src',
@@ -127,6 +206,20 @@ const sanitizeSchema: Schema = {
       'width',
       'height',
     ],
+    li: [...getAttributeDefinitions(defaultSchema.attributes?.li ?? []), 'dataStep'],
+    nav: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.nav ?? []),
+      'ariaLabel',
+      'dataDirective',
+      'dataTheme',
+      'dataTitle',
+      'dataVlLayout',
+    ],
+    p: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.p ?? []),
+      'className',
+      'dataDirectiveEyebrow',
+    ],
     pre: [
       ...getAttributeDefinitions(defaultSchema.attributes?.pre ?? []),
       'className',
@@ -134,17 +227,52 @@ const sanitizeSchema: Schema = {
     ],
     section: [
       ...getAttributeDefinitions(defaultSchema.attributes?.section ?? []),
+      'dataColumns',
+      'dataCardTheme',
+      'dataCellTheme',
+      'dataDefault',
+      'dataDisabled',
+      'dataDirective',
+      'dataLabel',
+      'dataLayout',
+      'dataNumbered',
+      'dataStepTheme',
+      'dataTabTheme',
+      'dataTabValue',
+      'dataTheme',
+      'dataVariant',
+      'dataValue',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
+      'role',
     ],
-    span: [...getAttributeDefinitions(defaultSchema.attributes?.span ?? []), 'className', 'style'],
+    span: [
+      ...getAttributeDefinitions(defaultSchema.attributes?.span ?? []),
+      'className',
+      'dataStepNumber',
+      'style',
+    ],
+    summary: [...getAttributeDefinitions(defaultSchema.attributes?.summary ?? []), 'className'],
   },
-  tagNames: [...(defaultSchema.tagNames ?? []), 'a', 'img', 'span', 'section', 'br'],
+  clobberPrefix: '',
+  tagNames: [
+    ...(defaultSchema.tagNames ?? []),
+    'a',
+    'article',
+    'br',
+    'button',
+    'details',
+    'img',
+    'nav',
+    'section',
+    'span',
+    'summary',
+  ],
 }
 
 export async function compileMarkdown(
   markdown: string,
-  config: MarkdownConfig = {},
+  config: MarkdownRenderConfig = {},
 ): Promise<RenderMarkdownResult> {
   const warnings: string[] = []
 
@@ -155,10 +283,12 @@ export async function compileMarkdown(
       .use(remarkLiftLayoutDirectives)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
+      .use(remarkValidateDirectiveThemes, config)
+      .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
       .use(rehypeStripAuthoredInlineStyles)
-      .use(rehypeShikiCodeBlocks, config.options)
+      .use(rehypeShikiCodeBlocks, resolveRenderMarkdownOptions(config))
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)
       .use(rehypeStringify)
@@ -166,7 +296,7 @@ export async function compileMarkdown(
 
     return {
       html: String(file),
-      warnings,
+      warnings: file.messages.map((message) => message.reason),
     }
   } catch (error) {
     warnings.push(error instanceof Error ? error.message : 'Failed to render markdown.')

@@ -74,6 +74,59 @@ export type RenderMarkdownOptions = {
   theme?: string
 }
 
+export type MarkdownCodeConfig = {
+  /**
+   * Whether to apply the plugin's enhanced code block rendering pipeline.
+   */
+  enhanced?: boolean
+
+  /**
+   * Whether fenced code blocks should extend beyond the normal content width
+   * on larger screens.
+   */
+  fullBleed?: boolean
+
+  /**
+   * Optional list of language identifiers to load for Shiki syntax highlighting.
+   */
+  langs?: string[]
+
+  /**
+   * Whether to show line numbers for fenced code blocks.
+   */
+  lineNumbers?: boolean
+
+  /**
+   * The Shiki theme to use for syntax highlighting.
+   */
+  shikiTheme?: string
+}
+
+export type MarkdownDirectiveTheme = {
+  classes: string
+  label?: string
+  name: string
+}
+
+export type MarkdownDirectiveThemeGroup = {
+  extendDefaults?: boolean
+  items?: MarkdownDirectiveTheme[]
+} | MarkdownDirectiveTheme[]
+
+export type MarkdownDirectiveThemes = {
+  callout?: MarkdownDirectiveThemeGroup
+  card?: MarkdownDirectiveThemeGroup
+  cards?: MarkdownDirectiveThemeGroup
+  cell?: MarkdownDirectiveThemeGroup
+  columns?: MarkdownDirectiveThemeGroup
+  details?: MarkdownDirectiveThemeGroup
+  section?: MarkdownDirectiveThemeGroup
+  steps?: MarkdownDirectiveThemeGroup
+  tab?: MarkdownDirectiveThemeGroup
+  tabs?: MarkdownDirectiveThemeGroup
+  toc?: MarkdownDirectiveThemeGroup
+}
+
 /**
  * The result of compiling markdown into sanitized HTML.
  */
@@ -115,6 +168,8 @@ export type MarkdownConfig = {
 
   /**
    * Additional classes applied to column elements within the rendered markdown, if applicable.
+   *
+   * @deprecated Use directive themes instead.
    */
   columnClassName?: string
 
@@ -130,6 +185,8 @@ export type MarkdownConfig = {
    * on larger screens.
    *
    * Defaults to `false`.
+   *
+   * @deprecated Use top-level or renderer-level `code.fullBleed` instead.
    */
   fullBleedCode?: boolean
 
@@ -147,11 +204,15 @@ export type MarkdownConfig = {
 
   /**
    * Options that control fenced code block rendering.
+   *
+   * @deprecated Use top-level or renderer-level `code` instead.
    */
   options?: RenderMarkdownOptions
 
   /**
    * Additional classes applied to section elements within the rendered markdown, if applicable.
+   *
+   * @deprecated Use directive themes instead.
    */
   sectionClassName?: string
 
@@ -174,6 +235,11 @@ export type MarkdownConfig = {
    */
   wrapperClassName?: string
 }
+
+export type MarkdownRenderConfig = {
+  code?: MarkdownCodeConfig
+  themes?: MarkdownDirectiveThemes
+} & MarkdownConfig
 
 /**
  * Runtime-only props shared by markdown renderer components.
@@ -209,9 +275,9 @@ export type BaseMarkdownRendererProps = {
  * runtime-only rendering props required by the component itself.
  */
 export type MarkdownRendererProps = {
-    collectionSlug?: string
-    scope?: MarkdownRendererScope
-  } & BaseMarkdownRendererProps & MarkdownConfig
+  collectionSlug?: string
+  scope?: MarkdownRendererScope
+} & BaseMarkdownRendererProps & MarkdownRenderConfig
 
 /**
  * Options available while rendering an individual fenced code block.

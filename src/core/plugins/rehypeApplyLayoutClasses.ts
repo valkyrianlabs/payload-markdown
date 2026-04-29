@@ -3,7 +3,10 @@ import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig } from '../../types/core.js'
+import type { ResolvedDirectiveTheme } from '../../directives/themes.js'
+import type { MarkdownRenderConfig } from '../../types/core.js'
+
+import { layoutDirectiveRegistry } from '../../directives/registry.js'
 
 function compactClassNames(...values: Array<string | undefined>): string[] {
   return values.flatMap((value) => value?.split(/\s+/).filter(Boolean) ?? [])
@@ -34,24 +37,23 @@ function isCellBoundary(node: ElementContent): boolean {
   return isElement(node) && ['h2', 'h3', 'h4'].includes(node.tagName)
 }
 
-function wrapAsCell(children: ElementContent[], columnClassName?: string): Element {
+function wrapAsCell(
+  children: ElementContent[],
+  columnClassName?: string,
+  cellTheme?: ResolvedDirectiveTheme,
+): Element {
   return {
     type: 'element',
     children,
     properties: {
       className: mergeClassNames(
-        'flex',
-        'flex-col',
-        'w-full',
-        'gap-2',
-        '[&>h2]:text-2xl',
-        '[&>h2]:my-4',
-        '[&>h3]:text-xl',
-        '[&>h3]:my-3',
-        '[&>h4]:text-lg',
-        '[&>h4]:my-2',
+        cellTheme?.hookClassName ??
+          'flex flex-col w-full gap-2 [&>h2]:text-2xl [&>h2]:my-4 [&>h3]:text-xl [&>h3]:my-3 [&>h4]:text-lg [&>h4]:my-2',
+        cellTheme?.modifierClassName,
+        cellTheme?.classes,
         columnClassName,
       ),
+      dataTheme: cellTheme?.name,
       dataVlLayout: 'cell',
     },
     tagName: 'div',
@@ -61,6 +63,7 @@ function wrapAsCell(children: ElementContent[], columnClassName?: string): Eleme
 function groupChildrenIntoCells(
   children: ElementContent[],
   columnClassName?: string,
+  cellTheme?: ResolvedDirectiveTheme,
 ): ElementContent[] {
   const groups: ElementContent[][] = []
   let current: ElementContent[] = []
@@ -77,68 +80,26 @@ function groupChildrenIntoCells(
 
   if (current.length > 0) groups.push(current)
 
-  return groups.map((group) => wrapAsCell(group, columnClassName))
+  return groups.map((group) => wrapAsCell(group, columnClassName, cellTheme))
 }
 
-export const rehypeApplyLayoutClasses: Plugin<[MarkdownConfig?], Root> = ({
-  columnClassName,
-  sectionClassName,
-}: MarkdownConfig = {}) => {
+export const rehypeApplyLayoutClasses: Plugin<[MarkdownRenderConfig?], Root> = (
+  config: MarkdownRenderConfig = {},
+) => {
   return (tree: Root) => {
     visit(tree, 'element', (node) => {
       if (!isElement(node)) return
 
       const marker = node.properties?.dataVlLayout
+      if (typeof marker !== 'string') return
 
-      if (marker === 'section') {
-        node.properties.className = mergeClassNames(
-          'bg-black/10 dark:bg-white/10',
-          'w-full mx-0 my-12 p-6',
-          'backdrop-blur-2xl',
-          'rounded-xl',
-          '[&>h1]:my-2 [&>h1]:text-4xl [&>h1]:font-semibold',
-          '[&>h2]:my-2 [&>h2]:text-4xl [&>h2]:font-semibold',
-          'border-none',
-          sectionClassName,
-        )
-        return
-      }
+      const definition = layoutDirectiveRegistry.get(marker)
+      if (!definition?.applyHast) return
 
-      if (marker === 'cell') {
-        node.properties.className = mergeClassNames(
-          'flex',
-          'flex-col',
-          'w-full',
-          'gap-2',
-          '[&>h2]:text-2xl',
-          '[&>h2]:my-4',
-          '[&>h3]:text-xl',
-          '[&>h3]:my-3',
-          '[&>h4]:text-lg',
-          '[&>h4]:my-2',
-          columnClassName,
-        )
-        return
-      }
-
-      if (marker === '2col' || marker === '3col') {
-        node.properties.className = mergeClassNames(
-          'grid',
-          'grid-cols-1',
-          marker === '2col' ? 'md:grid-cols-2' : 'md:grid-cols-3',
-          'gap-6',
-          'w-full',
-        )
-
-        const hasExplicitCells = node.children.some(
-          (child) => isElement(child) && child.properties?.dataVlLayout === 'cell',
-        )
-
-        if (!hasExplicitCells)
-          node.children = groupChildrenIntoCells(node.children, columnClassName)
-
-        return
-      }
+      definition.applyHast(node, config, {
+        groupChildrenIntoCells,
+        mergeClassNames,
+      })
     })
   }
 }
