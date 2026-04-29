@@ -1,6 +1,6 @@
 import type { CollectionSlug, TextField } from 'payload'
 
-import type { MarkdownConfig } from './types/core.js'
+import type { MarkdownCodeConfig, MarkdownConfig, MarkdownDirectiveThemes } from './types/core.js'
 
 export type DualMarkdownFieldConfig = {
   blocks?: MarkdownConfig
@@ -19,6 +19,11 @@ export type MarkdownFieldOptions = {
 }
 
 export type PayloadMarkdownCollectionConfig = {
+  /**
+   * Code fence / Shiki rendering options for markdown in this collection.
+   */
+  code?: MarkdownCodeConfig
+
   /**
    * Styling options for markdown fields added to the collection, and/or markdown fields added within blocks to the collection.
    */
@@ -54,9 +59,19 @@ export type PayloadMarkdownCollectionConfig = {
    * or equivalent for the block to render properly.
    */
   installIntoBlocks?: boolean
+
+  /**
+   * Directive theme registry extensions for markdown in this collection.
+   */
+  themes?: MarkdownDirectiveThemes
 }
 
 export interface PayloadMarkdownConfig {
+  /**
+   * Code fence / Shiki rendering options.
+   */
+  code?: MarkdownCodeConfig
+
   /**
    * Add markdown field to collections.
    * Set to `true` to add a field with default options, or an object to configure the field.
@@ -73,4 +88,9 @@ export interface PayloadMarkdownConfig {
    * @default false
    */
   enabled?: boolean
+
+  /**
+   * Directive theme registry extensions.
+   */
+  themes?: MarkdownDirectiveThemes
 }

@@ -2,6 +2,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
+
 export const CALLOUT_VARIANTS = [
   'note',
   'info',
@@ -40,15 +42,23 @@ function getTitle(node: ContainerDirective): string | undefined {
 
 export const calloutDirective: LayoutDirectiveDefinition = {
   name: 'callout',
-  allowedAttributes: ['title', 'variant'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['theme', 'title', 'variant'],
+  applyHast(node, config, { mergeClassNames }) {
     const variant = typeof node.properties.dataVariant === 'string' ? node.properties.dataVariant : 'note'
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
+    const theme = resolveDirectiveTheme(
+      'callout',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : 'soft',
+      config.themes,
+    )
     const children = node.children
 
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'my-6 rounded-xl border px-4 py-3',
       'not-prose',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
       calloutVariantClasses[isCalloutVariant(variant) ? variant : 'note'],
     )
 
@@ -89,6 +99,7 @@ export const calloutDirective: LayoutDirectiveDefinition = {
   getMdastRenderProperties(node) {
     return {
       dataDirective: 'callout',
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'soft',
       dataTitle: getTitle(node),
       dataVariant: resolveCalloutVariant(node),
     }
@@ -98,6 +109,9 @@ export const calloutDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'div',
+  themeAttributes: {
+    theme: 'callout',
+  },
   validateAttributes({ attributes }) {
     const warnings: string[] = []
 

@@ -3,7 +3,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
-import { CARD_BODY_CLASS_NAMES, CARD_CLASS_NAMES } from './card.js'
+import { resolveDirectiveTheme } from '../themes.js'
+import { CARD_BODY_CLASS_NAMES } from './card.js'
 
 const STEP_VARIANTS = ['default', 'cards'] as const
 
@@ -39,7 +40,11 @@ function makeStep(children: ElementContent[], index: number): Element {
   }
 }
 
-function makeCardStep(children: ElementContent[], index: number): Element {
+function makeCardStep(
+  children: ElementContent[],
+  index: number,
+  stepTheme: ReturnType<typeof resolveDirectiveTheme>,
+): Element {
   return {
     type: 'element',
     children: [
@@ -47,8 +52,14 @@ function makeCardStep(children: ElementContent[], index: number): Element {
         type: 'element',
         children,
         properties: {
-          className: [CARD_CLASS_NAMES, CARD_BODY_CLASS_NAMES],
+          className: [
+            stepTheme.hookClassName,
+            stepTheme.modifierClassName,
+            stepTheme.classes,
+            CARD_BODY_CLASS_NAMES,
+          ],
           dataStepCard: '',
+          dataTheme: stepTheme.name,
         },
         tagName: 'article',
       },
@@ -61,10 +72,17 @@ function makeCardStep(children: ElementContent[], index: number): Element {
   }
 }
 
-function groupStepChildren(children: ElementContent[], variant: StepVariant): ElementContent[] {
+function groupStepChildren(
+  children: ElementContent[],
+  variant: StepVariant,
+  stepTheme: ReturnType<typeof resolveDirectiveTheme>,
+): ElementContent[] {
   const groups: ElementContent[][] = []
   let current: ElementContent[] = []
-  const makeStepElement = variant === 'cards' ? makeCardStep : makeStep
+  const makeStepElement =
+    variant === 'cards'
+      ? (group: ElementContent[], index: number) => makeCardStep(group, index, stepTheme)
+      : makeStep
 
   for (const child of children) {
     if (isStepHeading(child) && current.length > 0) {
@@ -95,15 +113,33 @@ function groupStepChildren(children: ElementContent[], variant: StepVariant): El
 
 export const stepsDirective: LayoutDirectiveDefinition = {
   name: 'steps',
-  allowedAttributes: ['variant'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['stepTheme', 'theme', 'variant'],
+  applyHast(node, config, { mergeClassNames }) {
     const variant =
       typeof node.properties.dataVariant === 'string' && isStepVariant(node.properties.dataVariant)
         ? node.properties.dataVariant
         : 'default'
+    const theme = resolveDirectiveTheme(
+      'steps',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
+    const stepTheme = resolveDirectiveTheme(
+      'card',
+      typeof node.properties.dataStepTheme === 'string'
+        ? node.properties.dataStepTheme
+        : undefined,
+      config.themes,
+    )
 
-    node.properties.className = mergeClassNames('not-prose my-8')
-    node.children = groupStepChildren(node.children, variant)
+    node.properties.dataTheme = theme.name
+    node.properties.className = mergeClassNames(
+      'not-prose',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
+    )
+    node.children = groupStepChildren(node.children, variant, stepTheme)
   },
   description: 'Structured ordered flow for tutorials and install steps.',
   editor: {
@@ -116,6 +152,9 @@ export const stepsDirective: LayoutDirectiveDefinition = {
 
     return {
       dataDirective: 'steps',
+      dataStepTheme:
+        typeof node.attributes?.stepTheme === 'string' ? node.attributes.stepTheme : undefined,
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
       dataVariant: variant === 'default' ? undefined : variant,
     }
   },
@@ -124,6 +163,10 @@ export const stepsDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'section',
+  themeAttributes: {
+    stepTheme: 'card',
+    theme: 'steps',
+  },
   validateAttributes({ attributes }) {
     const warnings: string[] = []
 

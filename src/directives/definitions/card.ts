@@ -3,8 +3,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
-export const CARD_CLASS_NAMES =
-  'group rounded-2xl border border-border bg-black/5 p-5 shadow-sm transition-colors dark:bg-white/5'
+import { resolveDirectiveTheme } from '../themes.js'
+
 export const CARD_BODY_CLASS_NAMES = 'space-y-3 [&>:first-child]:mt-0 [&>:last-child]:mb-0'
 export const CARD_TITLE_CLASS_NAMES = 'mb-3 text-lg font-semibold tracking-tight'
 
@@ -53,15 +53,26 @@ function makeEyebrow(eyebrow: string): Element {
 
 export const cardDirective: LayoutDirectiveDefinition = {
   name: 'card',
-  allowedAttributes: ['eyebrow', 'href', 'title'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['eyebrow', 'href', 'theme', 'title'],
+  applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
     const href = typeof node.properties.dataHref === 'string' ? node.properties.dataHref : undefined
     const eyebrow =
       typeof node.properties.dataEyebrow === 'string' ? node.properties.dataEyebrow : undefined
+    const theme = resolveDirectiveTheme(
+      'card',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
     const children = node.children
 
-    node.properties.className = mergeClassNames('not-prose', CARD_CLASS_NAMES)
+    node.properties.dataTheme = theme.name
+    node.properties.className = mergeClassNames(
+      'not-prose',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
+    )
     node.children = [
       ...(eyebrow ? [makeEyebrow(eyebrow)] : []),
       ...(title ? [makeTitle(title, href)] : []),
@@ -87,6 +98,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
       dataDirective: 'card',
       dataEyebrow: getAttribute(node, 'eyebrow'),
       dataHref: getAttribute(node, 'href'),
+      dataTheme: getAttribute(node, 'theme'),
       dataTitle: getAttribute(node, 'title'),
     }
   },
@@ -95,4 +107,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'article',
+  themeAttributes: {
+    theme: 'card',
+  },
 }

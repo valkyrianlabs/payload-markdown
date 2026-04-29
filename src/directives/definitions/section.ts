@@ -1,16 +1,22 @@
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
+
 export const sectionDirective: LayoutDirectiveDefinition = {
   name: 'section',
+  allowedAttributes: ['theme'],
   applyHast(node, config, { mergeClassNames }) {
+    const theme = resolveDirectiveTheme(
+      'section',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
+
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'bg-black/10 dark:bg-white/10',
-      'w-full mx-0 my-12 p-6',
-      'backdrop-blur-2xl',
-      'rounded-xl',
-      '[&>h1]:my-2 [&>h1]:text-4xl [&>h1]:font-semibold',
-      '[&>h2]:my-2 [&>h2]:text-4xl [&>h2]:font-semibold',
-      'border-none',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
       config.sectionClassName,
     )
   },
@@ -19,8 +25,17 @@ export const sectionDirective: LayoutDirectiveDefinition = {
     label: 'Layout section',
     snippet: ':::section\n${Content}\n:::endsection\n${}',
   },
+  getMdastRenderProperties(node) {
+    return {
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
+    }
+  },
   kind: 'section',
   openMarker: ':::section',
   public: true,
+  supportsAttributes: true,
   tagName: 'section',
+  themeAttributes: {
+    theme: 'section',
+  },
 }

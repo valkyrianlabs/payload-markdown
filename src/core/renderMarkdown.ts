@@ -12,8 +12,9 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
-import type { MarkdownConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
+import type { MarkdownRenderConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
 
+import { resolveRenderMarkdownOptions } from './codeConfig.js'
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
@@ -21,6 +22,7 @@ import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
+import { remarkValidateDirectiveThemes } from './plugins/remarkValidateDirectiveThemes.js'
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string  ,
@@ -121,6 +123,7 @@ const sanitizeSchema: Schema = {
       'dataEyebrow',
       'dataHref',
       'dataStepCard',
+      'dataTheme',
       'dataTitle',
       'dataVlLayout',
     ],
@@ -128,6 +131,7 @@ const sanitizeSchema: Schema = {
     details: [
       ...getAttributeDefinitions(defaultSchema.attributes?.details ?? []),
       'dataDirective',
+      'dataTheme',
       'dataTitle',
       'dataVlLayout',
       'open',
@@ -139,6 +143,8 @@ const sanitizeSchema: Schema = {
       'dataDirectiveTitle',
       'dataEyebrow',
       'dataHref',
+      'dataCellTheme',
+      'dataTheme',
       'dataTitle',
       'dataVariant',
       'dataVlLayout',
@@ -178,7 +184,9 @@ const sanitizeSchema: Schema = {
       ...getAttributeDefinitions(defaultSchema.attributes?.nav ?? []),
       'ariaLabel',
       'dataDirective',
+      'dataTheme',
       'dataTitle',
+      'dataVlLayout',
     ],
     p: [...getAttributeDefinitions(defaultSchema.attributes?.p ?? []), 'dataDirectiveEyebrow'],
     pre: [
@@ -189,7 +197,11 @@ const sanitizeSchema: Schema = {
     section: [
       ...getAttributeDefinitions(defaultSchema.attributes?.section ?? []),
       'dataColumns',
+      'dataCardTheme',
+      'dataCellTheme',
       'dataDirective',
+      'dataStepTheme',
+      'dataTheme',
       'dataVariant',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
@@ -214,7 +226,7 @@ const sanitizeSchema: Schema = {
 
 export async function compileMarkdown(
   markdown: string,
-  config: MarkdownConfig = {},
+  config: MarkdownRenderConfig = {},
 ): Promise<RenderMarkdownResult> {
   const warnings: string[] = []
 
@@ -225,11 +237,12 @@ export async function compileMarkdown(
       .use(remarkLiftLayoutDirectives)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
+      .use(remarkValidateDirectiveThemes, config)
       .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
       .use(rehypeStripAuthoredInlineStyles)
-      .use(rehypeShikiCodeBlocks, config.options)
+      .use(rehypeShikiCodeBlocks, resolveRenderMarkdownOptions(config))
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)
       .use(rehypeStringify)

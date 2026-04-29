@@ -4,21 +4,28 @@ import type {
   PayloadMarkdownCollectionConfig,
   PayloadMarkdownConfig,
 } from '../types.js'
-import type { MarkdownConfig } from '../types/core.js'
+import type { MarkdownCodeConfig, MarkdownConfig, MarkdownRenderConfig } from '../types/core.js'
+
+import { mergeCodeConfigFromRenderConfigs } from '../core/codeConfig.js'
+import { mergeMarkdownDirectiveThemes } from '../directives/themes.js'
 
 export type PayloadMarkdownResolvedSettings = {
+  code?: MarkdownCodeConfig
   collections: Partial<Record<string, PayloadMarkdownCollectionConfig | true>>
   config?: ConfigOptions
   enabled: boolean
+  themes?: MarkdownRenderConfig['themes']
 }
 
 let settings: null | PayloadMarkdownResolvedSettings = null
 
 export function setPayloadMarkdownSettings(pluginOptions: PayloadMarkdownConfig = {}) {
   settings = {
+    code: pluginOptions.code,
     collections: pluginOptions.collections ?? {},
     config: pluginOptions.config,
     enabled: pluginOptions.enabled !== false,
+    themes: pluginOptions.themes,
   }
 }
 
@@ -87,6 +94,12 @@ export function mergeMarkdownConfigs(
     if (config.wrapperClassName)
       merged.wrapperClassName = joinClassNames(merged.wrapperClassName, config.wrapperClassName)
 
+    if (config.columnClassName)
+      merged.columnClassName = joinClassNames(merged.columnClassName, config.columnClassName)
+
+    if (config.sectionClassName)
+      merged.sectionClassName = joinClassNames(merged.sectionClassName, config.sectionClassName)
+
     if (config.variant !== undefined) merged.variant = config.variant
     if (config.size !== undefined) merged.size = config.size
     if (config.lead !== undefined) merged.lead = config.lead
@@ -105,15 +118,35 @@ export function mergeMarkdownConfigs(
   return merged
 }
 
+export function mergeMarkdownRenderConfigs(
+  ...configs: Array<MarkdownRenderConfig | undefined>
+): MarkdownRenderConfig | undefined {
+  const merged = mergeMarkdownConfigs(...configs)
+  const code = mergeCodeConfigFromRenderConfigs(...configs)
+  const themes = mergeMarkdownDirectiveThemes(...configs.map((config) => config?.themes))
+
+  if (!merged && !code && !themes) return undefined
+
+  return {
+    ...(merged ?? {}),
+    ...(code ? { code } : {}),
+    ...(themes ? { themes } : {}),
+  }
+}
+
 export function resolveGlobalMarkdownConfigs() {
   const current = maybeGetPayloadMarkdownSettings()
   if (!current) return {}
 
   const resolved = resolveConfigOptions(current.config)
+  const shared: MarkdownRenderConfig = {
+    code: current.code,
+    themes: current.themes,
+  }
 
   return {
-    blocks: resolved.blocks,
-    field: resolved.field,
+    blocks: mergeMarkdownRenderConfigs(resolved.blocks, shared),
+    field: mergeMarkdownRenderConfigs(resolved.field, shared),
   }
 }
 
@@ -132,10 +165,14 @@ export function resolveCollectionMarkdownConfigs(collectionSlug?: string) {
   }
 
   const collectionResolved = resolveConfigOptions(collectionEntry.config)
+  const shared: MarkdownRenderConfig = {
+    code: collectionEntry.code,
+    themes: collectionEntry.themes,
+  }
 
   return {
-    blocks: mergeMarkdownConfigs(globalResolved.blocks, collectionResolved.blocks),
-    field: mergeMarkdownConfigs(globalResolved.field, collectionResolved.field),
+    blocks: mergeMarkdownRenderConfigs(globalResolved.blocks, collectionResolved.blocks, shared),
+    field: mergeMarkdownRenderConfigs(globalResolved.field, collectionResolved.field, shared),
   }
 }
 

@@ -7,9 +7,10 @@ import type {
   MarkdownVariant,
 } from '../../types/core.js'
 
+import { resolveFullBleedCode } from '../../core/codeConfig.js'
 import { compileMarkdown } from '../../core/renderMarkdown.js'
 import {
-  mergeMarkdownConfigs,
+  mergeMarkdownRenderConfigs,
   resolveMarkdownBlockDefaults,
   resolveMarkdownFieldDefaults,
 } from '../../runtime/index.js'
@@ -172,17 +173,17 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   if (!markdown || !markdown.trim()) return emptyFallback
 
   const resolvedProps =
-    mergeMarkdownConfigs(resolveScopedDefaults(scope, collectionSlug), rawProps) ?? rawProps
+    mergeMarkdownRenderConfigs(resolveScopedDefaults(scope, collectionSlug), rawProps) ?? rawProps
 
   const {
     className,
     enableGutter = false,
-    fullBleedCode = false,
     mutedHeadings = false,
     size = 'lg',
     variant = 'blog',
     wrapperClassName,
   } = resolvedProps
+  const fullBleedCode = resolveFullBleedCode(resolvedProps) ?? false
 
   const result = await compileMarkdown(markdown, resolvedProps)
   const Tag = as

@@ -2,6 +2,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
+
 export const CARD_GRID_COLUMNS = ['1', '2', '3', '4', 'auto'] as const
 export const DEFAULT_CARD_GRID_COLUMNS = '3'
 
@@ -27,15 +29,35 @@ export function resolveCardGridColumns(node: ContainerDirective): CardGridColumn
 
 export const cardsDirective: LayoutDirectiveDefinition = {
   name: 'cards',
-  allowedAttributes: ['columns'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['cardTheme', 'columns', 'theme'],
+  applyHast(node, config, { mergeClassNames }) {
     const columns =
       typeof node.properties.dataColumns === 'string'
         ? node.properties.dataColumns
         : DEFAULT_CARD_GRID_COLUMNS
+    const theme = resolveDirectiveTheme(
+      'cards',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
+    const cardTheme =
+      typeof node.properties.dataCardTheme === 'string' ? node.properties.dataCardTheme : undefined
 
+    for (const child of node.children)
+      if (
+        child.type === 'element' &&
+        child.properties?.dataVlLayout === 'card' &&
+        typeof child.properties.dataTheme !== 'string' &&
+        cardTheme
+      )
+        child.properties.dataTheme = cardTheme
+
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
       'not-prose my-8 grid gap-4',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
       cardGridColumnClasses[isCardGridColumns(columns) ? columns : DEFAULT_CARD_GRID_COLUMNS],
     )
   },
@@ -51,8 +73,10 @@ export const cardsDirective: LayoutDirectiveDefinition = {
   },
   getMdastRenderProperties(node) {
     return {
+      dataCardTheme: typeof node.attributes?.cardTheme === 'string' ? node.attributes.cardTheme : undefined,
       dataColumns: resolveCardGridColumns(node),
       dataDirective: 'cards',
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
     }
   },
   kind: 'cards',
@@ -60,6 +84,10 @@ export const cardsDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'section',
+  themeAttributes: {
+    cardTheme: 'card',
+    theme: 'cards',
+  },
   validateAttributes({ attributes }) {
     const warnings: string[] = []
 

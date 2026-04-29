@@ -4,6 +4,17 @@ import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMark
 
 import { MarkdownBlock } from './blocks/MarkdownBlock/config.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
+import {
+  DEFAULT_CALLOUT_THEMES,
+  DEFAULT_CARD_THEMES,
+  DEFAULT_CARDS_THEMES,
+  DEFAULT_CELL_THEMES,
+  DEFAULT_COLUMNS_THEMES,
+  DEFAULT_DETAILS_THEMES,
+  DEFAULT_SECTION_THEMES,
+  DEFAULT_STEPS_THEMES,
+  DEFAULT_TOC_THEMES,
+} from './directives/themes.js'
 import { markdownField } from './field/MarkdownField/config.js'
 import { setPayloadMarkdownSettings } from './runtime/index.js'
 
@@ -135,5 +146,24 @@ export const payloadMarkdown =
     return config
   }
 
-export { DEFAULT_CODE_LANGS, MarkdownBlock, markdownField }
+export {
+  DEFAULT_CALLOUT_THEMES,
+  DEFAULT_CARD_THEMES,
+  DEFAULT_CARDS_THEMES,
+  DEFAULT_CELL_THEMES,
+  DEFAULT_CODE_LANGS,
+  DEFAULT_COLUMNS_THEMES,
+  DEFAULT_DETAILS_THEMES,
+  DEFAULT_SECTION_THEMES,
+  DEFAULT_STEPS_THEMES,
+  DEFAULT_TOC_THEMES,
+  MarkdownBlock,
+  markdownField,
+}
 export type { MarkdownFieldOptions, PayloadMarkdownConfig }
+export type {
+  MarkdownCodeConfig,
+  MarkdownDirectiveTheme,
+  MarkdownDirectiveThemeGroup,
+  MarkdownDirectiveThemes,
+} from './types/core.js'

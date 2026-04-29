@@ -3,21 +3,23 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { DirectiveChild, LayoutDirectiveDefinition } from '../types.js'
 
 import { setDirectiveRenderData } from '../renderData.js'
+import { resolveDirectiveTheme } from '../themes.js'
 
 export const cellDirective: LayoutDirectiveDefinition = {
   name: 'cell',
+  allowedAttributes: ['theme'],
   applyHast(node, config, { mergeClassNames }) {
+    const theme = resolveDirectiveTheme(
+      'cell',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
+
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'flex',
-      'flex-col',
-      'w-full',
-      'gap-2',
-      '[&>h2]:text-2xl',
-      '[&>h2]:my-4',
-      '[&>h3]:text-xl',
-      '[&>h3]:my-3',
-      '[&>h4]:text-lg',
-      '[&>h4]:my-2',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
       config.columnClassName,
     )
   },
@@ -26,10 +28,19 @@ export const cellDirective: LayoutDirectiveDefinition = {
     label: 'Layout cell',
     snippet: ':::cell\n${Content}\n:::\n${}',
   },
+  getMdastRenderProperties(node) {
+    return {
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
+    }
+  },
   kind: 'cell',
   openMarker: ':::cell',
   public: true,
+  supportsAttributes: true,
   tagName: 'div',
+  themeAttributes: {
+    theme: 'cell',
+  },
 }
 
 export function makeCellDirective(children: DirectiveChild[]): ContainerDirective {

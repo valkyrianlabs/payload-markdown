@@ -1,4 +1,5 @@
 import { layoutDirectiveRegistry } from './registry.js'
+import { hasDirectiveTheme } from './themes.js'
 
 export type DirectiveDiagnostic = {
   from: number
@@ -56,6 +57,31 @@ function updateOpenStack(stack: OpenFrame[], text: string, line: number, from: n
   if (index >= 0) stack.splice(index)
 }
 
+function getThemeDiagnostics(text: string): string[] {
+  const token = layoutDirectiveRegistry.parseMarkdownLineDetailed(text).token
+  if (!token || token.action !== 'open') return []
+
+  const definition = layoutDirectiveRegistry.get(token.name)
+  if (!definition?.themeAttributes) return []
+
+  const diagnostics: string[] = []
+
+  for (const [attribute, groupName] of Object.entries(definition.themeAttributes)) {
+    if (!groupName) continue
+
+    const value = token.attributes?.[attribute]
+    if (typeof value !== 'string' || !value.trim()) continue
+    if (hasDirectiveTheme(groupName, value)) continue
+
+    const label = attribute === 'theme' ? 'theme' : attribute
+    diagnostics.push(
+      `Unknown ${label} "${value}" on "${token.name}". Falling back to "default".`,
+    )
+  }
+
+  return diagnostics
+}
+
 export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] {
   const diagnostics: DirectiveDiagnostic[] = []
   const stack: OpenFrame[] = []
@@ -81,6 +107,15 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
       const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(trimmed)
 
       for (const message of result.diagnostics)
+        diagnostics.push({
+          from: markerFrom,
+          line: index + 1,
+          message,
+          severity: 'warning',
+          to: markerTo,
+        })
+
+      for (const message of getThemeDiagnostics(trimmed))
         diagnostics.push({
           from: markerFrom,
           line: index + 1,

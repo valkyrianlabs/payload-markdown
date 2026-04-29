@@ -8,6 +8,7 @@ import type {
   LayoutDirectiveTransformContext,
 } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
 import { makeCellDirective } from './cell.js'
 
 function isContainerDirective(node: unknown): node is ContainerDirective {
@@ -76,13 +77,34 @@ function groupGridChildren(
 function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutDirectiveDefinition {
   return {
     name,
+    allowedAttributes: ['cellTheme', 'theme'],
     applyHast(node, config, { groupChildrenIntoCells, mergeClassNames }) {
+      const theme = resolveDirectiveTheme(
+        'columns',
+        typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+        config.themes,
+      )
+      const cellTheme =
+        typeof node.properties.dataCellTheme === 'string' ? node.properties.dataCellTheme : undefined
+      const resolvedCellTheme = cellTheme
+        ? resolveDirectiveTheme('cell', cellTheme, config.themes)
+        : undefined
+
+      for (const child of node.children)
+        if (
+          child.type === 'element' &&
+          child.properties?.dataVlLayout === 'cell' &&
+          typeof child.properties.dataTheme !== 'string' &&
+          cellTheme
+        )
+          child.properties.dataTheme = cellTheme
+
+      node.properties.dataTheme = theme.name
       node.properties.className = mergeClassNames(
-        'grid',
-        'grid-cols-1',
+        theme.hookClassName,
+        theme.modifierClassName,
+        theme.classes,
         columns === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3',
-        'gap-6',
-        'w-full',
       )
 
       const hasExplicitCells = node.children.some(
@@ -91,7 +113,11 @@ function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutD
       )
 
       if (!hasExplicitCells)
-        node.children = groupChildrenIntoCells(node.children, config.columnClassName)
+        node.children = groupChildrenIntoCells(
+          node.children,
+          config.columnClassName,
+          resolvedCellTheme,
+        )
     },
     editor: {
       detail: 'Layout directive',
@@ -103,13 +129,21 @@ function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutD
     },
     getMdastRenderProperties(node) {
       return {
+        dataCellTheme:
+          typeof node.attributes?.cellTheme === 'string' ? node.attributes.cellTheme : undefined,
+        dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
         dataVlCellHeadingDepth: resolveCellHeadingDepth(node),
       }
     },
     kind: 'grid',
     openMarker: `:::${name}`,
     public: true,
+    supportsAttributes: true,
     tagName: 'div',
+    themeAttributes: {
+      cellTheme: 'cell',
+      theme: 'columns',
+    },
     transformMdast(node, context) {
       const cellHeadingDepth = resolveCellHeadingDepth(node)
       node.children = groupGridChildren(node.children, cellHeadingDepth, context)

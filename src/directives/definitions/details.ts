@@ -2,6 +2,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
+
 const DEFAULT_DETAILS_TITLE = 'Details'
 
 function getTitle(node: ContainerDirective): string {
@@ -12,14 +14,22 @@ function getTitle(node: ContainerDirective): string {
 
 export const detailsDirective: LayoutDirectiveDefinition = {
   name: 'details',
-  allowedAttributes: ['open', 'title'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['open', 'theme', 'title'],
+  applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : DEFAULT_DETAILS_TITLE
+    const theme = resolveDirectiveTheme(
+      'details',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
     const children = node.children
 
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'my-6 rounded-xl border border-border bg-black/5 px-4 py-3 dark:bg-white/5',
       'not-prose',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
     )
 
     node.children = [
@@ -54,6 +64,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
   getMdastRenderProperties(node) {
     return {
       dataDirective: 'details',
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
       dataTitle: getTitle(node),
       open: node.attributes?.open === 'true',
     }
@@ -63,4 +74,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'details',
+  themeAttributes: {
+    theme: 'details',
+  },
 }

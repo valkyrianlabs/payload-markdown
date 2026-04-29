@@ -2,6 +2,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { resolveDirectiveTheme } from '../themes.js'
+
 export const DEFAULT_TOC_DEPTH = 3
 export const DEFAULT_TOC_TITLE = 'On this page'
 
@@ -20,10 +22,20 @@ export function resolveTocTitle(node: ContainerDirective): string {
 
 export const tocDirective: LayoutDirectiveDefinition = {
   name: 'toc',
-  allowedAttributes: ['depth', 'title'],
-  applyHast(node, _config, { mergeClassNames }) {
+  allowedAttributes: ['depth', 'theme', 'title'],
+  applyHast(node, config, { mergeClassNames }) {
+    const theme = resolveDirectiveTheme(
+      'toc',
+      typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
+      config.themes,
+    )
+
+    node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'not-prose my-6 rounded-xl border border-border bg-black/5 px-4 py-3 dark:bg-white/5',
+      'not-prose',
+      theme.hookClassName,
+      theme.modifierClassName,
+      theme.classes,
     )
   },
   defaultAttributes: {
@@ -42,6 +54,7 @@ export const tocDirective: LayoutDirectiveDefinition = {
     return {
       ariaLabel: title,
       dataDirective: 'toc',
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
       dataTitle: title,
     }
   },
@@ -50,6 +63,9 @@ export const tocDirective: LayoutDirectiveDefinition = {
   public: true,
   supportsAttributes: true,
   tagName: 'nav',
+  themeAttributes: {
+    theme: 'toc',
+  },
   validateAttributes({ attributes }) {
     const warnings: string[] = []
 

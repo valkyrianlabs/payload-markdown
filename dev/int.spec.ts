@@ -9,8 +9,12 @@ import {
   parseDirectiveLine,
 } from '../src/directives'
 import { lintMarkdownDirectives } from '../src/directives/diagnostics'
-import { getDirectiveCompletionOptions } from '../src/editor/directives/completions'
-import { payloadMarkdown } from '../src/index.ts'
+import {
+  getDirectiveAttributeCompletionOptions,
+  getDirectiveCompletionOptions,
+  getDirectiveThemeValueCompletionOptions,
+} from '../src/editor/directives/completions'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from '../src/index.ts'
 import {
   clearPayloadMarkdownSettings,
   getPayloadMarkdownSettings,
@@ -225,6 +229,119 @@ describe('payloadMarkdown', () => {
         layoutField.blocks.filter((block) => block.slug === 'vlMdBlock').length,
     ).toBe(1)
   })
+
+  it('resolves top-level and collection code and theme config outside wrapper config', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      code: {
+        enhanced: false,
+        fullBleed: true,
+        langs: [...DEFAULT_CODE_LANGS, 'latex'],
+        lineNumbers: false,
+        shikiTheme: 'github-light',
+      },
+      collections: {
+        posts: {
+          code: {
+            lineNumbers: true,
+          },
+          themes: {
+            card: {
+              items: [
+                {
+                  name: 'postHeroCard',
+                  classes: 'post-hero-card-classes',
+                },
+              ],
+            },
+          },
+        },
+      },
+      config: {
+        className: 'global-markdown-class',
+      },
+      themes: {
+        card: {
+          items: [
+            {
+              name: 'forge',
+              classes: 'forge-card-classes',
+            },
+          ],
+        },
+      },
+    })
+
+    await plugin(config)
+
+    const defaults = resolveMarkdownFieldDefaults('posts')
+
+    expect(defaults?.className).toBe('global-markdown-class')
+    expect(defaults?.code).toMatchObject({
+      enhanced: false,
+      fullBleed: true,
+      lineNumbers: true,
+      shikiTheme: 'github-light',
+    })
+    expect(defaults?.code?.langs).toContain('latex')
+    expect(defaults?.themes?.card).toMatchObject({
+      extendDefaults: true,
+      items: expect.arrayContaining([
+        expect.objectContaining({ name: 'forge' }),
+        expect.objectContaining({ name: 'postHeroCard' }),
+      ]),
+    })
+  })
+
+  it('maps legacy config options into code while letting new code win at the same scope', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      code: {
+        enhanced: true,
+        fullBleed: true,
+        lineNumbers: true,
+        shikiTheme: 'github-dark',
+      },
+      collections: {
+        posts: true,
+      },
+      config: {
+        fullBleedCode: false,
+        options: {
+          enhancedCodeBlocks: false,
+          lineNumbers: false,
+          theme: 'github-light',
+        },
+      },
+    })
+
+    await plugin(config)
+
+    expect(resolveMarkdownFieldDefaults('posts')?.code).toMatchObject({
+      enhanced: true,
+      fullBleed: true,
+      lineNumbers: true,
+      shikiTheme: 'github-dark',
+    })
+  })
 })
 
 describe('layout directive registry', () => {
@@ -312,7 +429,7 @@ describe('layout directive registry', () => {
     })
   })
 
-  it('parses directive attributes without enabling attributed layout markers yet', () => {
+  it('parses directive attributes while keeping legacy layout markers stable', () => {
     expect(parseDirectiveLine(':::section {#hero .wide .dark tone="info" open}')).toMatchObject({
       name: 'section',
       attributes: {
@@ -330,7 +447,17 @@ describe('layout directive registry', () => {
       title: 'A title',
     })
 
-    expect(layoutDirectiveRegistry.parseMarkdownLine(':::section {#hero}')).toBeNull()
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::section {theme="panel"}')).toMatchObject({
+      name: 'section',
+      action: 'open',
+      attributes: {
+        theme: 'panel',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::section')).toMatchObject({
+      name: 'section',
+      action: 'open',
+    })
   })
 
   it('exposes public directive snippets from registry metadata', () => {
@@ -374,6 +501,22 @@ describe('layout directive registry', () => {
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
     expect(snippets.every((snippet) => snippet.includes('${}'))).toBe(true)
+  })
+
+  it('exposes theme-aware attribute and value completions', () => {
+    expect(getDirectiveAttributeCompletionOptions('card').map((completion) => completion.label))
+      .toContain('theme')
+    expect(getDirectiveAttributeCompletionOptions('cards').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'theme']))
+    expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['stepTheme', 'theme', 'variant']))
+
+    expect(getDirectiveThemeValueCompletionOptions('card', 'theme').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
+    expect(getDirectiveThemeValueCompletionOptions('cards', 'cardTheme').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
+    expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
   })
 })
 
@@ -474,6 +617,154 @@ Nested details.
     expect(countDirective(result.html, 'card')).toBe(1)
     expect(countDirective(result.html, 'callout')).toBe(1)
     expect(countDirective(result.html, 'details')).toBe(1)
+  })
+
+  it('renders default directive theme hooks and data attributes', async () => {
+    const result = await compileMarkdown(`
+:::card {title="Default Theme"}
+Body.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-theme="default"')
+    expect(result.html).toContain('vl-md-card')
+    expect(result.html).toContain('vl-md-card--theme-default')
+  })
+
+  it('resolves custom card themes with extendDefaults and override semantics', async () => {
+    const result = await compileMarkdown(
+      `
+:::card {theme="forge" title="Forge"}
+Body.
+:::
+
+:::card {theme="default" title="Override"}
+Override body.
+:::
+`,
+      {
+        themes: {
+          card: {
+            items: [
+              {
+                name: 'forge',
+                classes: 'forge-card-classes',
+              },
+              {
+                name: 'default',
+                classes: 'custom-default-card-classes',
+              },
+            ],
+          },
+        },
+      },
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-theme="forge"')
+    expect(result.html).toContain('vl-md-card--theme-forge')
+    expect(result.html).toContain('forge-card-classes')
+    expect(result.html).toContain('custom-default-card-classes')
+  })
+
+  it('supports extendDefaults false for directive themes', async () => {
+    const result = await compileMarkdown(
+      `
+:::card {title="Controlled"}
+Body.
+:::
+`,
+      {
+        themes: {
+          card: {
+            extendDefaults: false,
+            items: [
+              {
+                name: 'default',
+                classes: 'controlled-card-theme',
+              },
+            ],
+          },
+        },
+      },
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('controlled-card-theme')
+    expect(result.html).not.toContain('dark:bg-white/5')
+  })
+
+  it('falls back unknown themes and reports render diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::card {theme="missing" title="Fallback"}
+Body.
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Unknown theme "missing" on "card"')).toBe(true)
+    expect(result.html).toContain('data-theme="default"')
+    expect(result.html).toContain('vl-md-card--theme-default')
+  })
+
+  it('applies cards cardTheme to child cards and allows child overrides', async () => {
+    const result = await compileMarkdown(`
+:::cards {theme="spacious" cardTheme="glass"}
+
+:::card {title="Inherited"}
+Inherited card body.
+:::
+
+:::card {theme="cyan" title="Override"}
+Override card body.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-directive="cards"')
+    expect(result.html).toContain('data-theme="spacious"')
+    expect(result.html).toContain('vl-md-cards--theme-spacious')
+    expect(result.html).toContain('data-theme="glass"')
+    expect(result.html).toContain('data-theme="cyan"')
+    expect(result.html).toContain('vl-md-card--theme-glass')
+    expect(result.html).toContain('vl-md-card--theme-cyan')
+  })
+
+  it('applies themes to callout details toc section and steps card variant', async () => {
+    const result = await compileMarkdown(`
+:::callout {theme="glass" variant="warning" title="Warning"}
+Body.
+:::
+
+:::details {theme="glass" title="More"}
+Body.
+:::
+
+:::toc {theme="compact"}
+:::
+
+## Heading
+
+:::section {theme="panel"}
+Section body.
+:::endsection
+
+:::steps {variant="cards" theme="cyan" stepTheme="emerald"}
+### Step title
+Step body.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('vl-md-callout--theme-glass')
+    expect(result.html).toContain('vl-md-details--theme-glass')
+    expect(result.html).toContain('vl-md-toc--theme-compact')
+    expect(result.html).toContain('vl-md-section--theme-panel')
+    expect(result.html).toContain('vl-md-steps--theme-cyan')
+    expect(result.html).toContain('data-step-card')
+    expect(result.html).toContain('vl-md-card--theme-emerald')
   })
 
   it('renders stable heading anchors with deterministic duplicate slugs', async () => {
@@ -904,6 +1195,33 @@ console.log(marker)
     expect(countLayout(result.html, 'section')).toBe(0)
   })
 
+  it('uses new code config over legacy code options when rendering fences', async () => {
+    const result = await compileMarkdown(
+      `
+\`\`\`ts
+const value = 1
+\`\`\`
+`,
+      {
+        code: {
+          enhanced: true,
+          langs: ['ts'],
+          lineNumbers: true,
+          shikiTheme: 'github-dark',
+        },
+        options: {
+          enhancedCodeBlocks: false,
+          lineNumbers: false,
+          theme: 'github-light',
+        },
+      },
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('md-code-enhanced')
+    expect(result.html).toContain('md-line-number')
+  })
+
   it('preserves section and column class overrides', async () => {
     const result = await compileMarkdown(
       `
@@ -948,8 +1266,8 @@ Body.
 Body.
 :::
 
-:::cards {columns="bad" gap="wide"}
-:::card {title="Bad" bad="true"}
+:::cards {columns="bad" gap="wide" theme="missing" cardTheme="ghost"}
+:::card {title="Bad" bad="true" theme="missing"}
 Body.
 :::
 :::
@@ -970,7 +1288,10 @@ Body.
       'Unsupported steps variant "timeline". Falling back to "default".',
       'Unknown attribute "gap" on "cards".',
       'Invalid cards columns "bad". Falling back to "3".',
+      'Unknown theme "missing" on "cards". Falling back to "default".',
+      'Unknown cardTheme "ghost" on "cards". Falling back to "default".',
       'Unknown attribute "bad" on "card".',
+      'Unknown theme "missing" on "card". Falling back to "default".',
       'Unknown directive "not-real".',
       'Unclosed directive "callout".',
     ])

@@ -5,7 +5,7 @@ const layoutMarkdown = `
 
 Intro paragraph outside any directive.
 
-:::toc
+:::toc {theme="compact"}
 :::
 
 :::toc {title="Guide contents" depth="2"}
@@ -19,7 +19,7 @@ Duplicate heading one.
 
 Duplicate heading two.
 
-:::callout
+:::callout {theme="soft"}
 Default note callout with **strong Markdown** inside.
 :::
 
@@ -45,7 +45,7 @@ Destructive operations need review.
 The static directive path rendered correctly.
 :::
 
-:::details {title="Advanced install notes"}
+:::details {theme="glass" title="Advanced install notes"}
 These steps are only needed when running from source.
 
 1. Install dependencies.
@@ -53,23 +53,23 @@ These steps are only needed when running from source.
 
 :::
 
-:::cards {columns="3"}
+:::cards {columns="3" theme="spacious" cardTheme="glass"}
 
 :::card {eyebrow="Field" title="Markdown Field" href="/docs/markdown-field"}
 Portable Markdown content with **live preview**.
 :::
 
-:::card {eyebrow="Layout" title="Layout Directives"}
+:::card {eyebrow="Layout" title="Layout Directives" theme="cyan"}
 Use structured Markdown without turning content into JSON soup.
 :::
 
-:::card {eyebrow="Docs" title="Docs Mode"}
+:::card {eyebrow="Docs" title="Docs Mode" theme="violet"}
 TOC, anchors, callouts, details, steps, and cards.
 :::
 
 :::
 
-:::cards {columns="2"}
+:::cards {columns="2" theme="compact" cardTheme="muted"}
 
 :::card {title="Nested callout"}
 :::callout {variant="tip" title="Inside a card"}
@@ -85,7 +85,7 @@ Details inside card content.
 
 :::
 
-:::card {title="Standalone Card" href="/docs/standalone-card"}
+:::card {theme="emerald" title="Standalone Card" href="/docs/standalone-card"}
 Standalone cards render safely outside a cards grid.
 :::
 
@@ -107,7 +107,7 @@ Use the server renderer.
 
 :::
 
-:::steps {variant="cards"}
+:::steps {variant="cards" theme="cyan" stepTheme="cyan"}
 
 ### Plan the content
 
@@ -121,7 +121,7 @@ pnpm build
 
 :::
 
-:::section
+:::section {theme="panel"}
 ## Section Scope
 
 Section paragraph.
@@ -174,9 +174,9 @@ Malformed details attributes should warn without crashing.
 :::toc {depth="bad"}
 :::
 
-:::cards {columns="invalid"}
+:::cards {columns="invalid" theme="not-real" cardTheme="missing"}
 
-:::card {title="Fallback columns" unknown="true"}
+:::card {title="Fallback columns" theme="missing" unknown="true"}
 Invalid columns and unknown card attributes should not crash.
 :::
 

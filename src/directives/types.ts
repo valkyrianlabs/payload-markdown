@@ -2,7 +2,8 @@ import type { Element, ElementContent } from 'hast'
 import type { ContainerDirective } from 'mdast-util-directive'
 import type { Data } from 'unist'
 
-import type { MarkdownConfig } from '../types/core.js'
+import type { MarkdownRenderConfig } from '../types/core.js'
+import type { DirectiveThemeGroupName, ResolvedDirectiveTheme } from './themes.js'
 
 export type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
 export type StaticDirectiveName = 'callout' | 'card' | 'cards' | 'details' | 'steps' | 'toc'
@@ -57,6 +58,7 @@ export type LayoutDirectiveClassHelpers = {
   groupChildrenIntoCells: (
     children: ElementContent[],
     columnClassName?: string,
+    cellTheme?: ResolvedDirectiveTheme,
   ) => ElementContent[]
   mergeClassNames: (...values: Array<string | undefined>) => string[]
 }
@@ -76,7 +78,7 @@ export type LayoutDirectiveDefinition = {
   allowedAttributes?: readonly string[]
   applyHast?: (
     node: Element,
-    config: MarkdownConfig,
+    config: MarkdownRenderConfig,
     helpers: LayoutDirectiveClassHelpers,
   ) => void
   defaultAttributes?: Record<string, string>
@@ -89,6 +91,7 @@ export type LayoutDirectiveDefinition = {
   public?: boolean
   supportsAttributes?: boolean
   tagName: LayoutDirectiveRenderTagName
+  themeAttributes?: Partial<Record<string, DirectiveThemeGroupName>>
   transformMdast?: (
     node: ContainerDirective,
     context: LayoutDirectiveTransformContext,
