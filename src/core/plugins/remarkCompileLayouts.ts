@@ -2,14 +2,11 @@ import type { Heading, Root, RootContent } from 'mdast'
 import type { ContainerDirective } from 'mdast-util-directive'
 import type { Plugin } from 'unified'
 
-type LayoutName = '2col' | '3col' | 'section'
-type LayoutNode = ContainerDirective | Root
+import type { LayoutName, LayoutToken } from '../../directives/types.js'
 
-type LayoutToken =
-  | { action: 'close'; type: 'vlLayoutToken' }
-  | { action: 'closeGrid'; type: 'vlLayoutToken' }
-  | { action: 'closeSection'; type: 'vlLayoutToken' }
-  | { action: 'open'; name: LayoutName; type: 'vlLayoutToken' }
+import { layoutDirectiveRegistry } from '../../directives/registry.js'
+
+type LayoutNode = ContainerDirective | Root
 
 type AppendableRootContent = Exclude<RootContent, LayoutToken>
 
@@ -58,7 +55,7 @@ function top<T>(arr: T[]): T {
 }
 
 function isGridName(name: LayoutFrame['name']): name is '2col' | '3col' {
-  return name === '2col' || name === '3col'
+  return layoutDirectiveRegistry.isGridName(name)
 }
 
 function findNearestSectionIndex(stack: LayoutFrame[]): number {
@@ -125,6 +122,13 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
             const next = makeDirective('section')
             append(next)
             stack.push({ name: 'section', node: next })
+            continue
+          }
+
+          if (node.name === 'cell') {
+            const next = makeDirective('cell')
+            append(next)
+            stack.push({ name: 'cell', node: next })
             continue
           }
 
