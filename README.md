@@ -22,15 +22,15 @@ Just portable Markdown that renders like a real system.
 
 ---
 
-## Install from NPM
+## Install
 
-```bash
-pnpm add @valkyrianlabs/payload-markdown
-```
+`pnpm add @valkyrianlabs/payload-markdown`
 
 ---
 
 ## [📖 Explore the Docs](https://docs.valkyrianlabs.com/plugins/payload-markdown)
+
+Full setup, directive syntax, theme configuration, code block options, editor behavior, and migration notes live in the docs.
 
 ---
 
@@ -72,13 +72,13 @@ This plugin takes the third path:
 
 ![Payload Markdown v1.3 directive preview](https://docs-media.valkyrianlabs.com/payload-markdown_v1.3_new_directives_example_1.png)
 
-`payload-markdown` now renders structured Markdown directly inside the Payload admin preview, including callouts, details, TOCs, steps, cards, tabs, themes, and code blocks — without turning your content into JSON-shaped sludge.
+`payload-markdown` renders structured Markdown directly inside the Payload admin preview, including callouts, details, TOCs, steps, cards, tabs, themes, and code blocks — without turning your content into JSON-shaped sludge.
 
 ---
 
 ## Directive system
 
-Payload Markdown now supports structured directives for real content layouts:
+Payload Markdown supports structured directives for real content layouts:
 
 - `:::callout`
 - `:::details`
@@ -95,88 +95,9 @@ Payload Markdown now supports structured directives for real content layouts:
 
 Directives are plain Markdown. They stay readable in Git, easy to review in PRs, and simple for AI/editor tooling to maintain.
 
-### Callouts
+See the docs for directive syntax, supported attributes, nesting behavior, themes, and examples:
 
-```markdown
-:::callout {variant="warning" theme="soft" title="Read this first"}
-This is a structured callout written directly in Markdown.
-:::
-```
-
-### Details
-
-```markdown
-:::details {title="Advanced notes" theme="glass" open}
-Progressively disclose advanced content without custom React glue.
-:::
-```
-
-### Table of contents
-
-```markdown
-:::toc {title="On this page" depth="3" theme="compact"}
-:::
-```
-
-### Steps
-
-```markdown
-:::steps {variant="cards" layout="stack" numbered stepTheme="cyan"}
-
-### Install
-
-Add the package.
-
-### Configure
-
-Register the plugin.
-
-### Render
-
-Use the server renderer.
-
-:::
-```
-
-### Cards
-
-```markdown
-:::cards {columns="3" theme="spacious" cardTheme="glass"}
-
-:::card {eyebrow="Core" title="Markdown Field"}
-Portable Markdown content with live preview.
-:::
-
-:::card {eyebrow="Layout" title="Directive System" theme="cyan"}
-Structured content without JSON soup.
-:::
-
-:::card {eyebrow="Rendering" title="Server-first Output" theme="violet"}
-Clean rendering without client-side ceremony.
-:::
-
-:::
-```
-
-### Tabs
-
-```markdown
-:::tabs {default="pnpm" theme="glass"}
-
-:::tab {label="pnpm" value="pnpm"}
-```bash
-pnpm add @valkyrianlabs/payload-markdown
-```
-:::
-
-:::tab {label="npm" value="npm"}
-```bash
-npm install @valkyrianlabs/payload-markdown
-```
-:::
-
-:::
-```
+[Directive documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/directives)
 
 ---
 
@@ -184,64 +105,23 @@ npm install @valkyrianlabs/payload-markdown
 
 Directive themes are first-class.
 
-Themes live beside `config`, not inside it:
-
-```ts
-payloadMarkdown({
-  themes: {
-    card: {
-      extendDefaults: true,
-      items: [
-        {
-          name: 'forge',
-          classes:
-            'bg-gradient-to-br from-cyan-950/70 to-slate-950 border-white/10',
-        },
-      ],
-    },
-  },
-})
-```
-
-Use themes from Markdown:
-
-```markdown
-:::card {title="Themed Card" theme="forge"}
-This card uses a configured theme.
-:::
-```
-
-Theme objects use `classes`, not `className`.
+Themes live beside `config`, not inside it. Theme objects use `classes`, not `className`.
 
 Default themes are included automatically. You only define custom themes when you want to extend or override the built-ins.
 
-Stable classes and data attributes are emitted for overrides:
+Themes can be configured globally or scoped per collection, then selected directly from Markdown using directive attributes.
 
-```html
-<article
-  data-directive="card"
-  data-theme="cyan"
-  class="vl-md-card vl-md-card--theme-cyan ..."
->
-```
+Stable classes and data attributes are emitted for overrides, including `data-directive`, `data-theme`, and `vl-md-*` hook classes.
+
+[Theme documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/themes)
 
 ---
 
 ## Code config
 
-Code block rendering has its own top-level `code` namespace:
+Code block rendering has its own top-level `code` namespace.
 
-```ts
-payloadMarkdown({
-  code: {
-    langs: [...DEFAULT_CODE_LANGS],
-    lineNumbers: true,
-    shikiTheme: 'github-dark',
-    enhanced: true,
-    fullBleed: false,
-  },
-})
-```
+Use it to configure Shiki languages, the Shiki theme, line numbers, enhanced rendering, and full-bleed code behavior.
 
 Legacy `config.options` still works, but `code` is the preferred API.
 
@@ -253,107 +133,26 @@ Migration mapping:
 - `config.options.enhancedCodeBlocks` → `code.enhanced`
 - `config.fullBleedCode` → `code.fullBleed`
 
+[Code block documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/code)
+
 ---
 
 ## Quick setup
 
-### Register the plugin
+Register the plugin in your Payload config, enable it for one or more collections, then render Markdown content with the server renderer.
 
-```ts
-import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+The full setup guide covers:
 
-export default {
-  plugins: [
-    payloadMarkdown({
-      collections: {
-        posts: true,
-      },
-    }),
-  ],
-}
-```
+- plugin registration
+- collection configuration
+- field mode
+- block mode
+- server rendering
+- scoped config
+- themes
+- code block options
 
-### Render content
-
-```tsx
-import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
-
-<MarkdownRenderer
-  markdown={content}
-  collectionSlug="posts"
-/>
-```
-
----
-
-## Full config example
-
-```ts
-import {
-  DEFAULT_CODE_LANGS,
-  payloadMarkdown,
-} from '@valkyrianlabs/payload-markdown'
-
-export default {
-  plugins: [
-    payloadMarkdown({
-      code: {
-        langs: [...DEFAULT_CODE_LANGS],
-        lineNumbers: true,
-        shikiTheme: 'github-dark',
-        enhanced: true,
-        fullBleed: false,
-      },
-
-      themes: {
-        card: {
-          extendDefaults: true,
-          items: [
-            {
-              name: 'forge',
-              classes:
-                'bg-gradient-to-br from-cyan-950/70 to-slate-950 border-white/10',
-            },
-          ],
-        },
-      },
-
-      config: {
-        variant: 'blog',
-        size: 'lg',
-      },
-
-      collections: {
-        pages: true,
-
-        posts: {
-          code: {
-            langs: [...DEFAULT_CODE_LANGS, 'latex', 'r'],
-            lineNumbers: true,
-          },
-
-          themes: {
-            card: {
-              extendDefaults: true,
-              items: [
-                {
-                  name: 'postHeroCard',
-                  classes:
-                    'bg-gradient-to-br from-cyan-950/60 to-slate-950 border-white/10',
-                },
-              ],
-            },
-          },
-
-          config: {
-            className: '[&_li::marker]:!text-cyan-200/90',
-          },
-        },
-      },
-    }),
-  ],
-}
-```
+[Quick start →](https://docs.valkyrianlabs.com/plugins/payload-markdown/getting-started)
 
 ---
 
@@ -371,65 +170,41 @@ The editor is built on CodeMirror and includes:
 
 The goal is simple: author Markdown like text, but get enough tooling that complex docs stay pleasant.
 
+[Editor documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/editor)
+
 ---
 
 ## Tailwind setup
 
-For best rendering defaults, enable Tailwind Typography and scan the plugin output:
+For best rendering defaults, enable Tailwind Typography and scan the plugin output.
 
-```bash
-pnpm add @tailwindcss/typography
-```
+Required pieces:
 
-```css
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-
-/* Ensure Tailwind scans plugin output */
-@source "../node_modules/@valkyrianlabs/payload-markdown/dist";
-```
+- install `@tailwindcss/typography`
+- enable the typography plugin
+- add the plugin `dist` directory to Tailwind sources
 
 Theme class strings defined in your app config should also live in scanned source files.
 
 Runtime arbitrary Tailwind classes inside CMS-authored Markdown are not the recommended styling path. Use directive `theme="..."` values and configure named themes in source.
 
----
-
-## Real examples
-
-### Layout directives in practice
-
-![blocks demo](https://docs-media.valkyrianlabs.com/payload-markdown%20v1.0.0%20blocks%20demo.png)
-
-Plain Markdown can define real layout structure:
-
-- sections
-- columns
-- cards
-- steps
-- tabs
-- callouts
-- details
-- tables of contents
-
-No builder UI.  
-No hidden schema.  
-No frontend duct tape.
+[Tailwind setup →](https://docs.valkyrianlabs.com/plugins/payload-markdown/getting-started/tailwind)
 
 ---
 
-### Code blocks in practice
+## Built for docs, blogs, and technical content
 
-![code blocks demo](https://docs-media.valkyrianlabs.com/payload-markdown%20v1%20code%20blocks%20demo.png)
+Use one Markdown field to author:
 
-Production-ready code rendering with clean defaults:
+- release notes
+- documentation pages
+- technical blog posts
+- plugin docs
+- install guides
+- API walkthroughs
+- landing-page sections
 
-- Shiki syntax highlighting
-- line numbers
-- copy buttons
-- centralized panel styling
-- configurable language loading
-- server-first output
+The content stays readable in Git and editable in Payload.
 
 ---
 
