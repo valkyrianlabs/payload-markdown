@@ -225,10 +225,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          node ./dist/cli/index.js validate ./docs \
-            --source payload-markdown-docs
+          pnpm exec payload-markdown-docs validate ./docs \
+            --source payload-markdown
 
-          node ./dist/cli/index.js push ./docs \
+          pnpm exec payload-markdown-docs push ./docs \
             --endpoint "https://docs.valkyrianlabs.com/api/payload-markdown-docs/sync" \
             --source payload-markdown \
             --repository "$GITHUB_REPOSITORY" \
