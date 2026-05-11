@@ -1,12 +1,12 @@
 ![@valkyrianlabs/payload-markdown](https://docs-media.valkyrianlabs.com/payload-markdown_v1.3_release_banner.png)
 
-<a href="https://github.com/valkyrianlabs/payload-markdown/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml"></a>
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml)](https://github.com/valkyrianlabs/payload-markdown/actions)
 &nbsp;
-<a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"><img alt="npm" src="https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown" /></a>
+[![npm](https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown)](https://www.npmjs.com/package/@valkyrianlabs/payload-markdown)
 &nbsp;
-<a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"><img alt="npm" src="https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown" /></a>
+[![npm](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)](https://www.npmjs.com/package/@valkyrianlabs/payload-markdown)
 &nbsp;
-<a href="https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file"><img alt="license" src="https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown" /></a>
+[![license](https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown)](https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file)
 
 # Payload Markdown
 
