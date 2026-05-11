@@ -1,0 +1,136 @@
+---
+title: Directives
+navTitle: Directives
+description: Use registry-backed Markdown directives for structured content while keeping source portable.
+order: 200
+status: published
+tags:
+  - directives
+---
+
+# Directives
+
+Directives are Markdown containers powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, tabs, sections, columns, and cells.
+
+:::toc {title="On this page" depth="3" theme="compact"}
+:::
+
+## Public Directives
+
+- `:::callout`
+- `:::details`
+- `:::toc`
+- `:::steps`
+- `:::cards`
+- `:::card`
+- `:::tabs`
+- `:::tab`
+- `:::section`
+- `:::2col`
+- `:::3col`
+- `:::cell`
+
+## Basic Syntax
+
+````md
+:::callout {variant="warning" title="Read this first"}
+Content stays Markdown.
+:::
+````
+
+Attributes live on the opening marker:
+
+````md
+:::card {title="Markdown Field" href="/getting-started/fields-and-blocks" theme="cyan"}
+Portable Markdown content.
+:::
+````
+
+Quoted values are supported. Boolean-style attributes are supported where a directive defines them, such as `open="true"` on details, `numbered` on card steps, or `disabled` on a tab.
+
+## Rendering Guarantees
+
+- Directives render server-side.
+- Directives do not require client hydration except for progressive tab and copy-button behavior.
+- Nested Markdown remains Markdown.
+- Unknown or malformed attributes warn where possible and fall back safely.
+- Stable selectors are emitted for testing and styling, such as `data-directive`, `data-theme`, and `vl-md-*` classes.
+
+## Markdown-In-Markdown Examples
+
+Use four backticks when documenting Markdown that itself contains fenced code blocks:
+
+`````md
+````md
+:::steps {variant="cards" stepTheme="glass"}
+
+### Install
+
+```bash
+pnpm add @valkyrianlabs/payload-markdown
+```
+
+### Configure
+
+:::callout {variant="tip" title="Keep config in source"}
+Authors select themes by name. They do not need to write Tailwind classes.
+:::
+
+:::
+````
+`````
+
+The outer fence shows the literal Markdown. The inner fence remains part of the example content.
+
+## Heading Anchors
+
+Headings render with deterministic IDs:
+
+````md
+## Install
+
+## Install
+````
+
+Conceptual output:
+
+```html
+<h2 id="install">Install</h2>
+<h2 id="install-1">Install</h2>
+```
+
+The table of contents directive uses those same heading IDs.
+
+## Directive Pages
+
+:::cards {columns="3" cardTheme="muted"}
+
+:::card {title="Callout" href="/directives/callout"}
+Notes, tips, warnings, danger messages, and success states.
+:::
+
+:::card {title="Details" href="/directives/details"}
+Native disclosure blocks for optional or advanced content.
+:::
+
+:::card {title="Table Of Contents" href="/directives/table-of-contents"}
+Generated page-local navigation from headings.
+:::
+
+:::card {title="Steps" href="/directives/steps"}
+Ordered flows, install procedures, and card-based tutorials.
+:::
+
+:::card {title="Cards" href="/directives/cards"}
+Card grids and standalone card content.
+:::
+
+:::card {title="Tabs" href="/directives/tabs"}
+Accessible tabbed content with server-rendered panels.
+:::
+
+:::card {title="Layout" href="/directives/layout"}
+Sections, two-column grids, three-column grids, and explicit cells.
+:::
+
+:::
