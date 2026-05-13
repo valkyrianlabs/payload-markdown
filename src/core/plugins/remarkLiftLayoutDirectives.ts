@@ -57,10 +57,26 @@ function splitParagraphLines(node: Paragraph): PhrasingContent[][] {
   return lines
 }
 
-function getTextOnlyLine(children: PhrasingContent[]): null | string {
-  if (!children.every(isText)) return null
+function phrasingToText(node: PhrasingContent): null | string {
+  if (node.type === 'text') return node.value
+  if (node.type === 'inlineCode') return node.value
+  if ('children' in node && Array.isArray(node.children)) {
+    const values = node.children.map((child) => phrasingToText(child))
 
-  return children.map((child) => child.value).join('')
+    return values.every((value): value is string => typeof value === 'string')
+      ? values.join('')
+      : null
+  }
+
+  return null
+}
+
+function getTextOnlyLine(children: PhrasingContent[]): null | string {
+  const values = children.map((child) => phrasingToText(child))
+
+  if (!values.every((value): value is string => typeof value === 'string')) return null
+
+  return values.join('')
 }
 
 function appendParagraphLine(lines: PhrasingContent[][], children: PhrasingContent[]) {

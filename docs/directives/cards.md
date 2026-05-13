@@ -48,7 +48,9 @@ Attributes:
 
 - `title`: optional card title
 - `eyebrow`: optional small label above the title
-- `href`: optional title link
+- `href`: optional card link
+- `linkScope`: `full` or `title`
+- `newTab`: open `href` in a new tab when `true`
 - `theme`: card theme
 
 Cards support nested Markdown and render safely inside or outside a `:::cards` container.
@@ -73,7 +75,7 @@ Content.
 
 ## Link Behavior
 
-When `href` is present, the card title is linked:
+When `href` is present, the whole card is clickable by default:
 
 ```md
 :::card {title="Markdown Field" href="/getting-started/fields-and-blocks"}
@@ -81,7 +83,21 @@ Portable Markdown content.
 :::
 ```
 
-The renderer avoids turning the entire card into a link so nested Markdown cannot create invalid nested anchors.
+Set `linkScope="title"` to keep the link on the title only:
+
+```md
+:::card {title="Markdown Field" href="/getting-started/fields-and-blocks" linkScope="title"}
+Portable Markdown content.
+:::
+```
+
+Set `newTab` or `newTab="true"` to open the card link in a new tab:
+
+```md
+:::card {title="External Guide" href="https://example.com" newTab}
+Portable Markdown content.
+:::
+```
 
 ## Dense Grids
 

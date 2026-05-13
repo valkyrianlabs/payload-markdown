@@ -111,6 +111,9 @@ const sanitizeSchema: Schema = {
     ...(defaultSchema.attributes ?? {}),
     a: [
       ...getAttributeDefinitions(defaultSchema.attributes?.a ?? []),
+      'ariaLabel',
+      'className',
+      'dataDirectiveLink',
       'href',
       'target',
       'rel',
@@ -122,6 +125,8 @@ const sanitizeSchema: Schema = {
       'dataDirective',
       'dataEyebrow',
       'dataHref',
+      'dataLinkScope',
+      'dataNewTab',
       'dataStepCard',
       'dataTabPanel',
       'dataTabValue',

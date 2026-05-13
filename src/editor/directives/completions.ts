@@ -74,7 +74,7 @@ function attributeCompletionSource(context: CompletionContext) {
 
   const [, name, attributesBeforeCursor] = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(theme|cardTheme|cellTheme|stepTheme|tabTheme)="([^"]*)$/,
+    /(?:^|\s)(theme|cardTheme|cellTheme|linkScope|newTab|stepTheme|tabTheme)="([^"]*)$/,
   )
 
   if (valueMatch) {

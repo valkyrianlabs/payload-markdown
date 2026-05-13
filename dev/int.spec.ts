@@ -739,7 +739,7 @@ describe('layout directive registry', () => {
 
   it('exposes theme-aware attribute and value completions', () => {
     expect(getDirectiveAttributeCompletionOptions('card').map((completion) => completion.label))
-      .toContain('theme')
+      .toEqual(expect.arrayContaining(['href', 'linkScope', 'newTab', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('cards').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
@@ -751,6 +751,10 @@ describe('layout directive registry', () => {
 
     expect(getDirectiveThemeValueCompletionOptions('card', 'theme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
+    expect(getDirectiveThemeValueCompletionOptions('card', 'linkScope').map((completion) => completion.label))
+      .toEqual(['full', 'title'])
+    expect(getDirectiveThemeValueCompletionOptions('card', 'newTab').map((completion) => completion.label))
+      .toEqual(['true', 'false'])
     expect(getDirectiveThemeValueCompletionOptions('cards', 'cardTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
     expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
@@ -798,7 +802,7 @@ After cards.
     )
   })
 
-  it('renders cards with explicit columns and linked card titles', async () => {
+  it('renders cards with explicit columns and full-card links by default', async () => {
     const result = await compileMarkdown(`
 :::cards {columns="2"}
 
@@ -812,8 +816,29 @@ Read the docs.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('data-columns="2"')
     expect(result.html).toContain('data-directive-eyebrow="card"')
-    expect(result.html).toContain('<a href="/docs">Docs Mode</a>')
+    expect(result.html).toContain('data-link-scope="full"')
+    expect(result.html).toContain('data-new-tab="false"')
+    expect(result.html).toContain(
+      '<a href="/docs" aria-label="Open Docs Mode" class="absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="card"></a>',
+    )
+    expect(result.html).toContain('<h3 class="mb-3 text-lg font-semibold tracking-tight" data-directive-title="card">Docs Mode</h3>')
     expect(result.html).toContain('Read the docs.')
+  })
+
+  it('supports title-scoped card links and new tabs', async () => {
+    const result = await compileMarkdown(`
+:::card {title="External" href="https://example.com" linkScope="title" newTab}
+External card body.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-link-scope="title"')
+    expect(result.html).toContain('data-new-tab="true"')
+    expect(result.html).toContain(
+      '<a href="https://example.com" rel="noopener noreferrer" target="_blank">External</a>',
+    )
+    expect(result.html).not.toContain('data-directive-link="card"')
   })
 
   it('falls back invalid card columns and reports diagnostics', async () => {
@@ -830,6 +855,18 @@ Body.
     expect(countDirective(result.html, 'card')).toBe(1)
   })
 
+  it('falls back invalid card link scopes and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::card {title="Fallback" href="/fallback" linkScope="panel"}
+Body.
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Invalid card linkScope "panel"')).toBe(true)
+    expect(result.html).toContain('data-link-scope="full"')
+    expect(result.html).toContain('data-directive-link="card"')
+  })
+
   it('renders standalone card safely', async () => {
     const result = await compileMarkdown(`
 :::card {title="Standalone" href="/standalone"}
@@ -839,7 +876,8 @@ Standalone body with [a link](https://example.com).
 
     expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'card')).toBe(1)
-    expect(result.html).toContain('<a href="/standalone">Standalone</a>')
+    expect(result.html).toContain('href="/standalone"')
+    expect(result.html).toContain('data-directive-link="card"')
     expect(result.html).toContain('href="https://example.com"')
   })
 
