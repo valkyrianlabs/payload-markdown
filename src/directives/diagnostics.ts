@@ -1,3 +1,6 @@
+import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
+import { hasUnclosedDirectiveAttributeBlock } from './attributes.js'
+import { parseButtonDirectiveLine } from './buttonSyntax.js'
 import { layoutDirectiveRegistry } from './registry.js'
 import { hasDirectiveTheme } from './themes.js'
 
@@ -10,6 +13,8 @@ export type DirectiveDiagnostic = {
 }
 
 type OpenFrame = {
+  cardsHasHref?: boolean
+  cardsLinkScope?: string
   defaultValue?: string
   from: number
   line: number
@@ -31,21 +36,61 @@ function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame)
   return -1
 }
 
-function getTabValue(attributes: Record<string, boolean | string> | undefined, index: number): string {
+function getTabValue(
+  attributes: Record<string, boolean | string> | undefined,
+  index: number,
+  label?: string,
+): string {
   const value = attributes?.value
-  const label = attributes?.label
+  const attributeLabel = attributes?.label
   const raw =
     typeof value === 'string' && value.trim()
       ? value.trim()
       : typeof label === 'string' && label.trim()
         ? label.trim()
-        : `tab-${index + 1}`
+        : typeof attributeLabel === 'string' && attributeLabel.trim()
+          ? attributeLabel.trim()
+          : `tab-${index + 1}`
 
   return raw
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || `tab-${index + 1}`
+}
+
+function collectExpandedDirectiveText(
+  lines: readonly string[],
+  startIndex: number,
+): { endIndex: number; text: string } {
+  const firstText = lines[startIndex]
+
+  if (!hasUnclosedDirectiveAttributeBlock(firstText))
+    return {
+      endIndex: startIndex,
+      text: firstText,
+    }
+
+  let text = firstText
+
+  for (let index = startIndex + 1; index < lines.length; ++index) {
+    const nextText = lines[index]
+
+    if (nextText.trim().startsWith('::')) break
+
+    text += `\n${nextText}`
+
+    if (!hasUnclosedDirectiveAttributeBlock(text))
+      return {
+        endIndex: index,
+        text,
+      }
+  }
+
+  return {
+    endIndex: startIndex,
+    text: firstText,
+  }
 }
 
 function finalizeTabsFrame(frame: OpenFrame): string[] {
@@ -77,6 +122,22 @@ function findNearestTabsFrame(stack: OpenFrame[]): OpenFrame | undefined {
   return undefined
 }
 
+function findNearestCardsFrame(stack: OpenFrame[]): OpenFrame | undefined {
+  for (let index = stack.length - 1; index >= 0; --index) {
+    const frame = stack[index]
+    if (frame.name === 'cards') return frame
+  }
+
+  return undefined
+}
+
+function hasAttribute(
+  attributes: Record<string, boolean | string> | undefined,
+  name: string,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(attributes ?? {}, name)
+}
+
 function updateOpenStack(
   stack: OpenFrame[],
   text: string,
@@ -89,13 +150,30 @@ function updateOpenStack(
   if (!token) return diagnostics
 
   if (token.action === 'open') {
+    if (token.name === 'card') {
+      const cardsFrame = findNearestCardsFrame(stack)
+      const cardsSectionLink =
+        cardsFrame?.cardsHasHref &&
+        (cardsFrame.cardsLinkScope === undefined || cardsFrame.cardsLinkScope === 'section')
+
+      if (
+        cardsSectionLink &&
+        (hasAttribute(token.attributes, 'href') ||
+          hasAttribute(token.attributes, 'linkScope') ||
+          hasAttribute(token.attributes, 'newTab'))
+      )
+        diagnostics.push(
+          'Directive "cards" with linkScope="section" ignores child "card" link overrides.',
+        )
+    }
+
     if (token.name === 'tab') {
       const tabsFrame = findNearestTabsFrame(stack)
 
       if (!tabsFrame) diagnostics.push('Directive "tab" is usually intended inside "tabs".')
       else {
         const nextIndex = tabsFrame.tabCount ?? 0
-        const value = getTabValue(token.attributes, nextIndex)
+        const value = getTabValue(token.attributes, nextIndex, token.label)
 
         tabsFrame.tabCount = nextIndex + 1
         tabsFrame.tabValues ??= new Map<string, number>()
@@ -107,6 +185,16 @@ function updateOpenStack(
       name: token.name,
       from,
       line,
+      ...(token.name === 'cards'
+        ? {
+            cardsHasHref:
+              typeof token.attributes?.href === 'string' && Boolean(token.attributes.href.trim()),
+            cardsLinkScope:
+              typeof token.attributes?.linkScope === 'string'
+                ? token.attributes.linkScope
+                : undefined,
+          }
+        : {}),
       ...(token.name === 'tabs'
         ? {
             defaultValue:
@@ -172,6 +260,36 @@ function getThemeDiagnostics(text: string): string[] {
   return diagnostics
 }
 
+function getButtonDiagnostics(text: string): string[] {
+  const parsed = parseButtonDirectiveLine(text)
+  if (!parsed) return []
+
+  const definition = layoutDirectiveRegistry.get('button')
+  const diagnostics = [
+    ...parsed.warnings,
+    ...(definition?.validateAttributes?.({ name: 'button', attributes: parsed.attributes }) ?? []),
+  ]
+  const icon = parsed.attributes.icon
+
+  if (typeof icon === 'string') {
+    const normalized = normalizePayloadMarkdownIconRef(icon)
+    if (normalized.warning) diagnostics.push(normalized.warning)
+  }
+
+  if (!parsed.label.trim() && typeof parsed.attributes.ariaLabel !== 'string')
+    diagnostics.push('Icon-only button requires an ariaLabel attribute.')
+
+  return diagnostics
+}
+
+function getLeafDirectiveName(text: string): string | undefined {
+  if (text.startsWith(':::')) return undefined
+
+  const match = text.match(/^::([\w-]+)(?:$|[\s[{])/)
+
+  return match?.[1]
+}
+
 export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] {
   const diagnostics: DirectiveDiagnostic[] = []
   const stack: OpenFrame[] = []
@@ -194,7 +312,9 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
     }
 
     if (!inFence && trimmed.startsWith(':::')) {
-      const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(trimmed)
+      const expanded = collectExpandedDirectiveText(lines, index)
+      const expandedTrimmed = expanded.text.trim()
+      const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(expandedTrimmed)
 
       for (const message of result.diagnostics)
         diagnostics.push({
@@ -205,7 +325,7 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
           to: markerTo,
         })
 
-      for (const message of getThemeDiagnostics(trimmed))
+      for (const message of getThemeDiagnostics(expandedTrimmed))
         diagnostics.push({
           from: markerFrom,
           line: index + 1,
@@ -214,9 +334,35 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
           to: markerTo,
         })
 
-      for (const message of updateOpenStack(stack, trimmed, index + 1, markerFrom))
+      for (const message of updateOpenStack(stack, expandedTrimmed, index + 1, markerFrom))
         diagnostics.push({
           from: markerFrom,
+          line: index + 1,
+          message,
+          severity: 'warning',
+          to: markerTo,
+        })
+    }
+
+    if (!inFence && trimmed.startsWith('::') && !trimmed.startsWith(':::')) {
+      const expanded = collectExpandedDirectiveText(lines, index)
+      const expandedTrimmed = expanded.text.trim()
+      const leafName = getLeafDirectiveName(trimmed)
+      const leafMarkerStart = line.indexOf('::')
+      const leafMarkerFrom = leafMarkerStart >= 0 ? lineStart + leafMarkerStart : lineStart
+
+      if (leafName && leafName !== 'button')
+        diagnostics.push({
+          from: leafMarkerFrom,
+          line: index + 1,
+          message: `Unknown directive "${leafName}".`,
+          severity: 'warning',
+          to: markerTo,
+        })
+
+      for (const message of getButtonDiagnostics(expandedTrimmed))
+        diagnostics.push({
+          from: leafMarkerFrom,
           line: index + 1,
           message,
           severity: 'warning',

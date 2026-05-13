@@ -127,6 +127,16 @@ export type MarkdownDirectiveThemes = {
   toc?: MarkdownDirectiveThemeGroup
 }
 
+export type PayloadMarkdownIconPack = {
+  alias: string
+  path: string
+}
+
+export type PayloadMarkdownIconsConfig = {
+  baseDir: string
+  packs: PayloadMarkdownIconPack[]
+}
+
 /**
  * The result of compiling markdown into sanitized HTML.
  */
@@ -238,6 +248,7 @@ export type MarkdownConfig = {
 
 export type MarkdownRenderConfig = {
   code?: MarkdownCodeConfig
+  icons?: PayloadMarkdownIconsConfig
   themes?: MarkdownDirectiveThemes
 } & MarkdownConfig
 

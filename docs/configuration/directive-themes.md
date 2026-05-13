@@ -21,7 +21,7 @@ The recommended model:
 - select a named theme in Markdown with `theme="..."`
 - use stable emitted `vl-md-*` classes for additional CSS overrides
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Register Themes
@@ -125,13 +125,16 @@ Collection themes merge after plugin-level themes. If a collection theme has the
 Cards can set a default child card theme:
 
 ```md
-:::cards {columns="3" cardTheme="glass"}
+:::cards{
+  columns="3"
+  cardTheme="glass"
+}
 
-:::card {title="Inherits Glass"}
+:::card[Inherits Glass]
 Content.
 :::
 
-:::card {title="Overrides Parent" theme="cyan"}
+:::card[Overrides Parent]{theme="cyan"}
 Content.
 :::
 
@@ -141,7 +144,10 @@ Content.
 Steps can set a default card theme for individual step cards:
 
 ```md
-:::steps {variant="cards" stepTheme="cyan"}
+:::steps{
+  variant="cards"
+  stepTheme="cyan"
+}
 
 ### Install
 
@@ -153,9 +159,12 @@ Content.
 Tabs can set a default child panel theme:
 
 ```md
-:::tabs {default="pnpm" tabTheme="glass"}
+:::tabs{
+  default="pnpm"
+  tabTheme="glass"
+}
 
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 Content.
 :::
 

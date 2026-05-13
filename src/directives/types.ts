@@ -1,5 +1,5 @@
 import type { Element, ElementContent } from 'hast'
-import type { ContainerDirective } from 'mdast-util-directive'
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import type { Data } from 'unist'
 
 import type { MarkdownRenderConfig } from '../types/core.js'
@@ -7,6 +7,8 @@ import type { DirectiveThemeGroupName, ResolvedDirectiveTheme } from './themes.j
 
 export type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
 export type StaticDirectiveName =
+  | 'button'
+  | 'buttons'
   | 'callout'
   | 'card'
   | 'cards'
@@ -39,13 +41,17 @@ export type LayoutToken =
       action: 'open'
       attributes?: Record<string, boolean | string>
       data?: Data
+      label?: string
       name: LayoutName
       type: 'vlLayoutToken'
     }
 
 export type DirectiveChild = ContainerDirective['children'][number]
+export type MarkdownDirectiveNode = ContainerDirective | LeafDirective
 
 export type LayoutDirectiveKind =
+  | 'button'
+  | 'buttons'
   | 'callout'
   | 'card'
   | 'cards'
@@ -59,6 +65,7 @@ export type LayoutDirectiveKind =
   | 'toc'
 
 export type LayoutDirectiveRenderTagName =
+  | 'a'
   | 'article'
   | 'details'
   | 'div'

@@ -2,14 +2,15 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 const DEFAULT_DETAILS_TITLE = 'Details'
 
 function getTitle(node: ContainerDirective): string {
-  const title = node.attributes?.title
+  const title = getDirectiveLabelOrAttribute(node, 'title')
 
-  return typeof title === 'string' && title.trim() ? title.trim() : DEFAULT_DETAILS_TITLE
+  return title ?? DEFAULT_DETAILS_TITLE
 }
 
 export const detailsDirective: LayoutDirectiveDefinition = {
@@ -59,7 +60,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Static directive',
     label: 'Details',
-    snippet: ':::details {title="${Details}"}\n${Content}\n:::\n${}',
+    snippet: ':::details[${Details}]\n${Content}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {

@@ -14,15 +14,18 @@ tags:
 Use `:::tabs` with child `:::tab` directives for package-manager examples, feature comparisons, and compact docs sections.
 
 ````md
-:::tabs {default="pnpm" theme="glass"}
+:::tabs{
+  default="pnpm"
+  theme="glass"
+}
 
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 ```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
-:::tab {label="npm" value="npm"}
+:::tab[npm]{value="npm"}
 ```bash
 npm install @valkyrianlabs/payload-markdown
 ```
@@ -45,28 +48,29 @@ When `default` is missing or does not match a child tab value, the first tab is 
 
 Attributes:
 
-- `label`: visible tab label
+- `[Label]`: visible tab label, preferred for new Markdown
+- `label`: visible tab label retained for existing Markdown
 - `value`: stable tab identity
 - `theme`: tab panel theme
 - `disabled`: optional disabled trigger state
 
-If `value` is missing, the renderer derives one from `label`. If both are missing, it generates a safe fallback.
+If `value` is missing, the renderer derives one from `[Label]` or `label`. If both are missing, it generates a safe fallback.
 
 ## Nested Markdown
 
 Tab panels support normal Markdown, code fences, and nested directives:
 
 ````md
-:::tabs {default="install"}
+:::tabs{default="install"}
 
-:::tab {label="Install" value="install"}
+:::tab[Install]{value="install"}
 ```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
-:::tab {label="Notes" value="notes"}
-:::callout {variant="tip" title="Portable content"}
+:::tab[Notes]{value="notes"}
+:::callout[Portable content]{variant="tip"}
 Tabs still store as plain Markdown directives.
 :::
 :::
@@ -79,7 +83,7 @@ Tabs still store as plain Markdown directives.
 Duplicate tab values are slugged and made unique in rendered output, but diagnostics warn when duplicates are found. Use stable explicit values when tabs appear in long-lived docs:
 
 ```md
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 ```
 
 ## Disabled Tabs
@@ -87,7 +91,7 @@ Duplicate tab values are slugged and made unique in rendered output, but diagnos
 Use `disabled` when a tab should render but not be selectable:
 
 ```md
-:::tab {label="Coming soon" value="soon" disabled}
+:::tab[Coming soon]{value="soon" disabled}
 Content can stay in source while the trigger is disabled.
 :::
 ```

@@ -14,13 +14,17 @@ tags:
 Use `:::toc` to render a table of contents from headings in the current Markdown document.
 
 ```md
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{
+  depth="3"
+  theme="compact"
+}
 :::
 ```
 
 ## Attributes
 
-- `title`: visible TOC title and aria label
+- `[Label]`: visible TOC title and aria label, preferred for new Markdown
+- `title`: visible TOC title retained for existing Markdown
 - `depth`: maximum heading depth from `1` to `6`
 - `theme`: TOC theme name
 
@@ -60,7 +64,10 @@ Place `:::toc` after the H1 and introductory paragraph on long reference pages:
 
 Short introduction.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{
+  depth="3"
+  theme="compact"
+}
 :::
 ```
 

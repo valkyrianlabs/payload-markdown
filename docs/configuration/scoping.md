@@ -19,7 +19,7 @@ plugin -> collection -> field/block scope -> direct renderer props
 
 Later layers win for scalar values. Class names are joined so global and collection class additions can both apply.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Plugin Defaults
@@ -150,6 +150,6 @@ Use local overrides for preview states, one-off pages, tests, or migration paths
 
 Theme groups merge by theme name. A collection theme with the same `name` as a global theme overrides that global theme for the collection.
 
-:::callout {variant="tip" title="Use deliberate names"}
+:::callout[Use deliberate names]{variant="tip"}
 Use stable, semantic theme names such as `postHero`, `docsWarning`, or `featureCard`. These names become `data-theme` values and slugged `vl-md-*--theme-*` class modifiers.
 :::

@@ -12,17 +12,20 @@ tags:
 
 Authoring happens in a CodeMirror-powered Payload field. Authors write Markdown, use directive snippets, and preview server-rendered output without storing rich-text JSON.
 
-:::cards {columns="3" cardTheme="glass"}
+:::cards{
+  columns="3"
+  cardTheme="glass"
+}
 
-:::card {title="Editor" href="/authoring/editor"}
+:::card[Editor]{href="/authoring/editor"}
 Autocomplete, snippets, placeholder tabstops, attribute suggestions, and diagnostics.
 :::
 
-:::card {title="Rich Examples" href="/authoring/rich-examples"}
+:::card[Rich Examples]{href="/authoring/rich-examples"}
 Copyable examples for blog posts, docs pages, landing sections, and comparison content.
 :::
 
-:::card {title="Markdown In Markdown" href="/authoring/markdown-in-markdown"}
+:::card[Markdown In Markdown]{href="/authoring/markdown-in-markdown"}
 How to document directive syntax and nested fenced code blocks without breaking examples.
 :::
 
@@ -36,6 +39,6 @@ How to document directive syntax and nested fenced code blocks without breaking 
 - Prefer root-relative links inside the docs set, such as `/directives/cards`.
 - Use fenced code blocks with language hints for Shiki.
 
-:::callout {variant="tip" title="Directives are still Markdown"}
+:::callout[Directives are still Markdown]{variant="tip"}
 Every directive example in these docs is copyable source content. The same text can live in a Payload Markdown field, a Markdown block, or Git-backed docs.
 :::

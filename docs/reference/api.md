@@ -11,7 +11,7 @@ tags:
 
 # API Reference
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Package Exports
@@ -52,6 +52,8 @@ Advanced export:
 
 ```ts
 import {
+  createPayloadMarkdownIconRegistryEntry,
+  createPayloadMarkdownIconRegistrySource,
   vlMdCodeBlockConfig,
   vlMdConfig,
   vlMdTailwindField,
@@ -66,9 +68,26 @@ type PayloadMarkdownConfig = {
   collections?: Partial<Record<CollectionSlug, PayloadMarkdownCollectionConfig | true>>
   config?: ConfigOptions
   enabled?: boolean
+  icons?: PayloadMarkdownIconsConfig
   themes?: MarkdownDirectiveThemes
 }
 ```
+
+## `PayloadMarkdownIconsConfig`
+
+```ts
+type PayloadMarkdownIconPack = {
+  alias: string
+  path: string
+}
+
+type PayloadMarkdownIconsConfig = {
+  baseDir: string
+  packs: PayloadMarkdownIconPack[]
+}
+```
+
+Icon refs in Markdown use `@pack/name`, such as `@fa-duotone/home`. The plugin validates pack aliases, pack paths, icon refs, traversal attempts, unknown packs, and missing SVG files.
 
 ## `PayloadMarkdownCollectionConfig`
 
@@ -173,6 +192,8 @@ Layout directives:
 
 Static directives:
 
+- `button`
+- `buttons`
 - `callout`
 - `details`
 - `toc`

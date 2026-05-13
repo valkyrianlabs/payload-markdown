@@ -32,6 +32,7 @@ function isAppendableRootContent(node: RootContent): node is AppendableRootConte
 function makeDirective(
   name: LayoutName,
   attributes: Record<string, boolean | string> = {},
+  label?: string,
   parentHeadingDepth?: number,
   cellHeadingDepth?: number,
 ): ContainerDirective {
@@ -44,6 +45,7 @@ function makeDirective(
     children: [],
     data: {
       vlCellHeadingDepth: cellHeadingDepth,
+      vlDirectiveLabel: label,
       vlParentHeadingDepth: parentHeadingDepth,
     },
   }
@@ -124,21 +126,21 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
           const definition = layoutDirectiveRegistry.get(node.name)
 
           if (definition?.kind === 'section') {
-            const next = makeDirective('section', node.attributes)
+            const next = makeDirective('section', node.attributes, node.label)
             append(next)
             stack.push({ name: 'section', node: next })
             continue
           }
 
           if (definition?.kind === 'cell') {
-            const next = makeDirective('cell', node.attributes)
+            const next = makeDirective('cell', node.attributes, node.label)
             append(next)
             stack.push({ name: 'cell', node: next })
             continue
           }
 
           if (definition?.kind !== 'grid') {
-            const next = makeDirective(node.name, node.attributes)
+            const next = makeDirective(node.name, node.attributes, node.label)
             append(next)
             stack.push({ name: node.name, node: next })
             continue
@@ -148,7 +150,7 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
           const parentDepth = currentHeadingDepth ?? 1
           const cellDepth = parentDepth + 1
-          const next = makeDirective(node.name, node.attributes, parentDepth, cellDepth)
+          const next = makeDirective(node.name, node.attributes, node.label, parentDepth, cellDepth)
 
           append(next)
           stack.push({

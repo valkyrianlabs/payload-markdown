@@ -17,7 +17,9 @@ import type { MarkdownRenderConfig, RenderMarkdownOptions, RenderMarkdownResult 
 import { resolveRenderMarkdownOptions } from './codeConfig.js'
 import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
+import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
+import { remarkButtonDirectives } from './plugins/remarkButtonDirectives.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
@@ -111,6 +113,15 @@ const sanitizeSchema: Schema = {
     ...(defaultSchema.attributes ?? {}),
     a: [
       ...getAttributeDefinitions(defaultSchema.attributes?.a ?? []),
+      'ariaLabel',
+      'className',
+      'dataButton',
+      'dataDirective',
+      'dataDirectiveLink',
+      'dataIconPosition',
+      'dataSize',
+      'dataVariant',
+      'dataVlLayout',
       'href',
       'target',
       'rel',
@@ -122,6 +133,9 @@ const sanitizeSchema: Schema = {
       'dataDirective',
       'dataEyebrow',
       'dataHref',
+      'dataIcon',
+      'dataLinkScope',
+      'dataNewTab',
       'dataStepCard',
       'dataTabPanel',
       'dataTabValue',
@@ -157,18 +171,22 @@ const sanitizeSchema: Schema = {
     ],
     div: [
       ...getAttributeDefinitions(defaultSchema.attributes?.div ?? []),
+      'dataAlign',
       'dataDirective',
       'dataDirectiveBody',
       'dataDirectiveTitle',
       'dataEyebrow',
       'dataHref',
+      'dataGap',
       'dataCellTheme',
+      'dataIcon',
       'dataTabsList',
       'dataTabPanel',
       'dataTabTrigger',
       'dataTabValue',
       'dataTheme',
       'dataTitle',
+      'dataStack',
       'dataVariant',
       'dataVlLayout',
       'dataVlCellHeadingDepth',
@@ -233,8 +251,12 @@ const sanitizeSchema: Schema = {
       'dataDefault',
       'dataDisabled',
       'dataDirective',
+      'dataHref',
       'dataLabel',
+      'dataLinkScope',
       'dataLayout',
+      'dataNewTab',
+      'dataStack',
       'dataNumbered',
       'dataStepTheme',
       'dataTabTheme',
@@ -249,7 +271,10 @@ const sanitizeSchema: Schema = {
     span: [
       ...getAttributeDefinitions(defaultSchema.attributes?.span ?? []),
       'className',
+      'dataPmdIcon',
+      'dataPmdIconRef',
       'dataStepNumber',
+      'focusable',
       'style',
     ],
     summary: [...getAttributeDefinitions(defaultSchema.attributes?.summary ?? []), 'className'],
@@ -281,6 +306,7 @@ export async function compileMarkdown(
       .use(remarkParse)
       .use(remarkGfm)
       .use(remarkLiftLayoutDirectives)
+      .use(remarkButtonDirectives, config)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkValidateDirectiveThemes, config)
@@ -291,6 +317,7 @@ export async function compileMarkdown(
       .use(rehypeShikiCodeBlocks, resolveRenderMarkdownOptions(config))
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)
+      .use(rehypeResolveIcons, config)
       .use(rehypeStringify)
       .process(markdown)
 

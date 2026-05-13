@@ -5,6 +5,7 @@ import { EditorState } from '@codemirror/state'
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view'
 import React, { useEffect, useRef } from 'react'
 
+import { directiveCloseLabels } from '../directives/closeLabels.js'
 import { directiveCompletions } from '../directives/completions.js'
 import { directiveDiagnostics } from '../directives/diagnostics.js'
 import { payloadMarkdownTheme } from '../themes/payload.js'
@@ -34,6 +35,7 @@ export const MarkdownCodeMirrorClient: React.FC<MarkdownCodeMirrorClientProps> =
         EditorView.lineWrapping,
         cmPlaceholder(placeholder),
         payloadMarkdownTheme,
+        directiveCloseLabels,
         directiveCompletions,
         directiveDiagnostics,
         EditorView.updateListener.of((update) => {

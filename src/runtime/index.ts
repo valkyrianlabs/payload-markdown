@@ -14,6 +14,7 @@ export type PayloadMarkdownResolvedSettings = {
   collections: Partial<Record<string, PayloadMarkdownCollectionConfig | true>>
   config?: ConfigOptions
   enabled: boolean
+  icons?: MarkdownRenderConfig['icons']
   themes?: MarkdownRenderConfig['themes']
 }
 
@@ -25,6 +26,7 @@ export function setPayloadMarkdownSettings(pluginOptions: PayloadMarkdownConfig 
     collections: pluginOptions.collections ?? {},
     config: pluginOptions.config,
     enabled: pluginOptions.enabled !== false,
+    icons: pluginOptions.icons,
     themes: pluginOptions.themes,
   }
 }
@@ -123,13 +125,18 @@ export function mergeMarkdownRenderConfigs(
 ): MarkdownRenderConfig | undefined {
   const merged = mergeMarkdownConfigs(...configs)
   const code = mergeCodeConfigFromRenderConfigs(...configs)
+  let icons: MarkdownRenderConfig['icons']
   const themes = mergeMarkdownDirectiveThemes(...configs.map((config) => config?.themes))
 
-  if (!merged && !code && !themes) return undefined
+  for (const config of configs)
+    if (config?.icons !== undefined) icons = config.icons
+
+  if (!merged && !code && !icons && !themes) return undefined
 
   return {
     ...(merged ?? {}),
     ...(code ? { code } : {}),
+    ...(icons ? { icons } : {}),
     ...(themes ? { themes } : {}),
   }
 }
@@ -141,6 +148,7 @@ export function resolveGlobalMarkdownConfigs() {
   const resolved = resolveConfigOptions(current.config)
   const shared: MarkdownRenderConfig = {
     code: current.code,
+    icons: current.icons,
     themes: current.themes,
   }
 

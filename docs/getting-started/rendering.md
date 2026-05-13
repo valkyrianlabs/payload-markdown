@@ -13,7 +13,7 @@ tags:
 
 Markdown rendering is server-friendly and centralized in the plugin renderer. The same pipeline handles Markdown, GFM, Shiki code blocks, heading anchors, sanitized HTML, and registry-backed directives.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Render A Markdown Field
@@ -111,6 +111,6 @@ export function MarkdownLayoutBlock({
 
 The render pipeline uses `remark-gfm`, `rehype-raw`, and `rehype-sanitize`. Markdown tables, task lists, strikethrough, and raw HTML are parsed, but unsupported or unsafe HTML is sanitized. Authored inline `style` attributes are stripped before final output.
 
-:::details {title="When warnings matter"}
+:::details[When warnings matter]
 `compileMarkdown()` returns warnings for malformed directives, invalid directive attributes, unknown themes, and renderer failures. `MarkdownRenderer` returns `errorFallback` when warnings exist and `errorFallback` is provided.
 :::

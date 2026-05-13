@@ -11,7 +11,7 @@ tags:
 
 # Installation
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 Install the package in the Payload app:
@@ -46,7 +46,7 @@ When a collection is enabled with `true`, the plugin infers the useful install p
 - collections without a `blocks` field receive a Markdown text field named `content`
 - collections with one or more `blocks` fields receive the `vlMdBlock` Markdown block inside those fields
 
-:::callout {variant="info" title="The plugin avoids duplicates"}
+:::callout[The plugin avoids duplicates]{variant="info"}
 If a collection already has a field with the target name, the plugin does not add another one. If the root Payload config or a blocks field already includes `vlMdBlock`, it is not added twice.
 :::
 

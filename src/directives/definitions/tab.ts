@@ -2,6 +2,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { getDirectiveLabel, getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme, slugThemeName } from '../themes.js'
 
 function getAttribute(node: ContainerDirective, name: string): string | undefined {
@@ -11,7 +12,7 @@ function getAttribute(node: ContainerDirective, name: string): string | undefine
 }
 
 export function getTabLabel(node: ContainerDirective, index: number): string {
-  return getAttribute(node, 'label') ?? getAttribute(node, 'value') ?? `Tab ${index + 1}`
+  return getDirectiveLabelOrAttribute(node, 'label') ?? getAttribute(node, 'value') ?? `Tab ${index + 1}`
 }
 
 type TabAttributes = null | Record<string, boolean | null | string | undefined> | undefined
@@ -19,6 +20,19 @@ type TabAttributes = null | Record<string, boolean | null | string | undefined> 
 export function getTabValueFromAttributes(attributes: TabAttributes, index: number): string {
   const value = attributes?.value
   const label = attributes?.label
+  const raw =
+    typeof value === 'string' && value.trim()
+      ? value.trim()
+      : typeof label === 'string' && label.trim()
+        ? label.trim()
+        : `tab-${index + 1}`
+
+  return slugThemeName(raw)
+}
+
+export function getTabValue(node: ContainerDirective, index: number): string {
+  const value = node.attributes?.value
+  const label = getDirectiveLabel(node) ?? getAttribute(node, 'label')
   const raw =
     typeof value === 'string' && value.trim()
       ? value.trim()
@@ -61,7 +75,7 @@ export const tabDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Tabs directive',
     label: 'Tab',
-    snippet: ':::tab {label="${Label}"}\n${Content}\n:::\n${}',
+    snippet: ':::tab[${Label}]\n${Content}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {
@@ -69,7 +83,7 @@ export const tabDirective: LayoutDirectiveDefinition = {
       dataDisabled: isTabDisabled(node.attributes) ? 'true' : undefined,
       dataLabel: getTabLabel(node, 0),
       dataTheme: getAttribute(node, 'theme'),
-      dataValue: getTabValueFromAttributes(node.attributes, 0),
+      dataValue: getTabValue(node, 0),
     }
   },
   kind: 'tab',

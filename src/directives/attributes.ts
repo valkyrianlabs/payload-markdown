@@ -4,6 +4,7 @@ export type DirectiveAttributes = Record<string, DirectiveAttributeValue>
 
 export type ParsedDirectiveLine = {
   attributes: DirectiveAttributes
+  label?: string
   name: string
   rawAttributes?: string
   warnings: string[]
@@ -12,6 +13,11 @@ export type ParsedDirectiveLine = {
 type TokenizeAttributesResult = {
   tokens: string[]
   warnings: string[]
+}
+
+type BraceState = {
+  depth: number
+  hasBrace: boolean
 }
 
 function stripEnclosingBraces(value: string): { value: string; warnings: string[] } {
@@ -80,6 +86,59 @@ function appendClassName(attributes: DirectiveAttributes, className: string) {
   attributes.class = [existing, className].filter(Boolean).join(' ')
 }
 
+export function getDirectiveAttributeBraceState(value: string): BraceState {
+  let depth = 0
+  let escaped = false
+  let hasBrace = false
+  let quote: "'" | '"' | null = null
+
+  for (const char of value) {
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === '\\' && quote) {
+      escaped = true
+      continue
+    }
+
+    if ((char === '"' || char === "'") && quote === null) {
+      quote = char
+      continue
+    }
+
+    if (char === quote) {
+      quote = null
+      continue
+    }
+
+    if (quote) continue
+
+    if (char === '{') {
+      hasBrace = true
+      depth += 1
+      continue
+    }
+
+    if (char === '}') {
+      hasBrace = true
+      depth = Math.max(0, depth - 1)
+    }
+  }
+
+  return {
+    depth,
+    hasBrace,
+  }
+}
+
+export function hasUnclosedDirectiveAttributeBlock(value: string): boolean {
+  const state = getDirectiveAttributeBraceState(value)
+
+  return state.hasBrace && state.depth > 0
+}
+
 export function parseDirectiveAttributesDetailed(value = ''): {
   attributes: DirectiveAttributes
   warnings: string[]
@@ -139,22 +198,34 @@ export function parseDirectiveLine(text: string): null | ParsedDirectiveLine {
 
   if (!trimmed.startsWith(':::')) return null
 
-  const body = trimmed.slice(3)
+  let body = trimmed.slice(3)
   if (!body) return null
 
-  const firstWhitespaceIndex = body.search(/\s/)
-  const name = firstWhitespaceIndex < 0 ? body : body.slice(0, firstWhitespaceIndex)
+  const nameMatch = body.match(/^([\w-]+)/)
+  const name = nameMatch?.[1]
 
-  if (!/^[\w-]+$/.test(name)) return null
+  if (!name) return null
 
-  const rawAttributes =
-    firstWhitespaceIndex < 0 ? undefined : body.slice(firstWhitespaceIndex).trim()
+  body = body.slice(name.length).trimStart()
+
+  let label: string | undefined
+
+  if (body.startsWith('[')) {
+    const labelEnd = body.indexOf(']')
+    if (labelEnd < 0) return null
+
+    label = body.slice(1, labelEnd)
+    body = body.slice(labelEnd + 1).trimStart()
+  }
+
+  const rawAttributes = body ? body : undefined
 
   const attributes = parseDirectiveAttributesDetailed(rawAttributes)
 
   return {
     name,
     attributes: attributes.attributes,
+    label,
     rawAttributes,
     warnings: attributes.warnings,
   }

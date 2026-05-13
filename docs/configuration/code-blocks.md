@@ -14,7 +14,7 @@ tags:
 
 Fenced code blocks are rendered with Shiki during the Markdown compile pipeline. The browser receives finished HTML and does not need a client-side syntax highlighter.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Preferred Code Config

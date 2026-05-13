@@ -12,13 +12,15 @@
 
 Structured Markdown editing and rendering for Payload CMS.
 
-`@valkyrianlabs/payload-markdown` gives Payload a Markdown-first authoring system with a CodeMirror editor, Shiki-powered code blocks, registry-backed directives, named themes, tabs, cards, table-of-contents generation, autocomplete, diagnostics, and server-first rendering.
+`@valkyrianlabs/payload-markdown` gives Payload a Markdown-first authoring system with a CodeMirror editor, Shiki-powered code blocks, registry-backed directives, local SVG icon packs, buttons, cards, table-of-contents generation, autocomplete, diagnostics, and server-first rendering.
 
 No bloated rich text editor.  
 No JSON-shaped content prison.  
 No MDX ceremony for common docs/blog layouts.
 
 Just portable Markdown that renders like a real system.
+
+Payload Markdown now feels much closer to a Markdown-native design system: readable `[Title]` directive labels, expanded multiline args, local icon packs, button primitives, smarter autocomplete, richer card linking, and editor readability aids without giving up portable Markdown.
 
 ---
 
@@ -46,9 +48,9 @@ This plugin takes the third path:
 - Markdown stays the source of truth
 - structure lives directly in the content
 - rendering is production-ready by default
-- directives provide layout without turning content into a page-builder blob
+- directives provide layout, buttons, cards, and common calls to action without turning content into a page-builder blob
 - themes provide clean visual control without runtime Tailwind roulette
-- autocomplete and diagnostics make authoring fast instead of fussy
+- autocomplete, syntax highlighting, closing labels, and diagnostics make authoring fast instead of fussy
 
 **Write fast. Render clean. Stay in control.**
 
@@ -61,18 +63,61 @@ This plugin takes the third path:
 - **Editor UX** — CodeMirror-powered editing
 - **Code rendering** — Shiki-powered highlighting
 - **Server-first output** — clean rendering without client ceremony
-- **Structured directives** — callouts, details, TOCs, steps, cards, tabs, and layouts
-- **Autocomplete** — directive snippets and placeholders
+- **Structured directives** — callouts, details, TOCs, steps, cards, buttons, tabs, and layouts
+- **Buttons** — `::button` leaf directives and `:::buttons` groups
+- **Icon packs** — local SVG packs referenced as `@pack/name`
+- **Autocomplete** — directive snippets, placeholders, and editor-only snippet variants
 - **Diagnostics** — lightweight authoring warnings
 - **Heading anchors** — automatic IDs and table-of-contents support
 - **Themes** — themeable directive output with stable hooks
+- **Card links** — `linkScope` and `newTab` controls for card and cards layouts
 - **Scoped config** — global and collection-level overrides
 - **Portable storage** — clean Markdown source
 - **AI-friendly workflow** — content that agents and humans can edit sanely
 
-![Payload Markdown v1.3 directive preview](https://docs-media.valkyrianlabs.com/payload-markdown_v1.3_new_directives_example_1.png)
+![Payload Markdown directive preview](https://docs-media.valkyrianlabs.com/payload-markdown_v1.3_new_directives_example_1.png)
 
-`payload-markdown` renders structured Markdown directly inside the Payload admin preview, including callouts, details, TOCs, steps, cards, tabs, themes, and code blocks — without turning your content into JSON-shaped sludge.
+`payload-markdown` renders structured Markdown directly inside the Payload admin preview, including callouts, details, TOCs, steps, cards, buttons, tabs, themes, icons, and code blocks — without turning your content into JSON-shaped sludge.
+
+---
+
+## v1.4 authoring primitives
+
+New examples prefer labels for visible titles and expanded attrs for anything non-trivial:
+
+```md
+:::card[Fast Setup]{
+  href="/getting-started/installation"
+  linkScope="title"
+  icon="@fa-duotone/bolt"
+}
+Install, configure, ship.
+
+:::buttons{
+  align="center"
+  stack="mobile"
+  gap="md"
+}
+::button[Read Docs]{
+  href="/docs"
+  variant="primary"
+  icon="@fa-duotone/book-open"
+}
+
+::button[GitHub]{
+  href="https://github.com/valkyrianlabs/payload-markdown"
+  variant="secondary"
+  icon="@brand/github"
+  newTab=true
+}
+:::
+
+:::
+```
+
+The older `title=""` form remains compatible, but `[Title]` keeps visible content out of the argument list. Card and cards directives support scoped linking through `linkScope`; use `linkScope="title"` when a card body contains buttons or links.
+
+Editor completion can expose shortcuts such as `::button`, `::button_icon`, and `::button_full`, but generated Markdown always uses the canonical `::button` directive. Syntax highlighting now distinguishes directive names, labels, arg names, arg values, and leaf-vs-container directives, while closing labels make nested `:::` blocks easier to scan.
 
 ---
 
@@ -86,6 +131,8 @@ Payload Markdown supports structured directives for real content layouts:
 - `:::steps`
 - `:::cards`
 - `:::card`
+- `::button`
+- `:::buttons`
 - `:::tabs`
 - `:::tab`
 - `:::section`
@@ -113,7 +160,7 @@ Themes can be configured globally or scoped per collection, then selected direct
 
 Stable classes and data attributes are emitted for overrides, including `data-directive`, `data-theme`, and `vl-md-*` hook classes.
 
-[Theme documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/themes)
+[Theme documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/directive-themes)
 
 ---
 
@@ -133,7 +180,7 @@ Migration mapping:
 - `config.options.enhancedCodeBlocks` → `code.enhanced`
 - `config.fullBleedCode` → `code.fullBleed`
 
-[Code block documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/code)
+[Code block documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/code-blocks)
 
 ---
 
@@ -152,7 +199,7 @@ The full setup guide covers:
 - themes
 - code block options
 
-[Quick start →](https://docs.valkyrianlabs.com/plugins/payload-markdown/getting-started)
+[Quick start →](https://docs.valkyrianlabs.com/plugins/payload-markdown/getting-started/installation)
 
 ---
 
@@ -161,16 +208,18 @@ The full setup guide covers:
 The editor is built on CodeMirror and includes:
 
 - Markdown syntax highlighting
-- directive autocomplete
-- directive snippets
+- directive autocomplete, including snippet variants such as `::button_icon`
+- directive snippets with canonical Markdown output
 - snippet placeholders/tabstops
 - theme-aware attribute suggestions
+- highlighting for directive labels and expanded arg blocks
+- visual closing labels for nested directive blocks
 - lightweight diagnostics for malformed directives
 - warnings for unknown directives, invalid variants, invalid themes, malformed attrs, and common structural issues
 
 The goal is simple: author Markdown like text, but get enough tooling that complex docs stay pleasant.
 
-[Editor documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/editor)
+[Editor documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/authoring/editor)
 
 ---
 
@@ -188,7 +237,7 @@ Theme class strings defined in your app config should also live in scanned sourc
 
 Runtime arbitrary Tailwind classes inside CMS-authored Markdown are not the recommended styling path. Use directive `theme="..."` values and configure named themes in source.
 
-[Tailwind setup →](https://docs.valkyrianlabs.com/plugins/payload-markdown/getting-started/tailwind)
+[Tailwind setup →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/styling)
 
 ---
 

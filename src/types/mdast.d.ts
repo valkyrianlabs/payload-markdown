@@ -9,7 +9,14 @@ import type { LayoutToken } from './layoutToken'
 declare module 'mdast-util-directive' {
   interface ContainerDirectiveData {
     vlCellHeadingDepth?: number
+    vlDirectiveLabel?: string
     vlParentHeadingDepth?: number
+  }
+
+  interface LeafDirectiveData {
+    hChildren?: unknown[]
+    hName?: string
+    hProperties?: Record<string, unknown>
   }
 }
 

@@ -7,10 +7,13 @@ import { getDirectiveThemeNames } from '../../directives/themes.js'
 
 export function getDirectiveCompletionOptions() {
   return layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => {
+    const label = definition.editor.label.startsWith(':')
+      ? definition.editor.label
+      : `:::${definition.name}`
     const snippets = [
       {
         detail: definition.editor.detail,
-        label: `:::${definition.name}`,
+        label,
         snippet: definition.editor.snippet,
       },
       ...(definition.editor.snippets ?? []).map((snippet) => ({
@@ -34,11 +37,12 @@ export function getDirectiveCompletionOptions() {
 export function getDirectiveAttributeCompletionOptions(name: string): Completion[] {
   const definition = layoutDirectiveRegistry.get(name)
   const attributes = definition?.allowedAttributes ?? []
+  const detailPrefix = name === 'button' ? '::button' : `:::${name}`
 
   return attributes.map((attribute) =>
     snippetCompletion(`${attribute}="\${${attribute}}"`, {
       type: 'property',
-      detail: `:::${name} attribute`,
+      detail: `${detailPrefix} attribute`,
       label: attribute,
     }),
   )
@@ -50,11 +54,12 @@ export function getDirectiveThemeValueCompletionOptions(
 ): Completion[] {
   const definition = layoutDirectiveRegistry.get(name)
   const groupName = definition?.themeAttributes?.[attribute]
+  const detailPrefix = name === 'button' ? '::button' : `:::${name}`
 
   if (!groupName)
     return (definition?.attributeValues?.[attribute] ?? []).map((value) => ({
       type: 'constant',
-      detail: `:::${name} ${attribute}`,
+      detail: `${detailPrefix} ${attribute}`,
       label: value,
     }))
 
@@ -68,13 +73,29 @@ export function getDirectiveThemeValueCompletionOptions(
 function attributeCompletionSource(context: CompletionContext) {
   const line = context.state.doc.lineAt(context.pos)
   const beforeCursor = line.text.slice(0, context.pos - line.from)
-  const directiveMatch = beforeCursor.match(/^\s*:::(\w+)\s+\{([^}]*)$/)
+  const containerMatch = beforeCursor.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{([^}]*)$/)
+  const buttonMatch = beforeCursor.match(/^\s*::button(?:\[[^\]]*\])?\s*\{([^}]*)$/)
+  const multilineMatch =
+    containerMatch || buttonMatch
+      ? null
+      : findOpenDirectiveAttributeBlock(context, beforeCursor)
+  const directiveMatch = containerMatch
+    ? {
+        name: containerMatch[1],
+        attributesBeforeCursor: containerMatch[2],
+      }
+    : buttonMatch
+      ? {
+          name: 'button',
+          attributesBeforeCursor: buttonMatch[1],
+        }
+      : multilineMatch
 
   if (!directiveMatch) return null
 
-  const [, name, attributesBeforeCursor] = directiveMatch
+  const { name, attributesBeforeCursor } = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(theme|cardTheme|cellTheme|stepTheme|tabTheme)="([^"]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|linkScope|newTab|size|stack|stepTheme|tabTheme|variant)=["']?([^"'\s}]*)$/,
   )
 
   if (valueMatch) {
@@ -102,9 +123,57 @@ function attributeCompletionSource(context: CompletionContext) {
   }
 }
 
+function findOpenDirectiveAttributeBlock(
+  context: CompletionContext,
+  attributesBeforeCursor: string,
+): { attributesBeforeCursor: string; name: string } | null {
+  const line = context.state.doc.lineAt(context.pos)
+
+  for (let lineNumber = line.number - 1; lineNumber >= 1; --lineNumber) {
+    const previousLine = context.state.doc.line(lineNumber).text
+    const trimmed = previousLine.trim()
+
+    if (!trimmed) break
+    if (trimmed.includes('}')) break
+
+    const containerMatch = previousLine.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{/)
+    if (containerMatch)
+      return {
+        name: containerMatch[1],
+        attributesBeforeCursor,
+      }
+
+    const buttonMatch = previousLine.match(/^\s*::button(?:\[[^\]]*\])?\s*\{/)
+    if (buttonMatch)
+      return {
+        name: 'button',
+        attributesBeforeCursor,
+      }
+  }
+
+  return null
+}
+
 function directiveCompletionSource(context: CompletionContext) {
   const attributeResult = attributeCompletionSource(context)
   if (attributeResult) return attributeResult
+
+  const leafMatch = context.matchBefore(/::[\w-]*/)
+  if (leafMatch) {
+    const line = context.state.doc.lineAt(context.pos)
+    const beforeLeaf = line.text.slice(0, leafMatch.from - line.from)
+    const typedLeaf = line.text.slice(leafMatch.from - line.from, leafMatch.to - line.from)
+
+    if (!typedLeaf.startsWith(':::') && !beforeLeaf.trim())
+      return {
+        from: leafMatch.from,
+        options: getDirectiveCompletionOptions().filter((option) =>
+          typeof option.label === 'string'
+            ? option.label.startsWith('::') && !option.label.startsWith(':::')
+            : false,
+        ),
+      }
+  }
 
   const match = context.matchBefore(/:::[\w-]*/)
 
@@ -113,7 +182,9 @@ function directiveCompletionSource(context: CompletionContext) {
 
   return {
     from: match.from,
-    options: getDirectiveCompletionOptions(),
+    options: getDirectiveCompletionOptions().filter((option) =>
+      typeof option.label === 'string' ? option.label.startsWith(':::') : true,
+    ),
   }
 }
 

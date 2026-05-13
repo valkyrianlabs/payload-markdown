@@ -14,7 +14,7 @@ tags:
 
 Payload Markdown supports both direct Markdown fields and reusable Payload blocks. Both store Markdown source; the difference is how the content is placed in your schema.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Automatic Install Behavior
@@ -124,7 +124,7 @@ export function RenderBlocks({
 }
 ```
 
-:::callout {variant="warning" title="Do not wrap the block in a block prop"}
+:::callout[Do not wrap the block in a block prop]{variant="warning"}
 `MarkdownBlockComponent` reads `content`, `blockType`, `id`, and `blockName` from its own props. Pass `{...block}`, not `block={block}`.
 :::
 
