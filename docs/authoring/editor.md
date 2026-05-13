@@ -30,8 +30,11 @@ Typing or invoking completion around `:::` offers public directives from the dir
 - `:::steps`
 - `:::cards`
 - `:::card`
+- `:::buttons`
 - `:::tabs`
 - `:::tab`
+
+Typing or invoking completion around `::button` offers the leaf button directive and its attributes.
 
 Snippets insert directive skeletons and use CodeMirror placeholders/tabstops, so placeholder content such as `Content` can be overwritten immediately.
 
@@ -82,6 +85,12 @@ npm install package-name
 
 :::
 ````
+
+Button snippets use the leaf directive form:
+
+```md
+::button[Label]{href="/docs" variant="primary"}
+```
 
 ## Attribute Completion
 

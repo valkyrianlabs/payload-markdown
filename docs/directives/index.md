@@ -23,7 +23,7 @@ Directives are Markdown primitives powered by the plugin directive registry. The
 - `:::steps`
 - `:::cards`
 - `:::card`
-- `:button`
+- `::button`
 - `:::buttons`
 - `:::tabs`
 - `:::tab`

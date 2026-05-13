@@ -64,10 +64,10 @@ export const buttonsDirective: LayoutDirectiveDefinition = {
   },
   description: 'Button group wrapper for one or more button directives.',
   editor: {
-    detail: 'Button directive',
+    detail: 'Button group directive',
     label: 'Buttons',
     snippet:
-      ':::buttons {align="${left}" stack="${mobile}"}\n:button[${Get started}]{href="${/docs}"}\n:::\n${}',
+      ':::buttons {align="${left}" stack="${mobile}"}\n::button[${Get started}]{href="${/docs}"}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {

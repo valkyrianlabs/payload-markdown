@@ -77,7 +77,7 @@ const buildConfigWithMemoryDB = async () => {
           },
         },
         icons: {
-          baseDir: '../public/icons',
+          baseDir: './public/icons',
           packs: [
             { alias: 'fa-duotone', path: 'fa/duotone' }
           ]

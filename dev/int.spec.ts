@@ -703,6 +703,24 @@ describe('layout directive registry', () => {
     expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
+  it('highlights leaf button directives separately from container directives', () => {
+    const markdown = [
+      '::button[Home]{href="/home"}',
+      '',
+      ':::buttons',
+      '::button[Docs]{href="/docs"}',
+      ':::',
+      '',
+      '12:30pm',
+      'localhost:8080',
+      'std::filesystem::path',
+      'ratio: 3:2',
+    ].join('\n')
+
+    expect(countSyntaxNodes(markdown, 'LeafDirectiveLine')).toBe(2)
+    expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
+  })
+
   it('warns in editor diagnostics when section-scoped cards use child link overrides', () => {
     const diagnostics = lintMarkdownDirectives(`
 :::cards {href="/overview"}
@@ -777,7 +795,7 @@ Ignored body.
       ':::2col',
       ':::3col',
       ':::cell',
-      ':button',
+      '::button',
       ':::buttons',
       ':::callout',
       ':::details',
@@ -790,6 +808,8 @@ Ignored body.
       ':::tabs',
       ':::tab',
     ])
+    expect(completions.map((completion) => completion.label)).not.toContain(':button')
+    expect(completions.map((completion) => completion.label)).not.toContain(':::button')
 
     const snippets = layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => [
       definition.editor.snippet,
@@ -797,7 +817,7 @@ Ignored body.
     ])
 
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
-    expect(snippets.some((snippet) => snippet.includes(':button[${Label}]'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes('::button[${Label}]'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::tabs {default="${pnpm}"}'))).toBe(true)
@@ -863,7 +883,7 @@ Ignored body.
 
 describe('compileMarkdown layout directives', () => {
   it('renders a button as an anchor with label href default variant and default size', async () => {
-    const result = await compileMarkdown(':button[Home]{href="/home"}')
+    const result = await compileMarkdown('::button[Home]{href="/home"}')
 
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('<a')
@@ -874,9 +894,50 @@ describe('compileMarkdown layout directives', () => {
     expect(result.html).toContain('>Home</a>')
   })
 
+  it('does not render unsupported button directive forms', async () => {
+    const textDirective = await compileMarkdown(':button[Home]{href="/home"}')
+    const containerDirective = await compileMarkdown(`
+:::button{href="/home"}
+Home
+:::
+`)
+
+    expect(countDirective(textDirective.html, 'button')).toBe(0)
+    expect(textDirective.html).toContain(':button[Home]{href="/home"}')
+    expect(countDirective(containerDirective.html, 'button')).toBe(0)
+    expect(containerDirective.html).toContain(':::button{href="/home"}')
+  })
+
+  it('leaves prose with colon-heavy text untouched by leaf directive parsing', async () => {
+    const result = await compileMarkdown(`
+Meeting at 12:30pm.
+
+Local dev runs at localhost:8080.
+
+Use \`std::filesystem::path\`.
+
+Image ratio: 3:2.
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('12:30pm')
+    expect(result.html).toContain('localhost:8080')
+    expect(result.html).toContain('<code>std::filesystem::path</code>')
+    expect(result.html).toContain('ratio: 3:2')
+    expect(countDirective(result.html, 'button')).toBe(0)
+  })
+
+  it('leaves unknown leaf directives as markdown text with a diagnostic', async () => {
+    const result = await compileMarkdown('::badge[Beta]{tone="info"}')
+
+    expect(hasWarning(result.warnings, 'Unknown directive "badge".')).toBe(true)
+    expect(result.html).toContain('::badge[Beta]{tone="info"}')
+    expect(countDirective(result.html, 'button')).toBe(0)
+  })
+
   it('renders new-tab button attributes', async () => {
     const result = await compileMarkdown(
-      ':button[GitHub]{href="https://github.com/valkyrianlabs" newTab=true}',
+      '::button[GitHub]{href="https://github.com/valkyrianlabs" newTab=true}',
     )
 
     expect(result.warnings).toEqual([])
@@ -886,7 +947,7 @@ describe('compileMarkdown layout directives', () => {
   })
 
   it('renders button variant and size classes', async () => {
-    const result = await compileMarkdown(':button[Docs]{href="/docs" variant="secondary" size="lg"}')
+    const result = await compileMarkdown('::button[Docs]{href="/docs" variant="secondary" size="lg"}')
 
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('pmd-button--secondary')
@@ -897,7 +958,7 @@ describe('compileMarkdown layout directives', () => {
 
   it('renders a left button icon from a fixture icon pack', async () => {
     const result = await compileMarkdown(
-      ':button[Home]{href="/home" icon="@fa-duotone/home"}',
+      '::button[Home]{href="/home" icon="@fa-duotone/home"}',
       fixtureIconConfig,
     )
 
@@ -912,7 +973,7 @@ describe('compileMarkdown layout directives', () => {
 
   it('renders a right button icon from a fixture icon pack', async () => {
     const result = await compileMarkdown(
-      ':button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" iconPosition="right"}',
+      '::button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" iconPosition="right"}',
       fixtureIconConfig,
     )
 
@@ -923,9 +984,9 @@ describe('compileMarkdown layout directives', () => {
   })
 
   it('emits diagnostics for malformed unknown and missing button icons without crashing', async () => {
-    const malformed = await compileMarkdown(':button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
-    const unknownPack = await compileMarkdown(':button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)
-    const missingIcon = await compileMarkdown(':button[Bad]{href="/bad" icon="@fa-duotone/missing"}', fixtureIconConfig)
+    const malformed = await compileMarkdown('::button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
+    const unknownPack = await compileMarkdown('::button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)
+    const missingIcon = await compileMarkdown('::button[Bad]{href="/bad" icon="@fa-duotone/missing"}', fixtureIconConfig)
 
     expect(hasWarning(malformed.warnings, 'Malformed icon ref "fa/home"')).toBe(true)
     expect(hasWarning(unknownPack.warnings, 'Unknown icon pack "unknown"')).toBe(true)
@@ -936,7 +997,7 @@ describe('compileMarkdown layout directives', () => {
 
   it('emits icon pack config diagnostics without blocking valid icons', async () => {
     const result = await compileMarkdown(
-      ':button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github"}',
+      '::button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github"}',
       {
         icons: {
           baseDir: 'tests/fixtures/icons',
@@ -976,9 +1037,9 @@ describe('compileMarkdown layout directives', () => {
 
   it('emits diagnostics for invalid button attributes', async () => {
     const missingHref = await compileMarkdown(
-      ':button[Missing]{variant="banana" size="xl" iconPosition="center"}',
+      '::button[Missing]{variant="banana" size="xl" iconPosition="center"}',
     )
-    const iconOnly = await compileMarkdown(':button[]{href="/settings" icon="@fa-duotone/home"}')
+    const iconOnly = await compileMarkdown('::button[]{href="/settings" icon="@fa-duotone/home"}')
 
     expect(hasWarning(missingHref.warnings, 'Directive "button" requires an href attribute.')).toBe(true)
     expect(hasWarning(missingHref.warnings, 'Invalid button variant "banana"')).toBe(true)
@@ -990,8 +1051,8 @@ describe('compileMarkdown layout directives', () => {
   it('renders buttons wrapper alignment stack and gap classes', async () => {
     const result = await compileMarkdown(`
 :::buttons{align="center" stack="always" gap="lg"}
-:button[Get started]{href="/docs"}
-:button[GitHub]{href="https://github.com/valkyrianlabs" variant="secondary"}
+::button[Get started]{href="/docs"}
+::button[GitHub]{href="https://github.com/valkyrianlabs" variant="secondary"}
 :::
 `)
 
@@ -1008,7 +1069,7 @@ describe('compileMarkdown layout directives', () => {
   it('falls back invalid buttons options and reports diagnostics', async () => {
     const result = await compileMarkdown(`
 :::buttons{align="middle" stack="sometimes" gap="huge"}
-:button[Get started]{href="/docs"}
+::button[Get started]{href="/docs"}
 :::
 `)
 
@@ -2181,9 +2242,9 @@ Body.
 :::toc {depth="bad"}
 :::
 
-:button[Broken]{variant="banana" icon="bad/ref"}
+::button[Broken]{variant="banana" icon="bad/ref"}
 
-:button[]{href="/settings" icon="@brand/github"}
+::button[]{href="/settings" icon="@brand/github"}
 
 :::steps {mode="bad" variant="timeline" layout="diagonal" columns="wide" numbered="maybe"}
 ### Step

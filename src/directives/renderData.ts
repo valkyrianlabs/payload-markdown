@@ -1,9 +1,9 @@
-import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive'
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from './types.js'
 
 export function setDirectiveRenderData(
-  node: ContainerDirective | LeafDirective | TextDirective,
+  node: ContainerDirective | LeafDirective,
   definition: LayoutDirectiveDefinition,
   extraProperties?: Record<string, unknown>,
 ) {

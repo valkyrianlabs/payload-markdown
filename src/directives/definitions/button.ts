@@ -63,9 +63,9 @@ export const buttonDirective: LayoutDirectiveDefinition = {
   },
   description: 'Link button with optional icon, variant, size, and new-tab behavior.',
   editor: {
-    detail: 'Button directive',
-    label: ':button',
-    snippet: ':button[${Label}]{href="${/docs}" variant="${primary}"}\n${}',
+    detail: 'Button leaf directive',
+    label: '::button',
+    snippet: '::button[${Label}]{href="${/docs}" variant="${primary}"}\n${}',
   },
   kind: 'button',
   public: true,

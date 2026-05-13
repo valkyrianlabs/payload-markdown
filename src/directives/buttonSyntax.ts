@@ -8,11 +8,16 @@ export type ParsedButtonDirectiveLine = {
   warnings: string[]
 }
 
+const BUTTON_LEAF_MARKER = '::button'
+
 export function parseButtonDirectiveLine(text: string): null | ParsedButtonDirectiveLine {
   const trimmed = text.trim()
-  if (!trimmed.startsWith(':button')) return null
+  if (!trimmed.startsWith(BUTTON_LEAF_MARKER)) return null
 
-  let rest = trimmed.slice(':button'.length).trimStart()
+  let rest = trimmed.slice(BUTTON_LEAF_MARKER.length)
+  if (rest && !/^[\s[{]/.test(rest)) return null
+
+  rest = rest.trimStart()
   let label = ''
 
   if (rest.startsWith('[')) {

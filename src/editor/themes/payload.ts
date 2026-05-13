@@ -151,10 +151,12 @@ export const payloadTheme = EditorView.theme(
 
 // Keep custom directive highlighting compatible with keyword semantics
 const mdQualifierTag = Tag.define(t.keyword)
+const mdLeafDirectiveTag = Tag.define(t.keyword)
 
 export const payloadHighlightStyle = HighlightStyle.define([
   // Directives + language keywords
   { color: violet, tag: [mdQualifierTag, t.keyword] },
+  { color: '#d7a7df', tag: mdLeafDirectiveTag },
 
   // Names / identifiers that should read warm
   { color: coral, tag: [t.name, t.deleted, t.character, t.propertyName, t.macroName] },
@@ -230,6 +232,10 @@ function isDirectiveLine(line: MarkdownLine): boolean {
   return line.text.slice(line.pos).startsWith(':::')
 }
 
+function isLeafDirectiveLine(line: MarkdownLine): boolean {
+  return /^::button(?:$|[\s[{])/.test(line.text.slice(line.pos))
+}
+
 const directiveBlock = {
   defineNodes: [
     {
@@ -237,9 +243,34 @@ const directiveBlock = {
       block: true,
       style: mdQualifierTag,
     },
+    {
+      name: 'LeafDirectiveLine',
+      block: true,
+      style: mdLeafDirectiveTag,
+    },
   ],
 
   parseBlock: [
+    {
+      name: 'LeafDirectiveLine',
+      before: 'HTMLBlock',
+      endLeaf(_cx, line) {
+        return isLeafDirectiveLine(line)
+      },
+      parse(cx, line) {
+        if (!isLeafDirectiveLine(line)) return false
+
+        const startInLine = line.pos
+
+        const from = cx.lineStart + startInLine
+        const to = cx.lineStart + line.text.length
+
+        cx.addElement(cx.elt('LeafDirectiveLine', from, to))
+        cx.nextLine()
+
+        return true
+      },
+    },
     {
       name: 'DirectiveLine',
       before: 'HTMLBlock',

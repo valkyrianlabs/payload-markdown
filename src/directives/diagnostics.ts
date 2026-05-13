@@ -241,6 +241,14 @@ function getButtonDiagnostics(text: string): string[] {
   return diagnostics
 }
 
+function getLeafDirectiveName(text: string): string | undefined {
+  if (text.startsWith(':::')) return undefined
+
+  const match = text.match(/^::([\w-]+)(?:$|[\s[{])/)
+
+  return match?.[1]
+}
+
 export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] {
   const diagnostics: DirectiveDiagnostic[] = []
   const stack: OpenFrame[] = []
@@ -293,10 +301,23 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
         })
     }
 
-    if (!inFence && trimmed.startsWith(':button')) {
+    if (!inFence && trimmed.startsWith('::') && !trimmed.startsWith(':::')) {
+      const leafName = getLeafDirectiveName(trimmed)
+      const leafMarkerStart = line.indexOf('::')
+      const leafMarkerFrom = leafMarkerStart >= 0 ? lineStart + leafMarkerStart : lineStart
+
+      if (leafName && leafName !== 'button')
+        diagnostics.push({
+          from: leafMarkerFrom,
+          line: index + 1,
+          message: `Unknown directive "${leafName}".`,
+          severity: 'warning',
+          to: markerTo,
+        })
+
       for (const message of getButtonDiagnostics(trimmed))
         diagnostics.push({
-          from: markerFrom,
+          from: leafMarkerFrom,
           line: index + 1,
           message,
           severity: 'warning',

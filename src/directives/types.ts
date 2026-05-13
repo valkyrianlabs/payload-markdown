@@ -1,5 +1,5 @@
 import type { Element, ElementContent } from 'hast'
-import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive'
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import type { Data } from 'unist'
 
 import type { MarkdownRenderConfig } from '../types/core.js'
@@ -46,7 +46,7 @@ export type LayoutToken =
     }
 
 export type DirectiveChild = ContainerDirective['children'][number]
-export type MarkdownDirectiveNode = ContainerDirective | LeafDirective | TextDirective
+export type MarkdownDirectiveNode = ContainerDirective | LeafDirective
 
 export type LayoutDirectiveKind =
   | 'button'

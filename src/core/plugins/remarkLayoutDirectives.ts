@@ -1,5 +1,5 @@
 import type { Root } from 'mdast'
-import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive'
+import type { ContainerDirective, LeafDirective } from 'mdast-util-directive'
 import type { Plugin } from 'unified'
 
 import { visit } from 'unist-util-visit'
@@ -7,14 +7,14 @@ import { visit } from 'unist-util-visit'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { setDirectiveRenderData } from '../../directives/renderData.js'
 
-type MarkdownDirectiveNode = ContainerDirective | LeafDirective | TextDirective
+type MarkdownDirectiveNode = ContainerDirective | LeafDirective
 
 function isMarkdownDirective(node: unknown): node is MarkdownDirectiveNode {
   return Boolean(
     node &&
       typeof node === 'object' &&
       'type' in node &&
-      ['containerDirective', 'leafDirective', 'textDirective'].includes(
+      ['containerDirective', 'leafDirective'].includes(
         (node as { type?: string }).type ?? '',
       ),
   )
@@ -29,6 +29,8 @@ type WarningSink = {
 }
 
 function transformDirective(node: MarkdownDirectiveNode, file: WarningSink) {
+  if (node.type === 'leafDirective' && node.name !== 'button') return
+
   const definition = layoutDirectiveRegistry.get(node.name)
 
   if (!definition) return

@@ -102,6 +102,15 @@ function getBooleanAttribute(attributes: Record<string, boolean | string>, name:
   return value === 'true'
 }
 
+function getLeafDirectiveName(text: string): string | undefined {
+  const trimmed = text.trim()
+  if (trimmed.startsWith(':::')) return undefined
+
+  const match = trimmed.match(/^::([\w-]+)(?:$|[\s[{])/)
+
+  return match?.[1]
+}
+
 function makeIconPlaceholder(icon: string, iconPosition: 'left' | 'right') {
   const normalized = normalizePayloadMarkdownIconRef(icon)
   const iconKey = normalized.icon?.key ?? icon
@@ -223,6 +232,9 @@ function splitParagraphButtonDirectives(
     const button = text ? makeButtonDirective(text, file, config) : undefined
 
     if (!button) {
+      const leafName = text ? getLeafDirectiveName(text) : undefined
+      if (leafName && leafName !== 'button') file.message(`Unknown directive "${leafName}".`)
+
       appendParagraphLine(paragraphLines, lineChildren)
       continue
     }
