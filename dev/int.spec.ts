@@ -1,5 +1,7 @@
 import type { Config } from 'payload'
 
+import { ensureSyntaxTree } from '@codemirror/language'
+import { EditorState } from '@codemirror/state'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { compileMarkdown } from '../src/core/renderMarkdown'
@@ -9,12 +11,14 @@ import {
   parseDirectiveLine,
   resolveDirectiveTheme,
 } from '../src/directives'
+import { getDirectiveCloseLabels } from '../src/directives/closeLabels'
 import { lintMarkdownDirectives } from '../src/directives/diagnostics'
 import {
   getDirectiveAttributeCompletionOptions,
   getDirectiveCompletionOptions,
   getDirectiveThemeValueCompletionOptions,
 } from '../src/editor/directives/completions'
+import { payloadMarkdownTheme } from '../src/editor/themes/payload'
 import { DEFAULT_CODE_LANGS, payloadMarkdown } from '../src/index.ts'
 import {
   clearPayloadMarkdownSettings,
@@ -32,6 +36,23 @@ const countDirective = (html: string, directive: string): number =>
 
 const hasWarning = (warnings: string[], value: string): boolean =>
   warnings.some((warning) => warning.includes(value))
+
+const countSyntaxNodes = (markdown: string, name: string): number => {
+  const state = EditorState.create({
+    doc: markdown,
+    extensions: [payloadMarkdownTheme],
+  })
+  const tree = ensureSyntaxTree(state, state.doc.length, 1000)
+  let count = 0
+
+  tree?.iterate({
+    enter(node) {
+      if (node.name === name) ++count
+    },
+  })
+
+  return count
+}
 
 describe('payloadMarkdown', () => {
   beforeEach(() => {
@@ -579,6 +600,59 @@ describe('layout directive registry', () => {
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::')).toMatchObject({
       action: 'close',
     })
+  })
+
+  it('derives editor-only close labels from directive nesting', () => {
+    const labels = getDirectiveCloseLabels(
+      [
+        ':::section',
+        ':::cards',
+        ':::card {title="One"}',
+        'Content',
+        ':::',
+        ':::',
+        ':::endsection',
+        '',
+        '```md',
+        ':::card',
+        ':::',
+        '```',
+        ':::2col',
+        ':::card',
+        ':::',
+        ':::endcol',
+        ':::section',
+        ':::',
+        ':::3col',
+        ':::',
+      ].join('\n'),
+    )
+
+    expect(
+      labels.map(({ kind, label, line }) => ({
+        kind,
+        label,
+        line,
+      })),
+    ).toEqual([
+      { kind: 'widget', label: 'endcard', line: 5 },
+      { kind: 'widget', label: 'endcards', line: 6 },
+      { kind: 'suffix', label: 'endsection', line: 7 },
+      { kind: 'widget', label: 'endcard', line: 15 },
+      { kind: 'suffix', label: 'endcol', line: 16 },
+      { kind: 'widget', label: 'endsection', line: 18 },
+      { kind: 'widget', label: 'endcol', line: 20 },
+    ])
+  })
+
+  it('highlights directive closers without requiring a blank line before them', () => {
+    const markdown = [
+      ':::card {eyebrow="Default child theme" title="Glass Card"}',
+      'This card inherits `cardTheme="glass"` from the parent `:::cards` block.',
+      ':::',
+    ].join('\n')
+
+    expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
   it('parses directive attributes while keeping legacy layout markers stable', () => {

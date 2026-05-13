@@ -216,6 +216,20 @@ export const payloadHighlightStyle = HighlightStyle.define([
   { color: invalid, tag: t.invalid },
 ])
 
+type MarkdownConfig = Extract<
+  NonNullable<NonNullable<Parameters<typeof markdown>[0]>['extensions']>,
+  { parseBlock?: unknown }
+>
+
+type MarkdownLine = {
+  pos: number
+  text: string
+}
+
+function isDirectiveLine(line: MarkdownLine): boolean {
+  return line.text.slice(line.pos).startsWith(':::')
+}
+
 const directiveBlock = {
   defineNodes: [
     {
@@ -229,12 +243,13 @@ const directiveBlock = {
     {
       name: 'DirectiveLine',
       before: 'HTMLBlock',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      parse(cx: any, line: any) {
-        const startInLine = line.pos
-        const text = line.text.slice(startInLine)
+      endLeaf(_cx, line) {
+        return isDirectiveLine(line)
+      },
+      parse(cx, line) {
+        if (!isDirectiveLine(line)) return false
 
-        if (!text.startsWith(':::')) return false
+        const startInLine = line.pos
 
         const from = cx.lineStart + startInLine
         const to = cx.lineStart + line.text.length
@@ -246,7 +261,7 @@ const directiveBlock = {
       },
     },
   ],
-}
+} satisfies MarkdownConfig
 
 export const payloadMarkdownTheme: Extension = [
   payloadTheme,
