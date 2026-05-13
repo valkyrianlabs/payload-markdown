@@ -13,7 +13,7 @@ tags:
 
 Most minor releases do not require stored content migrations. When a release changes stored data or Payload schema fields, a guide is provided here.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Current Deprecations

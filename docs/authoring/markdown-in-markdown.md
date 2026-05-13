@@ -14,7 +14,7 @@ tags:
 
 When documenting Markdown syntax, the examples often contain both directive markers and fenced code blocks. Use a fence with more backticks than any fence inside the example.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Showing A Directive
@@ -23,7 +23,7 @@ Use four backticks around an example that contains a normal triple-backtick code
 
 `````md
 ````md
-:::callout {variant="tip" title="Use the server renderer"}
+:::callout[Use the server renderer]{variant="tip"}
 Render fields with:
 
 ```tsx
@@ -41,11 +41,14 @@ Use the same approach for a directive inside another directive:
 
 `````md
 ````md
-:::steps {variant="cards" stepTheme="glass"}
+:::steps{
+  variant="cards"
+  stepTheme="glass"
+}
 
 ### Configure
 
-:::callout {variant="warning" title="Collection scope"}
+:::callout[Collection scope]{variant="warning"}
 Pass `collectionSlug` when collection-scoped config should apply.
 :::
 
@@ -65,15 +68,15 @@ Tabs examples usually contain directive nesting and package-manager code fences:
 
 `````md
 ````md
-:::tabs {default="pnpm"}
+:::tabs{default="pnpm"}
 
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 ```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
-:::tab {label="npm" value="npm"}
+:::tab[npm]{value="npm"}
 ```bash
 npm install @valkyrianlabs/payload-markdown
 ```
@@ -85,21 +88,24 @@ npm install @valkyrianlabs/payload-markdown
 
 ## Common Mistakes
 
-:::cards {columns="2" cardTheme="muted"}
+:::cards{
+  columns="2"
+  cardTheme="muted"
+}
 
-:::card {title="Outer fence too short"}
+:::card[Outer fence too short]
 If the outer example fence is also triple backticks, the first inner code block closes the example early.
 :::
 
-:::card {title="Unclosed directive"}
+:::card[Unclosed directive]
 Every container directive needs a closing `:::` or the specific closer documented for layout directives.
 :::
 
-:::card {title="Raw classes in content"}
+:::card[Raw classes in content]
 Prefer named themes from config. Keep Tailwind class strings in source where Tailwind can scan them.
 :::
 
-:::card {title="Absolute internal links"}
+:::card[Absolute internal links]
 Use docs-root relative links such as `/directives/cards`, not a production domain.
 :::
 

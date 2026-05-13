@@ -13,13 +13,13 @@ tags:
 
 Layout directives are registry-backed Markdown containers for structured content. They preserve Markdown as the source of truth while giving the renderer enough structure to produce sections, columns, and cells.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Section
 
 ```md
-:::section {theme="panel"}
+:::section{theme="panel"}
 
 ## Interfaces Without Friction
 
@@ -37,7 +37,10 @@ Close a section with `:::` or `:::endsection`.
 ## Columns
 
 ```md
-:::2col {theme="default" cellTheme="panel"}
+:::2col{
+  theme="default"
+  cellTheme="panel"
+}
 
 ### First column
 
@@ -90,7 +93,7 @@ If a grid opens under a heading of depth `N`, then:
 ```md
 :::2col
 
-:::cell {theme="panel"}
+:::cell{theme="panel"}
 First cell content.
 :::
 
@@ -115,15 +118,15 @@ Second cell content.
 ## Mixed Layout Example
 
 ````md
-:::section {theme="panel"}
+:::section{theme="panel"}
 
 ## Product Documentation
 
-:::2col {cellTheme="panel"}
+:::2col{cellTheme="panel"}
 
 ### Authoring
 
-:::callout {variant="tip" title="Plain Markdown"}
+:::callout[Plain Markdown]{variant="tip"}
 Authors keep readable source.
 :::
 

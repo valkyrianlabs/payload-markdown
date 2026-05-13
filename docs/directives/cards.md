@@ -57,6 +57,12 @@ Defaults:
 
 Invalid columns fall back to `3` and produce a non-fatal diagnostic where diagnostics are available.
 
+Cards-level `href`, `linkScope`, and `newTab` can provide defaults for child cards. Supported `linkScope` values are:
+
+- `section`: one overlay link covers the whole cards section; child card link overrides are ignored
+- `card`: child cards inherit the parent `href` as full-card links unless they override it
+- `title`: child card titles inherit the parent `href` unless a child card overrides it
+
 ## `:::card`
 
 Attributes:
@@ -108,7 +114,7 @@ Content.
 
 ## Link Behavior
 
-When `href` is present on `:::cards`, the whole card section is clickable by default:
+When `href` is present on `:::cards`, `linkScope="section"` is the default. The whole cards section becomes one link:
 
 ```md
 :::cards{href="/getting-started/fields-and-blocks"}
@@ -158,6 +164,33 @@ Portable Markdown content.
 :::
 ```
 
+Child cards can override card-level defaults:
+
+```md
+:::cards{
+  columns="3"
+  href="/docs"
+  linkScope="title"
+}
+
+:::card[Install]
+Install the plugin.
+:::
+
+:::card[Configure]
+Configure the editor and renderer.
+:::
+
+:::card[Customize]{
+  href="/configuration/directive-themes"
+  linkScope="full"
+}
+This card overrides the parent default and links the full card.
+:::
+
+:::
+```
+
 When `href` is present on an individual `:::card`, the whole card is clickable by default:
 
 ```md
@@ -182,9 +215,56 @@ Set `newTab` or `newTab="true"` on `:::cards` or `:::card` to open links in a ne
 ```md
 :::card[External Guide]{
   href="https://example.com"
-  newTab
+  linkScope="full"
+  newTab=true
 }
 Portable Markdown content.
+:::
+```
+
+Full-card links should not contain nested buttons or other links. Use `linkScope="title"` when the card body contains links:
+
+```md
+:::card[Read the Docs]{
+  href="/docs"
+  linkScope="title"
+  icon="@fa-duotone/book-open"
+}
+Only the card title is linked. This keeps buttons and other links in the card body valid.
+:::
+```
+
+## CTA Composition
+
+A dedicated CTA directive is not required for common calls to action. Compose a `:::card` with `:::buttons`, and keep the card link scoped to the title when the body contains buttons:
+
+```md
+:::card[Ready to build better docs?]{
+  href="/docs"
+  icon="@fa-duotone/rocket"
+  linkScope="title"
+}
+Use rich Markdown directives, icon packs, buttons, cards, and clean autocomplete without turning docs into a page builder.
+
+:::buttons{
+  align="center"
+  stack="mobile"
+  gap="md"
+}
+::button[Get Started]{
+  href="/docs"
+  variant="primary"
+  icon="@fa-duotone/book-open"
+}
+
+::button[View GitHub]{
+  href="https://github.com/valkyrianlabs/payload-markdown"
+  variant="secondary"
+  icon="@brand/github"
+  newTab=true
+}
+:::
+
 :::
 ```
 

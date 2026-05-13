@@ -38,6 +38,12 @@ Typing or invoking completion around `::button` offers the leaf button directive
 
 Button completion may also show shortcut labels such as `::button_icon` and `::button_full`. These are autocomplete variants only. Selecting them inserts canonical `::button[...]` Markdown; `::button_icon` and `::button_full` are not valid directive names in source.
 
+Common button completions:
+
+- `::button` inserts a compact button with `href` and `variant`
+- `::button_icon` inserts canonical `::button` with an `icon` attribute included
+- `::button_full` inserts canonical `::button` with the common button attributes filled in
+
 Snippets insert directive skeletons and use CodeMirror placeholders/tabstops, so placeholder content such as `Content` can be overwritten immediately.
 
 ## Snippet Examples
@@ -116,6 +122,43 @@ Install, configure, ship.
 ```
 
 For visible directive headings, `[Label]` is preferred over `title=""`. Existing `title=""` content remains compatible.
+
+If both `[Label]` and `title` are present, the renderer uses `[Label]`. Matching values do not warn; differing values produce a non-fatal diagnostic so authors can remove the ambiguity.
+
+## Syntax Highlighting
+
+Directive highlighting distinguishes supported pieces where the active theme can style them:
+
+- leaf directives such as `::button`
+- container directives such as `:::card`
+- directive labels such as `[Fast Setup]`
+- argument names such as `href=`
+- argument values such as `"/docs"` or `true`
+- nested directive boundaries and closing markers
+
+The editor now handles directive highlighting more robustly across nested blocks and after partially edited or non-clean previous lines.
+
+## Closing Labels
+
+Nested directives can be hard to scan when several `:::` closers appear in a row. The editor adds lightweight visual labels beside plain closers, such as `endcard` or `endbuttons`, without changing the stored Markdown.
+
+```md
+:::cards{
+  columns="2"
+}
+
+:::card[First Card]
+Content.
+:::
+
+:::card[Second Card]
+Content.
+:::
+
+:::
+```
+
+The source remains plain Markdown. In the editor, the three closing markers are decorated so authors can see which `card` or `cards` block each closer ends. Explicit layout closers such as `:::endcol` and `:::endsection` are also highlighted as closing labels.
 
 ## Attribute Completion
 

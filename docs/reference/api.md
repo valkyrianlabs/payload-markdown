@@ -11,7 +11,7 @@ tags:
 
 # API Reference
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Package Exports

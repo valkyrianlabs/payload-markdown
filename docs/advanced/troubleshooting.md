@@ -11,7 +11,7 @@ tags:
 
 # Troubleshooting
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## The Field Does Not Appear
@@ -107,8 +107,8 @@ When `enhanced` is `false`, line numbers are disabled even if `lineNumbers` is `
 
 Directive diagnostics are non-fatal. Invalid values fall back safely. Examples:
 
-- invalid `:::cards {columns="wide"}` falls back to `3`
-- invalid `:::toc {depth="20"}` falls back to `3`
+- invalid `:::cards{columns="wide"}` falls back to `3`
+- invalid `:::toc{depth="20"}` falls back to `3`
 - unknown callout variants fall back to `note`
 - invalid tabs defaults fall back to the first tab
 - unknown themes fall back to the directive group's default theme
@@ -127,6 +127,6 @@ Use Markdown and directives for content structure. Use source-defined directive 
 
 Runtime helpers that read plugin settings require `payloadMarkdown(...)` to run first. Include the plugin in the Payload config before using helpers that rely on global plugin settings.
 
-:::details {title="Error shape"}
+:::details[Error shape]
 If settings are missing, `getPayloadMarkdownSettings()` throws an error that says settings have not been initialized and points back to adding `payloadMarkdown(...)` to the Payload plugins array.
 :::

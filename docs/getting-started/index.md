@@ -12,7 +12,13 @@ tags:
 
 Use this section when wiring the plugin into a Payload project for the first time.
 
-:::steps {variant="cards" layout="grid" columns="3" numbered stepTheme="cyan"}
+:::steps{
+  variant="cards"
+  layout="grid"
+  columns="3"
+  numbered
+  stepTheme="cyan"
+}
 
 ### Install
 
@@ -30,17 +36,20 @@ Render fields and blocks with the server exports so collection-scoped settings c
 
 ## Pages In This Section
 
-:::cards {columns="3" cardTheme="glass"}
+:::cards{
+  columns="3"
+  cardTheme="glass"
+}
 
-:::card {title="Installation" href="/getting-started/installation"}
+:::card[Installation]{href="/getting-started/installation"}
 Plugin registration, package installation, and Tailwind setup.
 :::
 
-:::card {title="Fields and Blocks" href="/getting-started/fields-and-blocks"}
+:::card[Fields and Blocks]{href="/getting-started/fields-and-blocks"}
 Automatic install behavior, manual schema control, and block rendering.
 :::
 
-:::card {title="Rendering" href="/getting-started/rendering"}
+:::card[Rendering]{href="/getting-started/rendering"}
 Server renderer usage, renderer props, empty fallbacks, and block component usage.
 :::
 

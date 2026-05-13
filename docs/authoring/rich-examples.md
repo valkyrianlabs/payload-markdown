@@ -13,7 +13,7 @@ tags:
 
 These examples are intended to be copied into a Markdown field, Markdown block, or Git-backed docs file.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Blog Post
@@ -21,14 +21,14 @@ These examples are intended to be copied into a Markdown field, Markdown block, 
 ````md
 # Building With Portable Markdown
 
-:::toc {title="Contents" depth="3" theme="compact"}
+:::toc[Contents]{depth="3" theme="compact"}
 :::
 
 ## Why Markdown
 
 Markdown keeps posts portable while the renderer handles presentation.
 
-:::callout {variant="tip" title="Keep content portable"}
+:::callout[Keep content portable]{variant="tip"}
 Use directives for structure, not arbitrary HTML.
 :::
 
@@ -42,7 +42,7 @@ payloadMarkdown({
 })
 ```
 
-:::details {title="Advanced notes" theme="glass"}
+:::details[Advanced notes]{theme="glass"}
 Collection-level `code`, `themes`, and `config` can override plugin defaults.
 :::
 ````
@@ -52,10 +52,15 @@ Collection-level `code`, `themes`, and `config` can override plugin defaults.
 ````md
 # Payload Markdown Setup
 
-:::toc {title="On this page" depth="3"}
+:::toc[On this page]{depth="3"}
 :::
 
-:::steps {variant="cards" layout="stack" numbered stepTheme="cyan"}
+:::steps{
+  variant="cards"
+  layout="stack"
+  numbered
+  stepTheme="cyan"
+}
 
 ### Install
 
@@ -73,7 +78,7 @@ Use `MarkdownRenderer` from the server export.
 
 :::
 
-:::callout {variant="warning" title="Remember collectionSlug"}
+:::callout[Remember collectionSlug]{variant="warning"}
 Pass `collectionSlug` when collection-scoped config should apply.
 :::
 ````
@@ -81,21 +86,25 @@ Pass `collectionSlug` when collection-scoped config should apply.
 ## Package Manager Tabs
 
 ````md
-:::tabs {default="pnpm" theme="glass" tabTheme="muted"}
+:::tabs{
+  default="pnpm"
+  theme="glass"
+  tabTheme="muted"
+}
 
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 ```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
-:::tab {label="npm" value="npm"}
+:::tab[npm]{value="npm"}
 ```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
-:::tab {label="yarn" value="yarn"}
+:::tab[yarn]{value="yarn"}
 ```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
@@ -107,21 +116,31 @@ yarn add @valkyrianlabs/payload-markdown
 ## Landing Section
 
 ```md
-:::section {theme="panel"}
+:::section{theme="panel"}
 
 ## Build Docs Without Losing Markdown
 
-:::cards {columns="3" theme="spacious" cardTheme="glass"}
+:::cards{
+  columns="3"
+  theme="spacious"
+  cardTheme="glass"
+}
 
-:::card {eyebrow="Core" title="Markdown Field" href="/getting-started/fields-and-blocks"}
+:::card[Markdown Field]{
+  eyebrow="Core"
+  href="/getting-started/fields-and-blocks"
+}
 Portable Markdown content with live preview.
 :::
 
-:::card {eyebrow="Authoring" title="Directive Autocomplete" theme="cyan"}
+:::card[Directive Autocomplete]{
+  eyebrow="Authoring"
+  theme="cyan"
+}
 Snippets, placeholders, and lightweight diagnostics.
 :::
 
-:::card {eyebrow="Rendering" title="Server Rendered"}
+:::card[Server Rendered]{eyebrow="Rendering"}
 Shiki code blocks, heading anchors, TOCs, and themed directives.
 :::
 
@@ -133,7 +152,7 @@ Shiki code blocks, heading anchors, TOCs, and themed directives.
 ## Comparison Layout
 
 ````md
-:::2col {cellTheme="panel"}
+:::2col{cellTheme="panel"}
 
 ### Field Content
 
@@ -157,11 +176,11 @@ Use `vlMdBlock` inside layout builders when Markdown is one section among other 
 ## Warning And Recovery Pattern
 
 ````md
-:::callout {variant="danger" title="Production migration"}
+:::callout[Production migration]{variant="danger"}
 Back up production data before reconciling Payload schema fields.
 :::
 
-:::details {title="Recovery checklist"}
+:::details[Recovery checklist]
 1. Restore from backup if a schema reconciliation removed expected fields.
 2. Re-run locally with the same collection config.
 3. Migrate deprecated `config.options` values into `code`.

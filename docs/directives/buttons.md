@@ -118,6 +118,6 @@ Button icons come from the local SVG icon packs configured in `payloadMarkdown({
 
 Icon refs must stay within a configured pack. Unknown packs, missing SVG files, malformed refs, traversal with `..`, backslashes, and non-SVG targets produce diagnostics and render the button without the icon.
 
-:::callout[Keep licensed icons local] {variant="warning"}
+:::callout[Keep licensed icons local]{variant="warning"}
 Paid or pro SVG icon files should remain in a local ignored folder such as `public/icons`. Do not commit those assets or make CI depend on them.
 :::

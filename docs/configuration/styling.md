@@ -17,7 +17,7 @@ The renderer ships with practical defaults and supports customization through th
 - `themes` for named directive themes
 - `code` for code fence rendering behavior
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Tailwind Typography
@@ -91,7 +91,7 @@ payloadMarkdown({
 Then authors select the theme in Markdown:
 
 ```md
-:::card {theme="forge" title="Custom Card"}
+:::card[Custom Card]{theme="forge"}
 Portable Markdown content.
 :::
 ```

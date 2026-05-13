@@ -113,7 +113,10 @@ The table of contents directive uses those same heading IDs.
 
 ## Directive Pages
 
-:::cards{columns="3" cardTheme="muted"}
+:::cards{
+  columns="3"
+  cardTheme="muted"
+}
 
 :::card[Callout]{href="/directives/callout"}
 Notes, tips, warnings, danger messages, and success states.
