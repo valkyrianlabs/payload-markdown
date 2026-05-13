@@ -13,7 +13,7 @@ tags:
 
 The Payload field uses CodeMirror for Markdown editing.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Directive Autocomplete
@@ -36,6 +36,8 @@ Typing or invoking completion around `:::` offers public directives from the dir
 
 Typing or invoking completion around `::button` offers the leaf button directive and its attributes.
 
+Button completion may also show shortcut labels such as `::button_icon` and `::button_full`. These are autocomplete variants only. Selecting them inserts canonical `::button[...]` Markdown; `::button_icon` and `::button_full` are not valid directive names in source.
+
 Snippets insert directive skeletons and use CodeMirror placeholders/tabstops, so placeholder content such as `Content` can be overwritten immediately.
 
 ## Snippet Examples
@@ -53,7 +55,12 @@ Content
 ```
 
 ```md
-:::steps {variant="cards" layout="grid" columns="2" numbered}
+:::steps{
+  variant="cards"
+  layout="grid"
+  columns="2"
+  numbered
+}
 
 ### First step
 
@@ -69,15 +76,17 @@ Content
 Tabs snippets include child `tab` panels and code fences:
 
 ````md
-:::tabs {default="pnpm"}
+:::tabs{
+  default="pnpm"
+}
 
-:::tab {label="pnpm" value="pnpm"}
+:::tab[pnpm]{value="pnpm"}
 ```bash
 pnpm add package-name
 ```
 :::
 
-:::tab {label="npm" value="npm"}
+:::tab[npm]{value="npm"}
 ```bash
 npm install package-name
 ```
@@ -89,15 +98,33 @@ npm install package-name
 Button snippets use the leaf directive form:
 
 ```md
-::button[Label]{href="/docs" variant="primary"}
+::button[Label]{
+  href="/docs"
+  variant="primary"
+}
 ```
+
+Expanded multiline attributes are preferred for readability:
+
+```md
+:::card[Fast Setup]{
+  icon="@fa-duotone/bolt"
+  theme="glass"
+}
+Install, configure, ship.
+:::
+```
+
+For visible directive headings, `[Label]` is preferred over `title=""`. Existing `title=""` content remains compatible.
 
 ## Attribute Completion
 
 Inside directive attribute braces, the editor suggests valid attributes where the registry knows them:
 
 ```md
-:::card {theme=""}
+:::card[Fast Setup]{
+  theme=""
+}
 ```
 
 Theme-aware attributes include:
@@ -142,6 +169,6 @@ The editor provides lightweight, non-fatal directive diagnostics for issues such
 
 Diagnostics do not block rendering. The renderer falls back to safe defaults where possible.
 
-:::details {title="Attribute parser notes"}
+:::details[Attribute parser notes]
 The parser understands quoted values and shorthand markers such as `.class`, `#id`, and boolean attributes. Directive definitions still control which attributes are valid for each directive; unknown attributes can warn even if the attribute parser can read them.
 :::

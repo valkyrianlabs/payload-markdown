@@ -721,6 +721,28 @@ describe('layout directive registry', () => {
     expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
+  it('highlights directive labels and expanded argument blocks', () => {
+    const markdown = [
+      '::button[Read Docs]{',
+      '  href="/docs"',
+      '  newTab=false',
+      '}',
+      '',
+      ':::card[Fast Setup]{',
+      '  theme="glass"',
+      '}',
+      'Install, configure, ship.',
+      ':::',
+    ].join('\n')
+
+    expect(countSyntaxNodes(markdown, 'LeafDirectiveName')).toBe(1)
+    expect(countSyntaxNodes(markdown, 'DirectiveName')).toBe(2)
+    expect(countSyntaxNodes(markdown, 'DirectiveLabel')).toBe(2)
+    expect(countSyntaxNodes(markdown, 'DirectiveAttributeName')).toBe(3)
+    expect(countSyntaxNodes(markdown, 'DirectiveAttributeValue')).toBe(3)
+    expect(countSyntaxNodes(markdown, 'DirectiveBrace')).toBe(4)
+  })
+
   it('warns in editor diagnostics when section-scoped cards use child link overrides', () => {
     const diagnostics = lintMarkdownDirectives(`
 :::cards {href="/overview"}
@@ -766,6 +788,22 @@ Ignored body.
     })
   })
 
+  it('parses directive labels and expanded multiline attributes', () => {
+    expect(parseDirectiveLine(':::card[Fast Setup]{\n  theme="glass"\n}')).toMatchObject({
+      name: 'card',
+      attributes: {
+        theme: 'glass',
+      },
+      label: 'Fast Setup',
+    })
+
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::card[Fast Setup]')).toMatchObject({
+      name: 'card',
+      action: 'open',
+      label: 'Fast Setup',
+    })
+  })
+
   it('exposes public directive snippets from registry metadata', () => {
     const publicNames = layoutDirectiveRegistry
       .getPublicDefinitions()
@@ -796,6 +834,8 @@ Ignored body.
       ':::3col',
       ':::cell',
       '::button',
+      '::button_icon',
+      '::button_full',
       ':::buttons',
       ':::callout',
       ':::details',
@@ -811,6 +851,19 @@ Ignored body.
     expect(completions.map((completion) => completion.label)).not.toContain(':button')
     expect(completions.map((completion) => completion.label)).not.toContain(':::button')
 
+    const buttonDefinition = layoutDirectiveRegistry.get('button')
+    const buttonSnippets = [
+      buttonDefinition?.editor.snippet,
+      ...(buttonDefinition?.editor.snippets ?? []).map((snippet) => snippet.snippet),
+    ].filter((snippet): snippet is string => typeof snippet === 'string')
+
+    expect(buttonSnippets).toHaveLength(3)
+    expect(buttonSnippets.every((snippet) => snippet.startsWith('::button['))).toBe(true)
+    expect(buttonSnippets.every((snippet) => !snippet.includes('::button_icon'))).toBe(true)
+    expect(buttonSnippets.every((snippet) => !snippet.includes('::button_full'))).toBe(true)
+    expect(buttonSnippets[1]).toContain('icon="${@fa-duotone/book-open}"')
+    expect(buttonSnippets[2]).toContain('ariaLabel="${}"')
+
     const snippets = layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => [
       definition.editor.snippet,
       ...(definition.editor.snippets ?? []).map((snippet) => snippet.snippet),
@@ -819,8 +872,8 @@ Ignored body.
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('::button[${Label}]'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
-    expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
-    expect(snippets.some((snippet) => snippet.includes(':::tabs {default="${pnpm}"}'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes(':::card[${Title}]'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes(':::tabs{'))).toBe(true)
     expect(snippets.every((snippet) => snippet.includes('${}'))).toBe(true)
   })
 
@@ -908,6 +961,30 @@ Home
     expect(containerDirective.html).toContain(':::button{href="/home"}')
   })
 
+  it('does not treat autocomplete-only button aliases as real directives', async () => {
+    const result = await compileMarkdown('::button_icon[Read Docs]{href="/docs"}')
+
+    expect(hasWarning(result.warnings, 'Unknown directive "button_icon".')).toBe(true)
+    expect(countDirective(result.html, 'button')).toBe(0)
+    expect(result.html).toContain('::button_icon[Read Docs]{href="/docs"}')
+  })
+
+  it('renders multiline leaf button attributes', async () => {
+    const result = await compileMarkdown(`
+::button[Read Docs]{
+  href="/docs"
+  variant="secondary"
+  size="lg"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('href="/docs"')
+    expect(result.html).toContain('pmd-button--secondary')
+    expect(result.html).toContain('pmd-button--lg')
+    expect(result.html).toContain('>Read Docs</a>')
+  })
+
   it('leaves prose with colon-heavy text untouched by leaf directive parsing', async () => {
     const result = await compileMarkdown(`
 Meeting at 12:30pm.
@@ -983,6 +1060,26 @@ Image ratio: 3:2.
     expect(result.html.indexOf('GitHub')).toBeLessThan(result.html.indexOf('pmd-button__icon--right'))
   })
 
+  it('renders card and callout icons from fixture icon packs', async () => {
+    const result = await compileMarkdown(
+      `
+:::card[Fast Setup]{icon="@fa-duotone/home"}
+Install, configure, ship.
+:::
+
+:::callout[Heads up]{variant="warning" icon="@brand/github"}
+Check credentials.
+:::
+`,
+      fixtureIconConfig,
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('pmd-card__icon')
+    expect(result.html).toContain('pmd-callout__icon')
+    expect(result.html.match(/<svg/g)?.length).toBe(2)
+  })
+
   it('emits diagnostics for malformed unknown and missing button icons without crashing', async () => {
     const malformed = await compileMarkdown('::button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
     const unknownPack = await compileMarkdown('::button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)
@@ -1048,6 +1145,13 @@ Image ratio: 3:2.
     expect(hasWarning(iconOnly.warnings, 'Icon-only button requires an ariaLabel attribute.')).toBe(true)
   })
 
+  it('emits did-you-mean diagnostics for unknown argument names', async () => {
+    const result = await compileMarkdown('::button[Docs]{hrfe="/docs" varaint="primary"}')
+
+    expect(hasWarning(result.warnings, 'Unknown attribute "hrfe" on "button". Did you mean "href"?')).toBe(true)
+    expect(hasWarning(result.warnings, 'Unknown attribute "varaint" on "button". Did you mean "variant"?')).toBe(true)
+  })
+
   it('renders buttons wrapper alignment stack and gap classes', async () => {
     const result = await compileMarkdown(`
 :::buttons{align="center" stack="always" gap="lg"}
@@ -1108,6 +1212,52 @@ After cards.
     expect(result.html.indexOf('<p>After cards.</p>')).toBeGreaterThan(
       result.html.indexOf('data-directive="cards"'),
     )
+  })
+
+  it('renders card labels and expanded multiline card attributes', async () => {
+    const result = await compileMarkdown(`
+:::card[Fast Setup]{
+  theme="glass"
+}
+Install, configure, ship.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'card')).toBe(1)
+    expect(result.html).toContain('Fast Setup')
+    expect(result.html).toContain('data-theme="glass"')
+    expect(result.html).toContain('Install, configure, ship.')
+  })
+
+  it('keeps title attributes compatible while preferring matching labels silently', async () => {
+    const oldStyle = await compileMarkdown(`
+:::card {title="Legacy Title"}
+Body.
+:::
+`)
+    const matching = await compileMarkdown(`
+:::card[Same Title]{title="Same Title"}
+Body.
+:::
+`)
+
+    expect(oldStyle.warnings).toEqual([])
+    expect(oldStyle.html).toContain('Legacy Title')
+    expect(matching.warnings).toEqual([])
+    expect(matching.html).toContain('Same Title')
+  })
+
+  it('warns when directive labels conflict with title attributes', async () => {
+    const result = await compileMarkdown(`
+:::card[Preferred Title]{title="Other Title"}
+Body.
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Directive has both [Label] and title')).toBe(true)
+    expect(result.html).toContain('Preferred Title')
+    expect(result.html).not.toContain('Other Title')
   })
 
   it('renders cards with explicit columns and full-card links by default', async () => {
@@ -1541,6 +1691,22 @@ Second tab content.
     expect(result.html).toContain('<strong>content</strong>')
   })
 
+  it('renders tab labels from bracket label syntax', async () => {
+    const result = await compileMarkdown(`
+:::tabs
+
+:::tab[Install]
+Install content.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-tab-value="install"')
+    expect(result.html).toContain('Install')
+  })
+
   it('honors explicit tabs default and falls back invalid defaults with diagnostics', async () => {
     const valid = await compileMarkdown(`
 :::tabs {default="npm"}
@@ -1969,6 +2135,21 @@ Success body.
     expect(result.html).toContain('data-directive-title="callout"')
   })
 
+  it('renders callout labels as preferred titles', async () => {
+    const result = await compileMarkdown(`
+:::callout[Heads up]{
+  variant="info"
+}
+This is important.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'callout')).toBe(1)
+    expect(result.html).toContain('Heads up')
+    expect(result.html).toContain('data-variant="info"')
+  })
+
   it('falls back invalid callout variants and reports diagnostics', async () => {
     const result = await compileMarkdown(`
 :::callout {variant="weird" title="Fallback"}
@@ -2003,6 +2184,17 @@ After details.
     expect(result.html).toContain('<strong>markdown</strong>')
     expect(result.html).toContain('<ol>')
     expect(result.html).toContain('<p>After details.</p>')
+  })
+
+  it('renders details labels as summary text', async () => {
+    const result = await compileMarkdown(`
+:::details[Install from source]
+Source notes.
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('>Install from source</summary>')
   })
 
   it('reports malformed static directive attributes without crashing rendering', async () => {

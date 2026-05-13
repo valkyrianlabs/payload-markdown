@@ -3,6 +3,7 @@ import type { Plugin } from 'unified'
 
 import type { LayoutToken } from '../../types/layoutToken.js'
 
+import { hasUnclosedDirectiveAttributeBlock } from '../../directives/attributes.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 
 function isParagraph(node: RootContent): node is Paragraph {
@@ -57,6 +58,42 @@ function splitParagraphLines(node: Paragraph): PhrasingContent[][] {
   return lines
 }
 
+function collectExpandedDirectiveText(
+  lines: PhrasingContent[][],
+  startIndex: number,
+): { endIndex: number; text: string } | null {
+  const firstText = getTextOnlyLine(lines[startIndex])
+
+  if (!firstText) return null
+  if (!hasUnclosedDirectiveAttributeBlock(firstText))
+    return {
+      endIndex: startIndex,
+      text: firstText,
+    }
+
+  let text = firstText
+
+  for (let index = startIndex + 1; index < lines.length; ++index) {
+    const nextText = getTextOnlyLine(lines[index])
+
+    if (nextText === null) break
+    if (nextText.trim().startsWith('::')) break
+
+    text += `\n${nextText}`
+
+    if (!hasUnclosedDirectiveAttributeBlock(text))
+      return {
+        endIndex: index,
+        text,
+      }
+  }
+
+  return {
+    endIndex: startIndex,
+    text: firstText,
+  }
+}
+
 function phrasingToText(node: PhrasingContent): null | string {
   if (node.type === 'text') return node.value
   if (node.type === 'inlineCode') return node.value
@@ -103,9 +140,15 @@ function splitParagraphLayoutDirectives(
     paragraphLines = []
   }
 
-  for (const lineChildren of splitParagraphLines(node)) {
+  const lines = splitParagraphLines(node)
+
+  for (let index = 0; index < lines.length; ++index) {
+    const lineChildren = lines[index]
     const text = getTextOnlyLine(lineChildren)
-    const result = text ? parseLayoutDirective(text.trim()) : { diagnostics: [], token: null }
+    const expanded = text ? collectExpandedDirectiveText(lines, index) : null
+    const result = expanded
+      ? parseLayoutDirective(expanded.text.trim())
+      : { diagnostics: [], token: null }
 
     for (const diagnostic of result.diagnostics) warn(diagnostic)
 
@@ -116,6 +159,7 @@ function splitParagraphLayoutDirectives(
 
     flushParagraph()
     out.push(result.token)
+    index = expanded?.endIndex ?? index
   }
 
   flushParagraph()

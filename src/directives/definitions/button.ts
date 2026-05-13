@@ -1,8 +1,19 @@
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { getUnknownAttributeWarnings } from '../attributeDiagnostics.js'
+
 export const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link'] as const
 export const BUTTON_SIZES = ['sm', 'md', 'lg'] as const
 export const BUTTON_ICON_POSITIONS = ['left', 'right'] as const
+export const BUTTON_ALLOWED_ATTRIBUTES = [
+  'ariaLabel',
+  'href',
+  'icon',
+  'iconPosition',
+  'newTab',
+  'size',
+  'variant',
+] as const
 
 export const DEFAULT_BUTTON_VARIANT = 'primary'
 export const DEFAULT_BUTTON_SIZE = 'md'
@@ -26,15 +37,7 @@ export function isButtonIconPosition(value: unknown): value is ButtonIconPositio
 
 export const buttonDirective: LayoutDirectiveDefinition = {
   name: 'button',
-  allowedAttributes: [
-    'ariaLabel',
-    'href',
-    'icon',
-    'iconPosition',
-    'newTab',
-    'size',
-    'variant',
-  ],
+  allowedAttributes: BUTTON_ALLOWED_ATTRIBUTES,
   applyHast(node, _config, { mergeClassNames }) {
     const variant = isButtonVariant(node.properties.dataVariant)
       ? node.properties.dataVariant
@@ -65,14 +68,32 @@ export const buttonDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Button leaf directive',
     label: '::button',
-    snippet: '::button[${Label}]{href="${/docs}" variant="${primary}"}\n${}',
+    snippet: '::button[${Label}]{\n  href="${/docs}"\n  variant="${primary}"\n}\n${}',
+    snippets: [
+      {
+        detail: 'Button snippet variant; inserts canonical ::button',
+        label: '::button_icon',
+        snippet:
+          '::button[${Label}]{\n  href="${/docs}"\n  variant="${primary}"\n  icon="${@fa-duotone/book-open}"\n}\n${}',
+      },
+      {
+        detail: 'Button snippet variant; inserts canonical ::button',
+        label: '::button_full',
+        snippet:
+          '::button[${Label}]{\n  href="${/docs}"\n  variant="${primary}"\n  size="${md}"\n  icon="${@fa-duotone/book-open}"\n  iconPosition="${left}"\n  newTab=${false}\n  ariaLabel="${}"\n}',
+      },
+    ],
   },
   kind: 'button',
   public: true,
   supportsAttributes: true,
   tagName: 'a',
   validateAttributes({ attributes }) {
-    const warnings: string[] = []
+    const warnings: string[] = getUnknownAttributeWarnings(
+      'button',
+      BUTTON_ALLOWED_ATTRIBUTES,
+      attributes,
+    )
 
     if (typeof attributes.variant === 'string' && !isButtonVariant(attributes.variant))
       warnings.push(

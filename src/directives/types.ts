@@ -41,6 +41,7 @@ export type LayoutToken =
       action: 'open'
       attributes?: Record<string, boolean | string>
       data?: Data
+      label?: string
       name: LayoutName
       type: 'vlLayoutToken'
     }

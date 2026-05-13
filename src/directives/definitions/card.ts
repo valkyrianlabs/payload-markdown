@@ -3,6 +3,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
+import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 export const CARD_BODY_CLASS_NAMES = 'space-y-3 [&>:first-child]:mt-0 [&>:last-child]:mb-0'
@@ -108,7 +110,7 @@ function makeEyebrow(eyebrow: string): Element {
 
 export const cardDirective: LayoutDirectiveDefinition = {
   name: 'card',
-  allowedAttributes: ['eyebrow', 'href', 'linkScope', 'newTab', 'theme', 'title'],
+  allowedAttributes: ['eyebrow', 'href', 'icon', 'linkScope', 'newTab', 'theme', 'title'],
   applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
     const href = typeof node.properties.dataHref === 'string' ? node.properties.dataHref : undefined
@@ -119,6 +121,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     const newTab = node.properties.dataNewTab === 'true'
     const eyebrow =
       typeof node.properties.dataEyebrow === 'string' ? node.properties.dataEyebrow : undefined
+    const icon = typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined
     const theme = resolveDirectiveTheme(
       'card',
       typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
@@ -141,6 +144,13 @@ export const cardDirective: LayoutDirectiveDefinition = {
     node.children = [
       ...(href && linkScope === 'full' ? [makeFullCardLink(href, title, newTab)] : []),
       ...(eyebrow ? [makeEyebrow(eyebrow)] : []),
+      ...(icon
+        ? [
+            makeDirectiveIconPlaceholder(icon, [
+              'pmd-card__icon mb-3 inline-flex size-5 text-current',
+            ]),
+          ]
+        : []),
       ...(title ? [makeTitle(title, href && linkScope === 'title' ? href : undefined, newTab)] : []),
       {
         type: 'element',
@@ -165,19 +175,20 @@ export const cardDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Layout directive',
     label: 'Card',
-    snippet: ':::card {title="${Title}"}\n${Content}\n:::\n${}',
+    snippet: ':::card[${Title}]\n${Content}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {
       dataDirective: 'card',
       dataEyebrow: getAttribute(node, 'eyebrow'),
       dataHref: getAttribute(node, 'href'),
+      dataIcon: getAttribute(node, 'icon'),
       dataLinkScope: getLinkScope(node),
       dataNewTab: 'newTab' in (node.attributes ?? {})
         ? getBooleanAttribute(node, 'newTab') ? 'true' : 'false'
         : undefined,
       dataTheme: getAttribute(node, 'theme'),
-      dataTitle: getAttribute(node, 'title'),
+      dataTitle: getDirectiveLabelOrAttribute(node, 'title'),
     }
   },
   kind: 'card',

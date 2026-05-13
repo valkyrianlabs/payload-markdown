@@ -4,6 +4,7 @@ import type { Plugin } from 'unified'
 
 import type { MarkdownRenderConfig } from '../../types/core.js'
 
+import { hasUnclosedDirectiveAttributeBlock } from '../../directives/attributes.js'
 import { parseButtonDirectiveLine } from '../../directives/buttonSyntax.js'
 import {
   DEFAULT_BUTTON_ICON_POSITION,
@@ -54,6 +55,42 @@ function splitParagraphLines(node: Paragraph): PhrasingContent[][] {
   }
 
   return lines
+}
+
+function collectExpandedDirectiveText(
+  lines: PhrasingContent[][],
+  startIndex: number,
+): { endIndex: number; text: string } | null {
+  const firstText = getTextOnlyLine(lines[startIndex])
+
+  if (!firstText) return null
+  if (!hasUnclosedDirectiveAttributeBlock(firstText))
+    return {
+      endIndex: startIndex,
+      text: firstText,
+    }
+
+  let text = firstText
+
+  for (let index = startIndex + 1; index < lines.length; ++index) {
+    const nextText = getTextOnlyLine(lines[index])
+
+    if (nextText === null) break
+    if (nextText.trim().startsWith('::')) break
+
+    text += `\n${nextText}`
+
+    if (!hasUnclosedDirectiveAttributeBlock(text))
+      return {
+        endIndex: index,
+        text,
+      }
+  }
+
+  return {
+    endIndex: startIndex,
+    text: firstText,
+  }
 }
 
 function phrasingToText(node: PhrasingContent): null | string {
@@ -227,9 +264,13 @@ function splitParagraphButtonDirectives(
     paragraphLines = []
   }
 
-  for (const lineChildren of splitParagraphLines(node)) {
+  const lines = splitParagraphLines(node)
+
+  for (let index = 0; index < lines.length; ++index) {
+    const lineChildren = lines[index]
     const text = getTextOnlyLine(lineChildren)
-    const button = text ? makeButtonDirective(text, file, config) : undefined
+    const expanded = text ? collectExpandedDirectiveText(lines, index) : null
+    const button = expanded ? makeButtonDirective(expanded.text, file, config) : undefined
 
     if (!button) {
       const leafName = text ? getLeafDirectiveName(text) : undefined
@@ -241,6 +282,7 @@ function splitParagraphButtonDirectives(
 
     flushParagraph()
     out.push(button as RootContent)
+    index = expanded?.endIndex ?? index
   }
 
   flushParagraph()

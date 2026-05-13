@@ -14,7 +14,10 @@ tags:
 Use `:::callout` for emphasized notes, warnings, tips, and status messages.
 
 ```md
-:::callout {variant="warning" theme="soft" title="Read this first"}
+:::callout[Read this first]{
+  variant="warning"
+  theme="soft"
+}
 Content stays Markdown.
 :::
 ```
@@ -23,7 +26,9 @@ Content stays Markdown.
 
 - `variant`: `note`, `info`, `tip`, `warning`, `danger`, or `success`
 - `theme`: callout theme name
-- `title`: optional title displayed above the body
+- `[Label]`: optional title displayed above the body, preferred for new Markdown
+- `title`: optional title retained for existing Markdown
+- `icon`: local icon reference such as `@fa-duotone/triangle-exclamation`
 
 Defaults:
 
@@ -32,12 +37,14 @@ Defaults:
 
 Unknown variants fall back to `note` and produce a non-fatal diagnostic where diagnostics are available.
 
+Existing `title=""` content remains valid. If `[Label]` and `title` are both present, `[Label]` is used. Differing values produce a non-fatal diagnostic.
+
 ## Markdown Content
 
 Callouts support nested Markdown:
 
 ````md
-:::callout {variant="tip" title="Use the server renderer"}
+:::callout[Use the server renderer]{variant="tip"}
 Render fields with:
 
 ```tsx
@@ -85,7 +92,10 @@ payloadMarkdown({
 Then select it in Markdown:
 
 ```md
-:::callout {variant="info" theme="blueprint" title="Blueprint"}
+:::callout[Blueprint]{
+  variant="info"
+  theme="blueprint"
+}
 This callout uses a source-defined theme.
 :::
 ```

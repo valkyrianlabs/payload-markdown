@@ -14,14 +14,18 @@ tags:
 Use `:::details` for optional or advanced content. It renders native `<details>` and `<summary>` markup.
 
 ```md
-:::details {title="Advanced notes" theme="glass" open="true"}
+:::details[Advanced notes]{
+  theme="glass"
+  open="true"
+}
 These steps are only needed when running from source.
 :::
 ```
 
 ## Attributes
 
-- `title`: summary text
+- `[Label]`: summary text, preferred for new Markdown
+- `title`: summary text retained for existing Markdown
 - `open`: use `open="true"` to render initially open
 - `theme`: details theme name
 
@@ -37,7 +41,7 @@ The directive uses browser-native disclosure behavior. It does not require clien
 ## Markdown Content
 
 ````md
-:::details {title="Install from source"}
+:::details[Install from source]
 1. Clone the repository.
 2. Install dependencies.
 3. Run:

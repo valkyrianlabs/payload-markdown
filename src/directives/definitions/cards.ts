@@ -185,7 +185,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
     detail: 'Layout directive',
     label: 'Cards',
     snippet:
-      ':::cards {columns="${3}"}\n\n:::card {title="${Title}"}\n${Content}\n:::\n\n:::card {title="${Title}"}\n${Content}\n:::\n\n:::\n${}',
+      ':::cards{\n  columns="${3}"\n}\n\n:::card[${Title}]\n${Content}\n:::\n\n:::card[${Title}]\n${Content}\n:::\n\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     const href = getAttribute(node, 'href')

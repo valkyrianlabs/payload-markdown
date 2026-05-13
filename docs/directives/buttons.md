@@ -14,8 +14,13 @@ tags:
 Use `::button` leaf directives for link buttons and `:::buttons` container directives for button groups.
 
 ```md
-::button[Home]{href="/home" icon="@fa-duotone/home"}
+::button[Home]{
+  href="/home"
+  icon="@fa-duotone/home"
+}
 ```
+
+`::button` is the real Markdown directive. The editor may offer autocomplete shortcuts such as `::button_icon` or `::button_full`, but those are snippet variants only. Selecting them inserts canonical `::button[...]` Markdown; writing `::button_icon` in source is treated as an unknown directive.
 
 ## `::button`
 
@@ -39,13 +44,22 @@ Defaults:
 Buttons render as anchors. When `newTab` is true, the renderer adds `target="_blank"` and `rel="noopener noreferrer"`.
 
 ```md
-::button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" newTab=true variant="secondary"}
+::button[GitHub]{
+  href="https://github.com/valkyrianlabs"
+  icon="@brand/github"
+  newTab=true
+  variant="secondary"
+}
 ```
 
 Icon-only buttons require `ariaLabel`:
 
 ```md
-::button[]{href="/settings" icon="@fa-duotone/gear" ariaLabel="Open settings"}
+::button[]{
+  href="/settings"
+  icon="@fa-duotone/gear"
+  ariaLabel="Open settings"
+}
 ```
 
 ## `:::buttons`
@@ -63,9 +77,23 @@ Defaults:
 - `gap="md"`
 
 ```md
-:::buttons{align="center" stack="mobile" gap="md"}
-::button[Get Started]{href="/docs" variant="primary" icon="@fa-duotone/rocket"}
-::button[GitHub]{href="https://github.com/valkyrianlabs" variant="secondary" icon="@brand/github" newTab=true}
+:::buttons{
+  align="center"
+  stack="mobile"
+  gap="md"
+}
+::button[Get Started]{
+  href="/docs"
+  variant="primary"
+  icon="@fa-duotone/rocket"
+}
+
+::button[GitHub]{
+  href="https://github.com/valkyrianlabs"
+  variant="secondary"
+  icon="@brand/github"
+  newTab=true
+}
 :::
 ```
 
@@ -76,12 +104,20 @@ Defaults:
 Button icons come from the local SVG icon packs configured in `payloadMarkdown({ icons })`. Markdown references use `@pack/name`; `.svg` is optional in source and omitted internally.
 
 ```md
-::button[Docs]{href="/docs" icon="@fa-duotone/book-open"}
-::button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/social/github" iconPosition="right"}
+::button[Docs]{
+  href="/docs"
+  icon="@fa-duotone/book-open"
+}
+
+::button[GitHub]{
+  href="https://github.com/valkyrianlabs"
+  icon="@brand/social/github"
+  iconPosition="right"
+}
 ```
 
 Icon refs must stay within a configured pack. Unknown packs, missing SVG files, malformed refs, traversal with `..`, backslashes, and non-SVG targets produce diagnostics and render the button without the icon.
 
-:::callout {variant="warning" title="Keep licensed icons local"}
+:::callout[Keep licensed icons local] {variant="warning"}
 Paid or pro SVG icon files should remain in a local ignored folder such as `public/icons`. Do not commit those assets or make CI depend on them.
 :::

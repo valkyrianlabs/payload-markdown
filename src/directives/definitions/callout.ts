@@ -2,6 +2,8 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
+import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 export const CALLOUT_VARIANTS = [
@@ -35,17 +37,16 @@ export function resolveCalloutVariant(node: ContainerDirective): CalloutVariant 
 }
 
 function getTitle(node: ContainerDirective): string | undefined {
-  const title = node.attributes?.title
-
-  return typeof title === 'string' && title.trim() ? title.trim() : undefined
+  return getDirectiveLabelOrAttribute(node, 'title')
 }
 
 export const calloutDirective: LayoutDirectiveDefinition = {
   name: 'callout',
-  allowedAttributes: ['theme', 'title', 'variant'],
+  allowedAttributes: ['icon', 'theme', 'title', 'variant'],
   applyHast(node, config, { mergeClassNames }) {
     const variant = typeof node.properties.dataVariant === 'string' ? node.properties.dataVariant : 'note'
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
+    const icon = typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined
     const theme = resolveDirectiveTheme(
       'callout',
       typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : 'soft',
@@ -63,13 +64,22 @@ export const calloutDirective: LayoutDirectiveDefinition = {
     )
 
     node.children = [
-      ...(title
+      ...(title || icon
         ? [
             {
               type: 'element' as const,
-              children: [{ type: 'text' as const, value: title }],
+              children: [
+                ...(icon
+                  ? [
+                      makeDirectiveIconPlaceholder(icon, [
+                        'pmd-callout__icon inline-flex size-4 shrink-0 text-current',
+                      ]),
+                    ]
+                  : []),
+                ...(title ? [{ type: 'text' as const, value: title }] : []),
+              ],
               properties: {
-                className: ['mb-2 text-sm font-semibold tracking-wide'],
+                className: ['mb-2 flex items-center gap-2 text-sm font-semibold tracking-wide'],
                 dataDirectiveTitle: 'callout',
               },
               tagName: 'div',
@@ -94,11 +104,12 @@ export const calloutDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Static directive',
     label: 'Callout',
-    snippet: ':::callout {variant="${variant}" title="${Title}"}\n${Content}\n:::\n${}',
+    snippet: ':::callout[${Title}]{\n  variant="${note}"\n}\n${Content}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {
       dataDirective: 'callout',
+      dataIcon: typeof node.attributes?.icon === 'string' ? node.attributes.icon : undefined,
       dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'soft',
       dataTitle: getTitle(node),
       dataVariant: resolveCalloutVariant(node),

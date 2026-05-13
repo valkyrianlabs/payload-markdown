@@ -2,6 +2,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 export const DEFAULT_TOC_DEPTH = 3
@@ -15,9 +16,9 @@ export function resolveTocDepth(node: ContainerDirective): number {
 }
 
 export function resolveTocTitle(node: ContainerDirective): string {
-  const title = node.attributes?.title
+  const title = getDirectiveLabelOrAttribute(node, 'title')
 
-  return typeof title === 'string' && title.trim() ? title.trim() : DEFAULT_TOC_TITLE
+  return title ?? DEFAULT_TOC_TITLE
 }
 
 export const tocDirective: LayoutDirectiveDefinition = {
@@ -46,7 +47,7 @@ export const tocDirective: LayoutDirectiveDefinition = {
   editor: {
     detail: 'Docs directive',
     label: 'Table of contents',
-    snippet: ':::toc {title="${On this page}" depth="${3}"}\n:::\n${}',
+    snippet: ':::toc[${On this page}]{\n  depth="${3}"\n}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     const title = resolveTocTitle(node)

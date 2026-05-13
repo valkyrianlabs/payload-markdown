@@ -11,7 +11,7 @@ tags:
 
 # Plugin Config
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Full Example
@@ -90,7 +90,7 @@ payloadMarkdown({
 - `themes`: directive theme registry extensions
 - `config`: Markdown wrapper and typography defaults
 
-:::details {title="Runtime settings initialization"}
+:::details[Runtime settings initialization]
 Runtime helpers read plugin settings from `payloadMarkdown(...)`. If you use renderer helpers before the plugin initializes, `getPayloadMarkdownSettings()` throws. In normal Payload usage, include the plugin in the config before rendering Markdown.
 :::
 
@@ -124,8 +124,16 @@ public/icons/
 Markdown references use `@pack/name`:
 
 ```md
-:button[Home]{href="/home" icon="@fa-duotone/home"}
-:button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" newTab=true}
+::button[Home]{
+  href="/home"
+  icon="@fa-duotone/home"
+}
+
+::button[GitHub]{
+  href="https://github.com/valkyrianlabs"
+  icon="@brand/github"
+  newTab=true
+}
 ```
 
 Only local SVG packs are supported. The plugin does not integrate FortAwesome packages, fetch remote icons, or accept arbitrary icon URLs.

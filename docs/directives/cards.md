@@ -14,13 +14,23 @@ tags:
 Use `:::cards` for card grids and `:::card` for individual cards.
 
 ````md
-:::cards {columns="3" theme="spacious" cardTheme="glass"}
+:::cards{
+  columns="3"
+  theme="spacious"
+  cardTheme="glass"
+}
 
-:::card {eyebrow="Core" title="Markdown Field" href="/getting-started/fields-and-blocks"}
+:::card[Markdown Field]{
+  eyebrow="Core"
+  href="/getting-started/fields-and-blocks"
+}
 Portable Markdown content.
 :::
 
-:::card {eyebrow="Custom" title="Cyan Card" theme="cyan"}
+:::card[Cyan Card]{
+  eyebrow="Custom"
+  theme="cyan"
+}
 Overrides parent `cardTheme`.
 :::
 
@@ -51,8 +61,10 @@ Invalid columns fall back to `3` and produce a non-fatal diagnostic where diagno
 
 Attributes:
 
-- `title`: optional card title
+- `[Label]`: optional card title, preferred for new Markdown
+- `title`: optional card title retained for existing Markdown
 - `eyebrow`: optional small label above the title
+- `icon`: local icon reference such as `@fa-duotone/bolt`
 - `href`: optional card link
 - `linkScope`: `full` or `title`
 - `newTab`: open `href` in a new tab when `true`
@@ -60,18 +72,34 @@ Attributes:
 
 Cards support nested Markdown and render safely inside or outside a `:::cards` container.
 
+Use expanded attributes and `[Label]` for new content:
+
+```md
+:::card[Fast Setup]{
+  icon="@fa-duotone/bolt"
+  theme="glass"
+}
+Install, configure, ship.
+:::
+```
+
+Existing `title=""` content remains valid. If `[Label]` and `title` are both present, `[Label]` is used. Differing values produce a non-fatal diagnostic.
+
 ## Parent And Child Themes
 
 `cardTheme` on `:::cards` applies to child cards that do not set their own theme:
 
 ```md
-:::cards {columns="2" cardTheme="glass"}
+:::cards{
+  columns="2"
+  cardTheme="glass"
+}
 
-:::card {title="Inherits Glass"}
+:::card[Inherits Glass]
 Content.
 :::
 
-:::card {title="Overrides Parent" theme="cyan"}
+:::card[Overrides Parent]{theme="cyan"}
 Content.
 :::
 
@@ -83,13 +111,13 @@ Content.
 When `href` is present on `:::cards`, the whole card section is clickable by default:
 
 ```md
-:::cards {href="/getting-started/fields-and-blocks"}
+:::cards{href="/getting-started/fields-and-blocks"}
 
-:::card {title="Markdown Field"}
+:::card[Markdown Field]
 Portable Markdown content.
 :::
 
-:::card {title="Rendering"}
+:::card[Rendering]
 Server-rendered output.
 :::
 
@@ -99,13 +127,16 @@ Server-rendered output.
 Section-scoped links do not support child card link overrides. Set `linkScope="card"` when each child card should inherit the parent link as a full-card link:
 
 ```md
-:::cards {href="/getting-started/fields-and-blocks" linkScope="card"}
+:::cards{
+  href="/getting-started/fields-and-blocks"
+  linkScope="card"
+}
 
-:::card {title="Markdown Field"}
+:::card[Markdown Field]
 Portable Markdown content.
 :::
 
-:::card {title="Custom Target" href="/directives/cards"}
+:::card[Custom Target]{href="/directives/cards"}
 This card overrides the parent `href`.
 :::
 
@@ -115,9 +146,12 @@ This card overrides the parent `href`.
 Set `linkScope="title"` on `:::cards` when child card titles should inherit the parent link:
 
 ```md
-:::cards {href="/getting-started/fields-and-blocks" linkScope="title"}
+:::cards{
+  href="/getting-started/fields-and-blocks"
+  linkScope="title"
+}
 
-:::card {title="Markdown Field"}
+:::card[Markdown Field]
 Portable Markdown content.
 :::
 
@@ -127,7 +161,7 @@ Portable Markdown content.
 When `href` is present on an individual `:::card`, the whole card is clickable by default:
 
 ```md
-:::card {title="Markdown Field" href="/getting-started/fields-and-blocks"}
+:::card[Markdown Field]{href="/getting-started/fields-and-blocks"}
 Portable Markdown content.
 :::
 ```
@@ -135,7 +169,10 @@ Portable Markdown content.
 Set `linkScope="title"` on `:::card` to keep the link on the title only:
 
 ```md
-:::card {title="Markdown Field" href="/getting-started/fields-and-blocks" linkScope="title"}
+:::card[Markdown Field]{
+  href="/getting-started/fields-and-blocks"
+  linkScope="title"
+}
 Portable Markdown content.
 :::
 ```
@@ -143,7 +180,10 @@ Portable Markdown content.
 Set `newTab` or `newTab="true"` on `:::cards` or `:::card` to open links in a new tab. Child cards can override a parent value with `newTab="false"`:
 
 ```md
-:::card {title="External Guide" href="https://example.com" newTab}
+:::card[External Guide]{
+  href="https://example.com"
+  newTab
+}
 Portable Markdown content.
 :::
 ```
@@ -153,13 +193,16 @@ Portable Markdown content.
 Use `columns="auto"` when cards have uneven lengths or the viewport width is unpredictable:
 
 ```md
-:::cards {columns="auto" cardTheme="muted"}
+:::cards{
+  columns="auto"
+  cardTheme="muted"
+}
 
-:::card {title="Short"}
+:::card[Short]
 Small note.
 :::
 
-:::card {title="Longer"}
+:::card[Longer]
 Longer content can wrap without forcing every card into a rigid column.
 :::
 

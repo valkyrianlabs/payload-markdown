@@ -5,7 +5,7 @@ import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
 import { resolveDirectiveTheme, slugThemeName } from '../themes.js'
-import { getTabValueFromAttributes } from './tab.js'
+import { getTabValue } from './tab.js'
 
 type TabModel = {
   disabled: boolean
@@ -221,7 +221,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
     detail: 'Tabs directive',
     label: 'Tabs',
     snippet:
-      ':::tabs {default="${pnpm}"}\n\n:::tab {label="${pnpm}" value="${pnpm}"}\n```bash\npnpm add ${package-name}\n```\n:::\n\n:::tab {label="${npm}" value="${npm}"}\n```bash\nnpm install ${package-name}\n```\n:::\n\n:::\n${}',
+      ':::tabs{\n  default="${pnpm}"\n}\n\n:::tab[${pnpm}]{\n  value="${pnpm}"\n}\n```bash\npnpm add ${package-name}\n```\n:::\n\n:::tab[${npm}]{\n  value="${npm}"\n}\n```bash\nnpm install ${package-name}\n```\n:::\n\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {
@@ -250,7 +250,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
     if (tabs.length === 0) warnings.push('Directive "tabs" has no child "tab" directives.')
 
     tabs.forEach((tab, index) => {
-      const value = getTabValueFromAttributes(tab.attributes, index)
+      const value = getTabValue(tab, index)
       values.set(value, (values.get(value) ?? 0) + 1)
     })
 

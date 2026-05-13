@@ -73,8 +73,12 @@ export function getDirectiveThemeValueCompletionOptions(
 function attributeCompletionSource(context: CompletionContext) {
   const line = context.state.doc.lineAt(context.pos)
   const beforeCursor = line.text.slice(0, context.pos - line.from)
-  const containerMatch = beforeCursor.match(/^\s*:::(\w+)\s*\{([^}]*)$/)
+  const containerMatch = beforeCursor.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{([^}]*)$/)
   const buttonMatch = beforeCursor.match(/^\s*::button(?:\[[^\]]*\])?\s*\{([^}]*)$/)
+  const multilineMatch =
+    containerMatch || buttonMatch
+      ? null
+      : findOpenDirectiveAttributeBlock(context, beforeCursor)
   const directiveMatch = containerMatch
     ? {
         name: containerMatch[1],
@@ -85,13 +89,13 @@ function attributeCompletionSource(context: CompletionContext) {
           name: 'button',
           attributesBeforeCursor: buttonMatch[1],
         }
-      : null
+      : multilineMatch
 
   if (!directiveMatch) return null
 
   const { name, attributesBeforeCursor } = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|linkScope|newTab|size|stack|stepTheme|tabTheme|variant)="([^"]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|linkScope|newTab|size|stack|stepTheme|tabTheme|variant)=["']?([^"'\s}]*)$/,
   )
 
   if (valueMatch) {
@@ -117,6 +121,37 @@ function attributeCompletionSource(context: CompletionContext) {
     from: context.pos - typedAttribute.length,
     options,
   }
+}
+
+function findOpenDirectiveAttributeBlock(
+  context: CompletionContext,
+  attributesBeforeCursor: string,
+): { attributesBeforeCursor: string; name: string } | null {
+  const line = context.state.doc.lineAt(context.pos)
+
+  for (let lineNumber = line.number - 1; lineNumber >= 1; --lineNumber) {
+    const previousLine = context.state.doc.line(lineNumber).text
+    const trimmed = previousLine.trim()
+
+    if (!trimmed) break
+    if (trimmed.includes('}')) break
+
+    const containerMatch = previousLine.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{/)
+    if (containerMatch)
+      return {
+        name: containerMatch[1],
+        attributesBeforeCursor,
+      }
+
+    const buttonMatch = previousLine.match(/^\s*::button(?:\[[^\]]*\])?\s*\{/)
+    if (buttonMatch)
+      return {
+        name: 'button',
+        attributesBeforeCursor,
+      }
+  }
+
+  return null
 }
 
 function directiveCompletionSource(context: CompletionContext) {

@@ -1,4 +1,5 @@
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
+import { hasUnclosedDirectiveAttributeBlock } from './attributes.js'
 import { parseButtonDirectiveLine } from './buttonSyntax.js'
 import { layoutDirectiveRegistry } from './registry.js'
 import { hasDirectiveTheme } from './themes.js'
@@ -35,21 +36,61 @@ function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame)
   return -1
 }
 
-function getTabValue(attributes: Record<string, boolean | string> | undefined, index: number): string {
+function getTabValue(
+  attributes: Record<string, boolean | string> | undefined,
+  index: number,
+  label?: string,
+): string {
   const value = attributes?.value
-  const label = attributes?.label
+  const attributeLabel = attributes?.label
   const raw =
     typeof value === 'string' && value.trim()
       ? value.trim()
       : typeof label === 'string' && label.trim()
         ? label.trim()
-        : `tab-${index + 1}`
+        : typeof attributeLabel === 'string' && attributeLabel.trim()
+          ? attributeLabel.trim()
+          : `tab-${index + 1}`
 
   return raw
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || `tab-${index + 1}`
+}
+
+function collectExpandedDirectiveText(
+  lines: readonly string[],
+  startIndex: number,
+): { endIndex: number; text: string } {
+  const firstText = lines[startIndex]
+
+  if (!hasUnclosedDirectiveAttributeBlock(firstText))
+    return {
+      endIndex: startIndex,
+      text: firstText,
+    }
+
+  let text = firstText
+
+  for (let index = startIndex + 1; index < lines.length; ++index) {
+    const nextText = lines[index]
+
+    if (nextText.trim().startsWith('::')) break
+
+    text += `\n${nextText}`
+
+    if (!hasUnclosedDirectiveAttributeBlock(text))
+      return {
+        endIndex: index,
+        text,
+      }
+  }
+
+  return {
+    endIndex: startIndex,
+    text: firstText,
+  }
 }
 
 function finalizeTabsFrame(frame: OpenFrame): string[] {
@@ -132,7 +173,7 @@ function updateOpenStack(
       if (!tabsFrame) diagnostics.push('Directive "tab" is usually intended inside "tabs".')
       else {
         const nextIndex = tabsFrame.tabCount ?? 0
-        const value = getTabValue(token.attributes, nextIndex)
+        const value = getTabValue(token.attributes, nextIndex, token.label)
 
         tabsFrame.tabCount = nextIndex + 1
         tabsFrame.tabValues ??= new Map<string, number>()
@@ -271,7 +312,9 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
     }
 
     if (!inFence && trimmed.startsWith(':::')) {
-      const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(trimmed)
+      const expanded = collectExpandedDirectiveText(lines, index)
+      const expandedTrimmed = expanded.text.trim()
+      const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(expandedTrimmed)
 
       for (const message of result.diagnostics)
         diagnostics.push({
@@ -282,7 +325,7 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
           to: markerTo,
         })
 
-      for (const message of getThemeDiagnostics(trimmed))
+      for (const message of getThemeDiagnostics(expandedTrimmed))
         diagnostics.push({
           from: markerFrom,
           line: index + 1,
@@ -291,7 +334,7 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
           to: markerTo,
         })
 
-      for (const message of updateOpenStack(stack, trimmed, index + 1, markerFrom))
+      for (const message of updateOpenStack(stack, expandedTrimmed, index + 1, markerFrom))
         diagnostics.push({
           from: markerFrom,
           line: index + 1,
@@ -302,6 +345,8 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
     }
 
     if (!inFence && trimmed.startsWith('::') && !trimmed.startsWith(':::')) {
+      const expanded = collectExpandedDirectiveText(lines, index)
+      const expandedTrimmed = expanded.text.trim()
       const leafName = getLeafDirectiveName(trimmed)
       const leafMarkerStart = line.indexOf('::')
       const leafMarkerFrom = leafMarkerStart >= 0 ? lineStart + leafMarkerStart : lineStart
@@ -315,7 +360,7 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
           to: markerTo,
         })
 
-      for (const message of getButtonDiagnostics(trimmed))
+      for (const message of getButtonDiagnostics(expandedTrimmed))
         diagnostics.push({
           from: leafMarkerFrom,
           line: index + 1,

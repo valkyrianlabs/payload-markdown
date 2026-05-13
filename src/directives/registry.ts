@@ -6,6 +6,8 @@ import type {
   MarkdownDirectiveName,
 } from './types.js'
 
+import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
+import { getUnknownAttributeWarnings } from './attributeDiagnostics.js'
 import { parseDirectiveLine } from './attributes.js'
 import { buttonDirective } from './definitions/button.js'
 import { buttonsDirective } from './definitions/buttons.js'
@@ -69,13 +71,30 @@ function getPublicDefinitions(): LayoutDirectiveDefinition[] {
   return directiveDefinitions.filter((definition) => definition.public)
 }
 
-function findUnknownAttributes(
-  definition: LayoutDirectiveDefinition,
+const preferredLabelAttributes = new Map<string, string>([
+  ['callout', 'title'],
+  ['card', 'title'],
+  ['details', 'title'],
+  ['tab', 'label'],
+  ['toc', 'title'],
+])
+
+function getLabelConflictDiagnostics(
+  name: string,
+  label: string | undefined,
   attributes: Record<string, boolean | string>,
 ): string[] {
-  if (!definition.allowedAttributes) return []
+  const labelAttribute = preferredLabelAttributes.get(name)
+  if (!labelAttribute) return []
 
-  return Object.keys(attributes).filter((attribute) => !definition.allowedAttributes?.includes(attribute))
+  const normalizedLabel = label?.trim()
+  const attributeTitle = attributes[labelAttribute]
+  if (!normalizedLabel || typeof attributeTitle !== 'string' || !attributeTitle.trim()) return []
+  if (normalizedLabel === attributeTitle.trim()) return []
+
+  return [
+    `Directive has both [Label] and ${labelAttribute}. [Label] is preferred; remove one to avoid ambiguity.`,
+  ]
 }
 
 function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
@@ -126,6 +145,7 @@ function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
   const attributedMatch =
     definition.supportsAttributes &&
     (trimmed.startsWith(`${definition.openMarker} `) ||
+      trimmed.startsWith(`${definition.openMarker}[`) ||
       trimmed.startsWith(`${definition.openMarker}{`))
 
   if (!exactMatch && !attributedMatch)
@@ -136,9 +156,13 @@ function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
 
   const diagnostics = [
     ...parsed.warnings,
-    ...findUnknownAttributes(definition, parsed.attributes).map(
-      (attribute) => `Unknown attribute "${attribute}" on "${parsed.name}".`,
-    ),
+    ...getUnknownAttributeWarnings(parsed.name, definition.allowedAttributes, parsed.attributes),
+    ...getLabelConflictDiagnostics(parsed.name, parsed.label, parsed.attributes),
+    ...(typeof parsed.attributes.icon === 'string'
+      ? [normalizePayloadMarkdownIconRef(parsed.attributes.icon).warning].filter(
+          (warning): warning is string => Boolean(warning),
+        )
+      : []),
     ...(definition.validateAttributes?.({
       name: parsed.name,
       attributes: parsed.attributes,
@@ -150,6 +174,7 @@ function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
     type: 'vlLayoutToken',
     action: 'open',
     attributes: parsed.attributes,
+    label: parsed.label,
   }
 
   return {

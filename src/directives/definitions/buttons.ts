@@ -67,7 +67,7 @@ export const buttonsDirective: LayoutDirectiveDefinition = {
     detail: 'Button group directive',
     label: 'Buttons',
     snippet:
-      ':::buttons {align="${left}" stack="${mobile}"}\n::button[${Get started}]{href="${/docs}"}\n:::\n${}',
+      ':::buttons{\n  align="${left}"\n  stack="${mobile}"\n  gap="${md}"\n}\n::button[${Get started}]{\n  href="${/docs}"\n  variant="${primary}"\n}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
     return {

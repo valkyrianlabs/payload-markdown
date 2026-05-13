@@ -12,7 +12,7 @@ tags:
 
 Directives are Markdown primitives powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, buttons, tabs, sections, columns, and cells.
 
-:::toc {title="On this page" depth="3" theme="compact"}
+:::toc[On this page]{depth="3" theme="compact"}
 :::
 
 ## Public Directives
@@ -35,18 +35,23 @@ Directives are Markdown primitives powered by the plugin directive registry. The
 ## Basic Syntax
 
 ````md
-:::callout {variant="warning" title="Read this first"}
+:::callout[Read this first]{variant="warning"}
 Content stays Markdown.
 :::
 ````
 
-Attributes live on the opening marker:
+Use `[Label]` for visible directive titles, and put attributes in braces. Expanded multiline attributes are preferred when a directive has more than one or two attributes:
 
 ````md
-:::card {title="Markdown Field" href="/getting-started/fields-and-blocks" theme="cyan"}
+:::card[Markdown Field]{
+  href="/getting-started/fields-and-blocks"
+  theme="cyan"
+}
 Portable Markdown content.
 :::
 ````
+
+The older `title=""` form remains valid for existing Markdown, but snippets and docs prefer `[Label]`.
 
 Quoted values are supported. Boolean-style attributes are supported where a directive defines them, such as `open="true"` on details, `numbered` on card steps, or `disabled` on a tab.
 
@@ -64,7 +69,10 @@ Use four backticks when documenting Markdown that itself contains fenced code bl
 
 `````md
 ````md
-:::steps {variant="cards" stepTheme="glass"}
+:::steps{
+  variant="cards"
+  stepTheme="glass"
+}
 
 ### Install
 
@@ -74,7 +82,7 @@ pnpm add @valkyrianlabs/payload-markdown
 
 ### Configure
 
-:::callout {variant="tip" title="Keep config in source"}
+:::callout[Keep config in source]{variant="tip"}
 Authors select themes by name. They do not need to write Tailwind classes.
 :::
 
@@ -105,37 +113,37 @@ The table of contents directive uses those same heading IDs.
 
 ## Directive Pages
 
-:::cards {columns="3" cardTheme="muted"}
+:::cards{columns="3" cardTheme="muted"}
 
-:::card {title="Callout" href="/directives/callout"}
+:::card[Callout]{href="/directives/callout"}
 Notes, tips, warnings, danger messages, and success states.
 :::
 
-:::card {title="Details" href="/directives/details"}
+:::card[Details]{href="/directives/details"}
 Native disclosure blocks for optional or advanced content.
 :::
 
-:::card {title="Table Of Contents" href="/directives/table-of-contents"}
+:::card[Table Of Contents]{href="/directives/table-of-contents"}
 Generated page-local navigation from headings.
 :::
 
-:::card {title="Steps" href="/directives/steps"}
+:::card[Steps]{href="/directives/steps"}
 Ordered flows, install procedures, and card-based tutorials.
 :::
 
-:::card {title="Cards" href="/directives/cards"}
+:::card[Cards]{href="/directives/cards"}
 Card grids and standalone card content.
 :::
 
-:::card {title="Buttons" href="/directives/buttons"}
+:::card[Buttons]{href="/directives/buttons"}
 Link buttons and grouped primary links with local SVG icons.
 :::
 
-:::card {title="Tabs" href="/directives/tabs"}
+:::card[Tabs]{href="/directives/tabs"}
 Accessible tabbed content with server-rendered panels.
 :::
 
-:::card {title="Layout" href="/directives/layout"}
+:::card[Layout]{href="/directives/layout"}
 Sections, two-column grids, three-column grids, and explicit cells.
 :::
 
