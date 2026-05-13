@@ -10,6 +10,8 @@ export type DirectiveDiagnostic = {
 }
 
 type OpenFrame = {
+  cardsHasHref?: boolean
+  cardsLinkScope?: string
   defaultValue?: string
   from: number
   line: number
@@ -77,6 +79,22 @@ function findNearestTabsFrame(stack: OpenFrame[]): OpenFrame | undefined {
   return undefined
 }
 
+function findNearestCardsFrame(stack: OpenFrame[]): OpenFrame | undefined {
+  for (let index = stack.length - 1; index >= 0; --index) {
+    const frame = stack[index]
+    if (frame.name === 'cards') return frame
+  }
+
+  return undefined
+}
+
+function hasAttribute(
+  attributes: Record<string, boolean | string> | undefined,
+  name: string,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(attributes ?? {}, name)
+}
+
 function updateOpenStack(
   stack: OpenFrame[],
   text: string,
@@ -89,6 +107,23 @@ function updateOpenStack(
   if (!token) return diagnostics
 
   if (token.action === 'open') {
+    if (token.name === 'card') {
+      const cardsFrame = findNearestCardsFrame(stack)
+      const cardsSectionLink =
+        cardsFrame?.cardsHasHref &&
+        (cardsFrame.cardsLinkScope === undefined || cardsFrame.cardsLinkScope === 'section')
+
+      if (
+        cardsSectionLink &&
+        (hasAttribute(token.attributes, 'href') ||
+          hasAttribute(token.attributes, 'linkScope') ||
+          hasAttribute(token.attributes, 'newTab'))
+      )
+        diagnostics.push(
+          'Directive "cards" with linkScope="section" ignores child "card" link overrides.',
+        )
+    }
+
     if (token.name === 'tab') {
       const tabsFrame = findNearestTabsFrame(stack)
 
@@ -107,6 +142,16 @@ function updateOpenStack(
       name: token.name,
       from,
       line,
+      ...(token.name === 'cards'
+        ? {
+            cardsHasHref:
+              typeof token.attributes?.href === 'string' && Boolean(token.attributes.href.trim()),
+            cardsLinkScope:
+              typeof token.attributes?.linkScope === 'string'
+                ? token.attributes.linkScope
+                : undefined,
+          }
+        : {}),
       ...(token.name === 'tabs'
         ? {
             defaultValue:

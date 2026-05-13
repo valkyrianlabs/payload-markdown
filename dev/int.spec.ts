@@ -655,6 +655,20 @@ describe('layout directive registry', () => {
     expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
+  it('warns in editor diagnostics when section-scoped cards use child link overrides', () => {
+    const diagnostics = lintMarkdownDirectives(`
+:::cards {href="/overview"}
+:::card {title="Ignored" href="/ignored"}
+Ignored body.
+:::
+:::
+`)
+
+    expect(diagnostics.map((diagnostic) => diagnostic.message)).toContain(
+      'Directive "cards" with linkScope="section" ignores child "card" link overrides.',
+    )
+  })
+
   it('parses directive attributes while keeping legacy layout markers stable', () => {
     expect(parseDirectiveLine(':::section {#hero .wide .dark tone="info" open}')).toMatchObject({
       name: 'section',
@@ -741,7 +755,7 @@ describe('layout directive registry', () => {
     expect(getDirectiveAttributeCompletionOptions('card').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['href', 'linkScope', 'newTab', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('cards').map((completion) => completion.label))
-      .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'theme']))
+      .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'href', 'linkScope', 'newTab', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant']))
     expect(getDirectiveAttributeCompletionOptions('tabs').map((completion) => completion.label))
@@ -757,6 +771,10 @@ describe('layout directive registry', () => {
       .toEqual(['true', 'false'])
     expect(getDirectiveThemeValueCompletionOptions('cards', 'cardTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
+    expect(getDirectiveThemeValueCompletionOptions('cards', 'linkScope').map((completion) => completion.label))
+      .toEqual(['section', 'card', 'title'])
+    expect(getDirectiveThemeValueCompletionOptions('cards', 'newTab').map((completion) => completion.label))
+      .toEqual(['true', 'false'])
     expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
     expect(getDirectiveThemeValueCompletionOptions('steps', 'layout').map((completion) => completion.label))
@@ -825,6 +843,85 @@ Read the docs.
     expect(result.html).toContain('Read the docs.')
   })
 
+  it('supports section-scoped links on cards containers', async () => {
+    const result = await compileMarkdown(`
+:::cards {href="/overview" newTab}
+
+:::card {title="First"}
+First body.
+:::
+
+:::card {title="Second"}
+Second body.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('data-link-scope="section"')
+    expect(result.html).toContain('data-new-tab="true"')
+    expect(result.html).toContain(
+      '<a href="/overview" rel="noopener noreferrer" target="_blank" aria-label="Open card section" class="absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="cards"></a>',
+    )
+    expect(result.html).not.toContain('data-directive-link="card"')
+  })
+
+  it('supports cards-level per-card link defaults and card overrides', async () => {
+    const result = await compileMarkdown(`
+:::cards {href="/docs" newTab linkScope="card"}
+
+:::card {title="Inherited"}
+Inherited body.
+:::
+
+:::card {title="Override" href="/custom" linkScope="title" newTab="false"}
+Override body.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('href="/docs" rel="noopener noreferrer" target="_blank"')
+    expect(result.html).toContain('aria-label="Open Inherited"')
+    expect(result.html).toContain('<a href="/custom">Override</a>')
+    expect(result.html).not.toContain('href="/custom" rel="noopener noreferrer" target="_blank"')
+  })
+
+  it('supports cards-level title link defaults', async () => {
+    const result = await compileMarkdown(`
+:::cards {href="/titles" linkScope="title"}
+
+:::card {title="Title Link"}
+Title body.
+:::
+
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<a href="/titles">Title Link</a>')
+    expect(result.html).not.toContain('data-directive-link="card"')
+    expect(result.html).not.toContain('data-directive-link="cards"')
+  })
+
+  it('warns when section-scoped cards use child link overrides', async () => {
+    const result = await compileMarkdown(`
+:::cards {href="/overview"}
+
+:::card {title="Ignored" href="/ignored"}
+Ignored body.
+:::
+
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'linkScope="section" ignores child "card" link overrides')).toBe(true)
+    expect(result.html).toContain('href="/overview"')
+    expect(result.html).not.toContain('href="/ignored"')
+  })
+
   it('supports title-scoped card links and new tabs', async () => {
     const result = await compileMarkdown(`
 :::card {title="External" href="https://example.com" linkScope="title" newTab}
@@ -853,6 +950,21 @@ Body.
     expect(hasWarning(result.warnings, 'Invalid cards columns "wide"')).toBe(true)
     expect(result.html).toContain('data-columns="3"')
     expect(countDirective(result.html, 'card')).toBe(1)
+  })
+
+  it('falls back invalid cards link scopes and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::cards {href="/fallback" linkScope="panel"}
+:::card {title="Fallback"}
+Body.
+:::
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Invalid cards linkScope "panel"')).toBe(true)
+    expect(result.html).toContain('data-link-scope="card"')
+    expect(result.html).toContain('data-directive-link="card"')
+    expect(result.html).not.toContain('data-directive-link="cards"')
   })
 
   it('falls back invalid card link scopes and reports diagnostics', async () => {

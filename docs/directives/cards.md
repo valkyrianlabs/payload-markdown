@@ -32,12 +32,17 @@ Overrides parent `cardTheme`.
 Attributes:
 
 - `columns`: `1`, `2`, `3`, `4`, or `auto`
+- `href`: optional link applied according to `linkScope`
+- `linkScope`: `section`, `card`, or `title`
+- `newTab`: open `href` in a new tab when `true`
 - `theme`: cards container theme
 - `cardTheme`: default child card theme
 
 Defaults:
 
 - `columns="3"`
+- `linkScope="section"`
+- `newTab="false"`
 - `theme="default"`
 
 Invalid columns fall back to `3` and produce a non-fatal diagnostic where diagnostics are available.
@@ -75,7 +80,51 @@ Content.
 
 ## Link Behavior
 
-When `href` is present, the whole card is clickable by default:
+When `href` is present on `:::cards`, the whole card section is clickable by default:
+
+```md
+:::cards {href="/getting-started/fields-and-blocks"}
+
+:::card {title="Markdown Field"}
+Portable Markdown content.
+:::
+
+:::card {title="Rendering"}
+Server-rendered output.
+:::
+
+:::
+```
+
+Section-scoped links do not support child card link overrides. Set `linkScope="card"` when each child card should inherit the parent link as a full-card link:
+
+```md
+:::cards {href="/getting-started/fields-and-blocks" linkScope="card"}
+
+:::card {title="Markdown Field"}
+Portable Markdown content.
+:::
+
+:::card {title="Custom Target" href="/directives/cards"}
+This card overrides the parent `href`.
+:::
+
+:::
+```
+
+Set `linkScope="title"` on `:::cards` when child card titles should inherit the parent link:
+
+```md
+:::cards {href="/getting-started/fields-and-blocks" linkScope="title"}
+
+:::card {title="Markdown Field"}
+Portable Markdown content.
+:::
+
+:::
+```
+
+When `href` is present on an individual `:::card`, the whole card is clickable by default:
 
 ```md
 :::card {title="Markdown Field" href="/getting-started/fields-and-blocks"}
@@ -83,7 +132,7 @@ Portable Markdown content.
 :::
 ```
 
-Set `linkScope="title"` to keep the link on the title only:
+Set `linkScope="title"` on `:::card` to keep the link on the title only:
 
 ```md
 :::card {title="Markdown Field" href="/getting-started/fields-and-blocks" linkScope="title"}
@@ -91,7 +140,7 @@ Portable Markdown content.
 :::
 ```
 
-Set `newTab` or `newTab="true"` to open the card link in a new tab:
+Set `newTab` or `newTab="true"` on `:::cards` or `:::card` to open links in a new tab. Child cards can override a parent value with `newTab="false"`:
 
 ```md
 :::card {title="External Guide" href="https://example.com" newTab}

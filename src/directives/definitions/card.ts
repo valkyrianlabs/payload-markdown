@@ -10,9 +10,9 @@ export const CARD_TITLE_CLASS_NAMES = 'mb-3 text-lg font-semibold tracking-tight
 export const CARD_LINK_SCOPES = ['full', 'title'] as const
 export const DEFAULT_CARD_LINK_SCOPE = 'full'
 
-type CardLinkScope = (typeof CARD_LINK_SCOPES)[number]
+export type CardLinkScope = (typeof CARD_LINK_SCOPES)[number]
 
-function isCardLinkScope(value: unknown): value is CardLinkScope {
+export function isCardLinkScope(value: unknown): value is CardLinkScope {
   return typeof value === 'string' && CARD_LINK_SCOPES.includes(value as CardLinkScope)
 }
 
@@ -35,8 +35,10 @@ function getBooleanAttribute(node: ContainerDirective, name: string): boolean {
   return value === 'true'
 }
 
-function getLinkScope(node: ContainerDirective): CardLinkScope {
+function getLinkScope(node: ContainerDirective): CardLinkScope | undefined {
   const value = node.attributes?.linkScope
+
+  if (typeof value !== 'string') return undefined
 
   return isCardLinkScope(value) ? value : DEFAULT_CARD_LINK_SCOPE
 }
@@ -171,7 +173,9 @@ export const cardDirective: LayoutDirectiveDefinition = {
       dataEyebrow: getAttribute(node, 'eyebrow'),
       dataHref: getAttribute(node, 'href'),
       dataLinkScope: getLinkScope(node),
-      dataNewTab: getBooleanAttribute(node, 'newTab') ? 'true' : 'false',
+      dataNewTab: 'newTab' in (node.attributes ?? {})
+        ? getBooleanAttribute(node, 'newTab') ? 'true' : 'false'
+        : undefined,
       dataTheme: getAttribute(node, 'theme'),
       dataTitle: getAttribute(node, 'title'),
     }
