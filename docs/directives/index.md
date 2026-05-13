@@ -10,7 +10,7 @@ tags:
 
 # Directives
 
-Directives are Markdown containers powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, tabs, sections, columns, and cells.
+Directives are Markdown primitives powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, buttons, tabs, sections, columns, and cells.
 
 :::toc {title="On this page" depth="3" theme="compact"}
 :::
@@ -23,6 +23,8 @@ Directives are Markdown containers powered by the plugin directive registry. The
 - `:::steps`
 - `:::cards`
 - `:::card`
+- `:button`
+- `:::buttons`
 - `:::tabs`
 - `:::tab`
 - `:::section`
@@ -123,6 +125,10 @@ Ordered flows, install procedures, and card-based tutorials.
 
 :::card {title="Cards" href="/directives/cards"}
 Card grids and standalone card content.
+:::
+
+:::card {title="Buttons" href="/directives/buttons"}
+Link buttons and grouped primary links with local SVG icons.
 :::
 
 :::card {title="Tabs" href="/directives/tabs"}

@@ -37,6 +37,22 @@ const countDirective = (html: string, directive: string): number =>
 const hasWarning = (warnings: string[], value: string): boolean =>
   warnings.some((warning) => warning.includes(value))
 
+const fixtureIconConfig = {
+  icons: {
+    baseDir: 'tests/fixtures/icons',
+    packs: [
+      {
+        alias: 'fa-duotone',
+        path: 'fa-duotone',
+      },
+      {
+        alias: 'brand',
+        path: 'brand',
+      },
+    ],
+  },
+}
+
 const countSyntaxNodes = (markdown: string, name: string): number => {
   const state = EditorState.create({
     doc: markdown,
@@ -149,6 +165,29 @@ describe('payloadMarkdown', () => {
       size: 'md',
       variant: 'docs',
     })
+  })
+
+  it('passes configured icon packs into resolved render defaults', async () => {
+    const config: Config = {
+      admin: {} as Config['admin'],
+      collections: [
+        {
+          slug: 'posts',
+          fields: [],
+        },
+      ],
+    } as unknown as Config
+
+    const plugin = payloadMarkdown({
+      collections: {
+        posts: true,
+      },
+      icons: fixtureIconConfig.icons,
+    })
+
+    await plugin(config)
+
+    expect(resolveMarkdownFieldDefaults('posts')?.icons).toEqual(fixtureIconConfig.icons)
   })
 
   it('respects explicit install overrides', async () => {
@@ -508,6 +547,8 @@ describe('layout directive registry', () => {
       '2col',
       '3col',
       'cell',
+      'button',
+      'buttons',
       'callout',
       'details',
       'toc',
@@ -533,6 +574,13 @@ describe('layout directive registry', () => {
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::cell')).toMatchObject({
       name: 'cell',
       action: 'open',
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::buttons{align="center"}')).toMatchObject({
+      name: 'buttons',
+      action: 'open',
+      attributes: {
+        align: 'center',
+      },
     })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::callout {variant="warning"}')).toMatchObject({
       name: 'callout',
@@ -710,6 +758,8 @@ Ignored body.
       '2col',
       '3col',
       'cell',
+      'button',
+      'buttons',
       'callout',
       'details',
       'toc',
@@ -727,6 +777,8 @@ Ignored body.
       ':::2col',
       ':::3col',
       ':::cell',
+      ':button',
+      ':::buttons',
       ':::callout',
       ':::details',
       ':::toc',
@@ -745,6 +797,7 @@ Ignored body.
     ])
 
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes(':button[${Label}]'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::card {title="${Title}"}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::tabs {default="${pnpm}"}'))).toBe(true)
@@ -756,6 +809,10 @@ Ignored body.
       .toEqual(expect.arrayContaining(['href', 'linkScope', 'newTab', 'theme']))
     expect(getDirectiveAttributeCompletionOptions('cards').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['cardTheme', 'columns', 'href', 'linkScope', 'newTab', 'theme']))
+    expect(getDirectiveAttributeCompletionOptions('button').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['ariaLabel', 'href', 'icon', 'iconPosition', 'newTab', 'size', 'variant']))
+    expect(getDirectiveAttributeCompletionOptions('buttons').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['align', 'gap', 'stack']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant']))
     expect(getDirectiveAttributeCompletionOptions('tabs').map((completion) => completion.label))
@@ -775,6 +832,20 @@ Ignored body.
       .toEqual(['section', 'card', 'title'])
     expect(getDirectiveThemeValueCompletionOptions('cards', 'newTab').map((completion) => completion.label))
       .toEqual(['true', 'false'])
+    expect(getDirectiveThemeValueCompletionOptions('button', 'variant').map((completion) => completion.label))
+      .toEqual(['primary', 'secondary', 'outline', 'ghost', 'link'])
+    expect(getDirectiveThemeValueCompletionOptions('button', 'size').map((completion) => completion.label))
+      .toEqual(['sm', 'md', 'lg'])
+    expect(getDirectiveThemeValueCompletionOptions('button', 'iconPosition').map((completion) => completion.label))
+      .toEqual(['left', 'right'])
+    expect(getDirectiveThemeValueCompletionOptions('button', 'newTab').map((completion) => completion.label))
+      .toEqual(['true', 'false'])
+    expect(getDirectiveThemeValueCompletionOptions('buttons', 'align').map((completion) => completion.label))
+      .toEqual(['left', 'center', 'right'])
+    expect(getDirectiveThemeValueCompletionOptions('buttons', 'stack').map((completion) => completion.label))
+      .toEqual(['mobile', 'always', 'never'])
+    expect(getDirectiveThemeValueCompletionOptions('buttons', 'gap').map((completion) => completion.label))
+      .toEqual(['sm', 'md', 'lg'])
     expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
     expect(getDirectiveThemeValueCompletionOptions('steps', 'layout').map((completion) => completion.label))
@@ -791,6 +862,164 @@ Ignored body.
 })
 
 describe('compileMarkdown layout directives', () => {
+  it('renders a button as an anchor with label href default variant and default size', async () => {
+    const result = await compileMarkdown(':button[Home]{href="/home"}')
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<a')
+    expect(result.html).toContain('data-directive="button"')
+    expect(result.html).toContain('href="/home"')
+    expect(result.html).toContain('pmd-button--primary')
+    expect(result.html).toContain('pmd-button--md')
+    expect(result.html).toContain('>Home</a>')
+  })
+
+  it('renders new-tab button attributes', async () => {
+    const result = await compileMarkdown(
+      ':button[GitHub]{href="https://github.com/valkyrianlabs" newTab=true}',
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('href="https://github.com/valkyrianlabs"')
+    expect(result.html).toContain('target="_blank"')
+    expect(result.html).toContain('rel="noopener noreferrer"')
+  })
+
+  it('renders button variant and size classes', async () => {
+    const result = await compileMarkdown(':button[Docs]{href="/docs" variant="secondary" size="lg"}')
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('pmd-button--secondary')
+    expect(result.html).toContain('pmd-button--lg')
+    expect(result.html).toContain('data-variant="secondary"')
+    expect(result.html).toContain('data-size="lg"')
+  })
+
+  it('renders a left button icon from a fixture icon pack', async () => {
+    const result = await compileMarkdown(
+      ':button[Home]{href="/home" icon="@fa-duotone/home"}',
+      fixtureIconConfig,
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<svg')
+    expect(result.html).toContain('pmd-button__icon')
+    expect(result.html).toContain('pmd-button__icon--left')
+    expect(result.html).toContain('aria-hidden="true"')
+    expect(result.html).toContain('focusable="false"')
+    expect(result.html.indexOf('pmd-button__icon--left')).toBeLessThan(result.html.indexOf('Home'))
+  })
+
+  it('renders a right button icon from a fixture icon pack', async () => {
+    const result = await compileMarkdown(
+      ':button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" iconPosition="right"}',
+      fixtureIconConfig,
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<svg')
+    expect(result.html).toContain('pmd-button__icon--right')
+    expect(result.html.indexOf('GitHub')).toBeLessThan(result.html.indexOf('pmd-button__icon--right'))
+  })
+
+  it('emits diagnostics for malformed unknown and missing button icons without crashing', async () => {
+    const malformed = await compileMarkdown(':button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
+    const unknownPack = await compileMarkdown(':button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)
+    const missingIcon = await compileMarkdown(':button[Bad]{href="/bad" icon="@fa-duotone/missing"}', fixtureIconConfig)
+
+    expect(hasWarning(malformed.warnings, 'Malformed icon ref "fa/home"')).toBe(true)
+    expect(hasWarning(unknownPack.warnings, 'Unknown icon pack "unknown"')).toBe(true)
+    expect(hasWarning(missingIcon.warnings, 'Unknown icon "fa-duotone/missing"')).toBe(true)
+    expect(missingIcon.html).toContain('>Bad</a>')
+    expect(missingIcon.html).not.toContain('pmd-button__icon')
+  })
+
+  it('emits icon pack config diagnostics without blocking valid icons', async () => {
+    const result = await compileMarkdown(
+      ':button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github"}',
+      {
+        icons: {
+          baseDir: 'tests/fixtures/icons',
+          packs: [
+            {
+              alias: 'brand',
+              path: 'brand',
+            },
+            {
+              alias: 'brand',
+              path: 'brand-copy',
+            },
+            {
+              alias: '',
+              path: 'brand',
+            },
+            {
+              alias: 'unsafe',
+              path: '../outside',
+            },
+            {
+              alias: 'empty',
+              path: '',
+            },
+          ],
+        },
+      },
+    )
+
+    expect(hasWarning(result.warnings, 'Duplicate icon pack alias "brand"')).toBe(true)
+    expect(hasWarning(result.warnings, 'Icon pack aliases must not be empty.')).toBe(true)
+    expect(hasWarning(result.warnings, 'Icon pack "unsafe" path must be a safe relative path.')).toBe(true)
+    expect(hasWarning(result.warnings, 'Icon pack "empty" path must not be empty.')).toBe(true)
+    expect(result.html).toContain('<svg')
+    expect(result.html).toContain('>GitHub')
+  })
+
+  it('emits diagnostics for invalid button attributes', async () => {
+    const missingHref = await compileMarkdown(
+      ':button[Missing]{variant="banana" size="xl" iconPosition="center"}',
+    )
+    const iconOnly = await compileMarkdown(':button[]{href="/settings" icon="@fa-duotone/home"}')
+
+    expect(hasWarning(missingHref.warnings, 'Directive "button" requires an href attribute.')).toBe(true)
+    expect(hasWarning(missingHref.warnings, 'Invalid button variant "banana"')).toBe(true)
+    expect(hasWarning(missingHref.warnings, 'Invalid button size "xl"')).toBe(true)
+    expect(hasWarning(missingHref.warnings, 'Invalid button iconPosition "center"')).toBe(true)
+    expect(hasWarning(iconOnly.warnings, 'Icon-only button requires an ariaLabel attribute.')).toBe(true)
+  })
+
+  it('renders buttons wrapper alignment stack and gap classes', async () => {
+    const result = await compileMarkdown(`
+:::buttons{align="center" stack="always" gap="lg"}
+:button[Get started]{href="/docs"}
+:button[GitHub]{href="https://github.com/valkyrianlabs" variant="secondary"}
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'buttons')).toBe(1)
+    expect(countDirective(result.html, 'button')).toBe(2)
+    expect(result.html).toContain('pmd-buttons--align-center')
+    expect(result.html).toContain('pmd-buttons--stack-always')
+    expect(result.html).toContain('pmd-buttons--gap-lg')
+    expect(result.html).toContain('href="/docs"')
+    expect(result.html).toContain('href="https://github.com/valkyrianlabs"')
+  })
+
+  it('falls back invalid buttons options and reports diagnostics', async () => {
+    const result = await compileMarkdown(`
+:::buttons{align="middle" stack="sometimes" gap="huge"}
+:button[Get started]{href="/docs"}
+:::
+`)
+
+    expect(hasWarning(result.warnings, 'Invalid buttons align "middle"')).toBe(true)
+    expect(hasWarning(result.warnings, 'Invalid buttons stack "sometimes"')).toBe(true)
+    expect(hasWarning(result.warnings, 'Invalid buttons gap "huge"')).toBe(true)
+    expect(result.html).toContain('pmd-buttons--align-left')
+    expect(result.html).toContain('pmd-buttons--stack-mobile')
+    expect(result.html).toContain('pmd-buttons--gap-md')
+  })
+
   it('renders cards with default columns and multiple card children', async () => {
     const result = await compileMarkdown(`
 :::cards
@@ -1952,6 +2181,10 @@ Body.
 :::toc {depth="bad"}
 :::
 
+:button[Broken]{variant="banana" icon="bad/ref"}
+
+:button[]{href="/settings" icon="@brand/github"}
+
 :::steps {mode="bad" variant="timeline" layout="diagonal" columns="wide" numbered="maybe"}
 ### Step
 Body.
@@ -1988,6 +2221,10 @@ Standalone.
       'Unsupported callout variant "weird". Falling back to "note".',
       'Malformed directive attributes: braces must be balanced.',
       'Invalid toc depth "bad". Falling back to "3".',
+      'Invalid button variant "banana". Falling back to "primary".',
+      'Directive "button" requires an href attribute.',
+      'Malformed icon ref "bad/ref". Expected "@pack/name".',
+      'Icon-only button requires an ariaLabel attribute.',
       'Unknown attribute "mode" on "steps".',
       'Unsupported steps variant "timeline". Falling back to "default".',
       'Unsupported steps layout "diagonal". Falling back to "stack".',

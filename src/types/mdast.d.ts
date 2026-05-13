@@ -11,6 +11,12 @@ declare module 'mdast-util-directive' {
     vlCellHeadingDepth?: number
     vlParentHeadingDepth?: number
   }
+
+  interface LeafDirectiveData {
+    hChildren?: unknown[]
+    hName?: string
+    hProperties?: Record<string, unknown>
+  }
 }
 
 declare module 'mdast' {

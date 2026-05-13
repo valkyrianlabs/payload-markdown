@@ -15,6 +15,7 @@ Payload Markdown separates configuration into clear namespaces:
 ```ts
 payloadMarkdown({
   code: {},
+  icons: {},
   themes: {},
   config: {},
   collections: {
@@ -27,12 +28,12 @@ payloadMarkdown({
 })
 ```
 
-Use `code` for Shiki and fenced code behavior, `themes` for directive theme registries, and `config` for Markdown wrapper presentation.
+Use `code` for Shiki and fenced code behavior, `icons` for local SVG icon packs, `themes` for directive theme registries, and `config` for Markdown wrapper presentation.
 
 :::cards {columns="3" cardTheme="glass"}
 
 :::card {title="Plugin Config" href="/configuration/plugin-config"}
-The full public config shape, collection install options, and preferred namespaces.
+The full public config shape, icon packs, collection install options, and preferred namespaces.
 :::
 
 :::card {title="Scoping" href="/configuration/scoping"}

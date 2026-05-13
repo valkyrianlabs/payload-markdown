@@ -7,10 +7,13 @@ import { getDirectiveThemeNames } from '../../directives/themes.js'
 
 export function getDirectiveCompletionOptions() {
   return layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => {
+    const label = definition.editor.label.startsWith(':')
+      ? definition.editor.label
+      : `:::${definition.name}`
     const snippets = [
       {
         detail: definition.editor.detail,
-        label: `:::${definition.name}`,
+        label,
         snippet: definition.editor.snippet,
       },
       ...(definition.editor.snippets ?? []).map((snippet) => ({
@@ -68,13 +71,25 @@ export function getDirectiveThemeValueCompletionOptions(
 function attributeCompletionSource(context: CompletionContext) {
   const line = context.state.doc.lineAt(context.pos)
   const beforeCursor = line.text.slice(0, context.pos - line.from)
-  const directiveMatch = beforeCursor.match(/^\s*:::(\w+)\s+\{([^}]*)$/)
+  const containerMatch = beforeCursor.match(/^\s*:::(\w+)\s*\{([^}]*)$/)
+  const buttonMatch = beforeCursor.match(/^\s*:button(?:\[[^\]]*\])?\s*\{([^}]*)$/)
+  const directiveMatch = containerMatch
+    ? {
+        name: containerMatch[1],
+        attributesBeforeCursor: containerMatch[2],
+      }
+    : buttonMatch
+      ? {
+          name: 'button',
+          attributesBeforeCursor: buttonMatch[1],
+        }
+      : null
 
   if (!directiveMatch) return null
 
-  const [, name, attributesBeforeCursor] = directiveMatch
+  const { name, attributesBeforeCursor } = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(theme|cardTheme|cellTheme|linkScope|newTab|stepTheme|tabTheme)="([^"]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|linkScope|newTab|size|stack|stepTheme|tabTheme|variant)="([^"]*)$/,
   )
 
   if (valueMatch) {
@@ -106,6 +121,13 @@ function directiveCompletionSource(context: CompletionContext) {
   const attributeResult = attributeCompletionSource(context)
   if (attributeResult) return attributeResult
 
+  const buttonMatch = context.matchBefore(/:button[\w-]*/)
+  if (buttonMatch)
+    return {
+      from: buttonMatch.from,
+      options: getDirectiveCompletionOptions().filter((option) => option.label === ':button'),
+    }
+
   const match = context.matchBefore(/:::[\w-]*/)
 
   if (!match) return null
@@ -113,7 +135,9 @@ function directiveCompletionSource(context: CompletionContext) {
 
   return {
     from: match.from,
-    options: getDirectiveCompletionOptions(),
+    options: getDirectiveCompletionOptions().filter((option) =>
+      typeof option.label === 'string' ? option.label.startsWith(':::') : true,
+    ),
   }
 }
 

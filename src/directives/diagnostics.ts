@@ -1,3 +1,5 @@
+import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
+import { parseButtonDirectiveLine } from './buttonSyntax.js'
 import { layoutDirectiveRegistry } from './registry.js'
 import { hasDirectiveTheme } from './themes.js'
 
@@ -217,6 +219,28 @@ function getThemeDiagnostics(text: string): string[] {
   return diagnostics
 }
 
+function getButtonDiagnostics(text: string): string[] {
+  const parsed = parseButtonDirectiveLine(text)
+  if (!parsed) return []
+
+  const definition = layoutDirectiveRegistry.get('button')
+  const diagnostics = [
+    ...parsed.warnings,
+    ...(definition?.validateAttributes?.({ name: 'button', attributes: parsed.attributes }) ?? []),
+  ]
+  const icon = parsed.attributes.icon
+
+  if (typeof icon === 'string') {
+    const normalized = normalizePayloadMarkdownIconRef(icon)
+    if (normalized.warning) diagnostics.push(normalized.warning)
+  }
+
+  if (!parsed.label.trim() && typeof parsed.attributes.ariaLabel !== 'string')
+    diagnostics.push('Icon-only button requires an ariaLabel attribute.')
+
+  return diagnostics
+}
+
 export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] {
   const diagnostics: DirectiveDiagnostic[] = []
   const stack: OpenFrame[] = []
@@ -260,6 +284,17 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
         })
 
       for (const message of updateOpenStack(stack, trimmed, index + 1, markerFrom))
+        diagnostics.push({
+          from: markerFrom,
+          line: index + 1,
+          message,
+          severity: 'warning',
+          to: markerTo,
+        })
+    }
+
+    if (!inFence && trimmed.startsWith(':button')) {
+      for (const message of getButtonDiagnostics(trimmed))
         diagnostics.push({
           from: markerFrom,
           line: index + 1,

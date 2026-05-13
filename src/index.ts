@@ -170,4 +170,6 @@ export type {
   MarkdownDirectiveTheme,
   MarkdownDirectiveThemeGroup,
   MarkdownDirectiveThemes,
+  PayloadMarkdownIconPack,
+  PayloadMarkdownIconsConfig,
 } from './types/core.js'

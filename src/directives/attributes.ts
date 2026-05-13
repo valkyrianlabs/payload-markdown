@@ -142,13 +142,13 @@ export function parseDirectiveLine(text: string): null | ParsedDirectiveLine {
   const body = trimmed.slice(3)
   if (!body) return null
 
-  const firstWhitespaceIndex = body.search(/\s/)
-  const name = firstWhitespaceIndex < 0 ? body : body.slice(0, firstWhitespaceIndex)
+  const firstAttributeIndex = body.search(/[\s{]/)
+  const name = firstAttributeIndex < 0 ? body : body.slice(0, firstAttributeIndex)
 
   if (!/^[\w-]+$/.test(name)) return null
 
   const rawAttributes =
-    firstWhitespaceIndex < 0 ? undefined : body.slice(firstWhitespaceIndex).trim()
+    firstAttributeIndex < 0 ? undefined : body.slice(firstAttributeIndex).trim()
 
   const attributes = parseDirectiveAttributesDetailed(rawAttributes)
 

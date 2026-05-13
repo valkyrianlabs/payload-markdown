@@ -7,6 +7,8 @@ import type {
 } from './types.js'
 
 import { parseDirectiveLine } from './attributes.js'
+import { buttonDirective } from './definitions/button.js'
+import { buttonsDirective } from './definitions/buttons.js'
 import { calloutDirective } from './definitions/callout.js'
 import { cardDirective } from './definitions/card.js'
 import { cardsDirective } from './definitions/cards.js'
@@ -23,6 +25,8 @@ const directiveDefinitions = [
   sectionDirective,
   ...columnDirectives,
   cellDirective,
+  buttonDirective,
+  buttonsDirective,
   calloutDirective,
   detailsDirective,
   tocDirective,
@@ -121,7 +125,8 @@ function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
   const exactMatch = definition.openMarker === trimmed
   const attributedMatch =
     definition.supportsAttributes &&
-    trimmed.startsWith(`${definition.openMarker} `)
+    (trimmed.startsWith(`${definition.openMarker} `) ||
+      trimmed.startsWith(`${definition.openMarker}{`))
 
   if (!exactMatch && !attributedMatch)
     return {

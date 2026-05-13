@@ -76,6 +76,12 @@ const buildConfigWithMemoryDB = async () => {
             },
           },
         },
+        icons: {
+          baseDir: '../public/icons',
+          packs: [
+            { alias: 'fa-duotone', path: 'fa/duotone' }
+          ]
+        },
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

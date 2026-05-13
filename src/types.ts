@@ -1,6 +1,11 @@
 import type { CollectionSlug, TextField } from 'payload'
 
-import type { MarkdownCodeConfig, MarkdownConfig, MarkdownDirectiveThemes } from './types/core.js'
+import type {
+  MarkdownCodeConfig,
+  MarkdownConfig,
+  MarkdownDirectiveThemes,
+  PayloadMarkdownIconsConfig,
+} from './types/core.js'
 
 export type DualMarkdownFieldConfig = {
   blocks?: MarkdownConfig
@@ -88,6 +93,11 @@ export interface PayloadMarkdownConfig {
    * @default false
    */
   enabled?: boolean
+
+  /**
+   * Local SVG icon pack configuration for markdown directives.
+   */
+  icons?: PayloadMarkdownIconsConfig
 
   /**
    * Directive theme registry extensions.

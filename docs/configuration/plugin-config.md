@@ -28,6 +28,13 @@ payloadMarkdown({
     lineNumbers: true,
     shikiTheme: 'github-dark',
   },
+  icons: {
+    baseDir: '../public/icons',
+    packs: [
+      { alias: 'fa-duotone', path: 'fa/duotone' },
+      { alias: 'brand', path: 'brand' },
+    ],
+  },
   collections: {
     pages: true,
     posts: {
@@ -79,12 +86,53 @@ payloadMarkdown({
 - `enabled`: set to `false` to return the incoming Payload config unchanged
 - `collections`: map of collection slugs to `true`, an options object, or a falsey value to skip
 - `code`: Shiki and fenced code rendering defaults
+- `icons`: local SVG icon packs available to Markdown directives
 - `themes`: directive theme registry extensions
 - `config`: Markdown wrapper and typography defaults
 
 :::details {title="Runtime settings initialization"}
 Runtime helpers read plugin settings from `payloadMarkdown(...)`. If you use renderer helpers before the plugin initializes, `getPayloadMarkdownSettings()` throws. In normal Payload usage, include the plugin in the config before rendering Markdown.
 :::
+
+## Icons
+
+Configure local SVG icon packs with `icons`:
+
+```ts
+payloadMarkdown({
+  icons: {
+    baseDir: '../public/icons',
+    packs: [
+      { alias: 'fa-duotone', path: 'fa/duotone' },
+      { alias: 'brand', path: 'brand' },
+    ],
+  },
+})
+```
+
+Expected folder layout:
+
+```txt
+public/icons/
+  fa/duotone/
+    home.svg
+    rocket.svg
+  brand/
+    github.svg
+```
+
+Markdown references use `@pack/name`:
+
+```md
+:button[Home]{href="/home" icon="@fa-duotone/home"}
+:button[GitHub]{href="https://github.com/valkyrianlabs" icon="@brand/github" newTab=true}
+```
+
+Only local SVG packs are supported. The plugin does not integrate FortAwesome packages, fetch remote icons, or accept arbitrary icon URLs.
+
+Paid or pro icon files should stay local and gitignored. CI-safe tests and fixtures should use tiny committed SVG fixtures outside `public/icons`, and local paid-icon checks should be opt-in only.
+
+The server renderer emits sanitized inline SVG in the rendered HTML. If your app needs a bundler-backed static import registry for SVG component workflows, use the advanced icon registry helper to generate static imports from your local pack layout. Those imports rely on your host app's SVG support, such as Next, SVGR, Webpack, Turbopack, or an equivalent loader. Keep generated files that import paid icons out of source control.
 
 ## Collection Options
 
