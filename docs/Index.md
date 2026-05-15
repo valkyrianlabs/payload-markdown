@@ -10,6 +10,21 @@ tags:
 
 # Payload Markdown
 
+<span class="flex flex-row gap-x-3">
+  <a href="https://github.com/valkyrianlabs/payload-markdown/actions">
+    <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml">
+  </a>
+  <a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown">
+    <img alt="npm" src="https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown">
+  </a>
+  <a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown">
+    <img alt="npm downloads" src="https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown">
+  </a>
+  <a href="https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file">
+    <img alt="license" src="https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown">
+  </a>
+</span>
+
 `@valkyrianlabs/payload-markdown` adds portable Markdown authoring to Payload CMS. It provides a CodeMirror-backed admin field, an optional reusable Payload block, server-rendered Markdown output, Shiki code highlighting, heading anchors, GFM support, and registry-backed content directives.
 
 The stored value remains Markdown. Configuration, presentation, directive themes, and code rendering stay in source-controlled Payload config instead of being baked into CMS-authored content.
