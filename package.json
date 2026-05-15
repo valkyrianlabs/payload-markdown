@@ -1,6 +1,6 @@
 {
   "name": "@valkyrianlabs/payload-markdown",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Structured Markdown editing and rendering for Payload CMS with CodeMirror, Shiki, directives, themes, and server-first output.",
   "repository": {
     "url": "https://github.com/valkyrianlabs/payload-markdown"
@@ -32,7 +32,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "scripts": {
     "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",

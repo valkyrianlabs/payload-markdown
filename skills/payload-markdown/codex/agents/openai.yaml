@@ -1,0 +1,4 @@
+interface:
+  display_name: "Payload Markdown"
+  short_description: "Write rich Payload Markdown docs"
+  default_prompt: "Use $payload-markdown to write elegant automated documentation with Payload Markdown directives."

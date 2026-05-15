@@ -125,7 +125,7 @@ export function RenderBlocks({
 ```
 
 :::callout[Do not wrap the block in a block prop]{variant="warning"}
-`MarkdownBlockComponent` reads `content`, `blockType`, `id`, and `blockName` from its own props. Pass `{...block}`, not `block={block}`.
+`MarkdownBlockComponent` accepts block data as direct props and renders the `content` field. Pass `{...block}`, not `block={block}`.
 :::
 
 ## Field And Block Presentation

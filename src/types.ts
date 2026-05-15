@@ -90,7 +90,7 @@ export interface PayloadMarkdownConfig {
 
   /**
    * Enable or disable plugin
-   * @default false
+   * @default true
    */
   enabled?: boolean
 

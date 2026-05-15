@@ -83,7 +83,7 @@ payloadMarkdown({
 
 ## Top-Level Options
 
-- `enabled`: set to `false` to return the incoming Payload config unchanged
+- `enabled`: defaults to enabled behavior; set to `false` to return the incoming Payload config unchanged
 - `collections`: map of collection slugs to `true`, an options object, or a falsey value to skip
 - `code`: Shiki and fenced code rendering defaults
 - `icons`: local SVG icon packs available to Markdown directives

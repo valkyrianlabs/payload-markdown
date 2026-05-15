@@ -51,6 +51,7 @@ Common props:
 - `emptyFallback`: returned for empty or whitespace-only Markdown
 - `errorFallback`: returned when compilation produces warnings and you prefer a fallback
 - `code`: local Shiki and code fence overrides
+- `icons`: local SVG icon pack overrides
 - `themes`: local directive theme overrides
 
 ## Local Overrides

@@ -73,6 +73,8 @@ type PayloadMarkdownConfig = {
 }
 ```
 
+`enabled` defaults to enabled behavior. Set `enabled: false` only when you want the plugin to return the incoming Payload config unchanged.
+
 ## `PayloadMarkdownIconsConfig`
 
 ```ts
@@ -140,6 +142,16 @@ type MarkdownConfig = {
   options?: RenderMarkdownOptions
   sectionClassName?: string
 }
+```
+
+## `MarkdownRenderConfig`
+
+```ts
+type MarkdownRenderConfig = {
+  code?: MarkdownCodeConfig
+  icons?: PayloadMarkdownIconsConfig
+  themes?: MarkdownDirectiveThemes
+} & MarkdownConfig
 ```
 
 ## `ConfigOptions`
