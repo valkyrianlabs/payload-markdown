@@ -30,7 +30,7 @@ Payload Markdown now feels much closer to a Markdown-native design system: reada
 
 ---
 
-## [📖 Explore the Docs](https://docs.valkyrianlabs.com/plugins/payload-markdown)
+## [📖 Explore the Docs](https://valkyrianlabs.com/plugins/payload-markdown/docs)
 
 Full setup, directive syntax, theme configuration, code block options, editor behavior, and migration notes live in the docs.
 
