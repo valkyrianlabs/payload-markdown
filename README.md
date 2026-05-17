@@ -1,4 +1,4 @@
-![@valkyrianlabs/payload-markdown](https://docs-media.valkyrianlabs.com/%40valkyrianlabspayload-markdown_v1.4.0-release-banner.png)
+![@valkyrianlabs/payload-markdown](https://media.valkyrianlabs.com/%40valkyrianlabspayload-markdown_v1.4.0-release-banner.png)
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml)](https://github.com/valkyrianlabs/payload-markdown/actions)
 &nbsp;
