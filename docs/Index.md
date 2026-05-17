@@ -10,7 +10,7 @@ tags:
 
 # Payload Markdown
 
-<span class="flex flex-row gap-x-3">
+<span class="flex flex-row gap-x-3 [&_img]:my-0">
   <a href="https://github.com/valkyrianlabs/payload-markdown/actions">
     <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml">
   </a>

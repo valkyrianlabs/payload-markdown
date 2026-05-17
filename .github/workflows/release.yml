@@ -228,12 +228,11 @@ jobs:
           pnpm exec payload-markdown-docs validate ./docs \
             --source payload-markdown
 
-          pnpm exec payload-markdown-docs push ./docs \
-            --endpoint "https://docs.valkyrianlabs.com/api/payload-markdown-docs/sync" \
+          pnpm exec payload-markdown-docs push \
+            --endpoint "https://valkyrianlabs.com/api/documentation/sync" \
             --source payload-markdown \
             --repository "$GITHUB_REPOSITORY" \
             --branch "$GITHUB_REF_NAME" \
             --commit "$GITHUB_SHA" \
             --github-oidc \
-            --sync \
             --publish
