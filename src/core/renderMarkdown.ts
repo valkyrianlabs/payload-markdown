@@ -19,6 +19,7 @@ import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
+import { remarkBadgeDirectives } from './plugins/remarkBadgeDirectives.js'
 import { remarkButtonDirectives } from './plugins/remarkButtonDirectives.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
@@ -189,6 +190,7 @@ const sanitizeSchema: Schema = {
       'dataStack',
       'dataVariant',
       'dataVlLayout',
+      'dataWrap',
       'dataVlCellHeadingDepth',
       'hidden',
       'id',
@@ -218,8 +220,10 @@ const sanitizeSchema: Schema = {
     h6: [...getAttributeDefinitions(defaultSchema.attributes?.h6 ?? []), 'dataHeadingAnchor', 'id'],
     img: [
       ...getAttributeDefinitions(defaultSchema.attributes?.img ?? []),
-      'src',
       'alt',
+      'className',
+      'dataDirective',
+      'src',
       'title',
       'width',
       'height',
@@ -307,6 +311,7 @@ export async function compileMarkdown(
       .use(remarkGfm)
       .use(remarkLiftLayoutDirectives)
       .use(remarkButtonDirectives, config)
+      .use(remarkBadgeDirectives)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkValidateDirectiveThemes, config)

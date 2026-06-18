@@ -35,6 +35,7 @@ order:
   - ./directives/steps.md
   - ./directives/cards.md
   - ./directives/buttons.md
+  - ./directives/badges.md
   - ./directives/tabs.md
   - ./directives/layout.md
   - ./authoring/index.md

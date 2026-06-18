@@ -1,8 +1,8 @@
-import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
 import React, { Fragment } from 'react'
 
 import type { Page } from '../payload-types.ts'
 
+import { MarkdownBlockComponent } from '../../src/blocks/MarkdownBlock/Component.tsx'
 import { ArchiveBlock } from './ArchiveBlock/Component.tsx'
 
 const blockComponents = {

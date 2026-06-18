@@ -1,6 +1,6 @@
 ---
 name: payload-markdown
-description: Write elegant automated documentation with @valkyrianlabs/payload-markdown. Use when authoring, rewriting, auditing, or structuring docs with Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, and layout primitives.
+description: Write elegant automated documentation with @valkyrianlabs/payload-markdown. Use when authoring, rewriting, auditing, or structuring docs with Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, badges, and layout primitives.
 ---
 
 # Payload Markdown
@@ -34,6 +34,7 @@ This package stores the Claude variant at `skills/payload-markdown/claude`. When
 - Use `:::callout` for important notes, warnings, tips, and migration hazards.
 - Use `:::steps` for setup, tutorials, and workflows.
 - Use `:::cards` and `:::card` for page maps, feature groups, related links, and summary grids.
+- Use `::badge` and `:::badges` for Shields badges when package, build, release, license, or status metadata helps orient the page.
 - Use `:::tabs` only for truly parallel alternatives such as package managers or framework variants.
 - Use `:::details` for optional caveats, migration notes, or advanced branches.
 - Use `:::section`, `:::2col`, `:::3col`, and `:::cell` sparingly for dense landing-style docs sections.

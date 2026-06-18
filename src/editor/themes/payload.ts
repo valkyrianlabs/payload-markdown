@@ -251,7 +251,7 @@ function isDirectiveLine(line: MarkdownLine): boolean {
 }
 
 function isLeafDirectiveLine(line: MarkdownLine): boolean {
-  return /^::button(?:$|[\s[{])/.test(line.text.slice(line.pos))
+  return /^::(?:button|badge)(?:$|[\s[{])/.test(line.text.slice(line.pos))
 }
 
 function skipInlineSpace(text: string, index: number): number {
@@ -375,7 +375,9 @@ function parseDirectiveLineElements(
   const text = line.text
   const start = line.pos
   const lineStart = cxLineStart(cx)
-  const directiveMatch = text.slice(start).match(leaf ? /^::button(?=$|[\s[{])/ : /^:::[\w-]*/)
+  const directiveMatch = text
+    .slice(start)
+    .match(leaf ? /^::(?:button|badge)(?=$|[\s[{])/ : /^:::[\w-]*/)
   const directiveText = directiveMatch?.[0]?.trimEnd()
 
   if (!directiveText) return []

@@ -204,6 +204,8 @@ Layout directives:
 
 Static directives:
 
+- `badge`
+- `badges`
 - `button`
 - `buttons`
 - `callout`

@@ -1,7 +1,9 @@
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
 import { hasUnclosedDirectiveAttributeBlock } from './attributes.js'
 import { parseButtonDirectiveLine } from './buttonSyntax.js'
+import { parseLeafDirectiveLine } from './leafSyntax.js'
 import { layoutDirectiveRegistry } from './registry.js'
+import { resolveShieldsBadge } from './shields.js'
 import { hasDirectiveTheme } from './themes.js'
 
 export type DirectiveDiagnostic = {
@@ -22,6 +24,8 @@ type OpenFrame = {
   tabCount?: number
   tabValues?: Map<string, number>
 }
+
+const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
 
 function isFenceLine(trimmed: string): boolean {
   return trimmed.startsWith('```') || trimmed.startsWith('~~~')
@@ -282,6 +286,20 @@ function getButtonDiagnostics(text: string): string[] {
   return diagnostics
 }
 
+function getBadgeDiagnostics(text: string): string[] {
+  const parsed = parseLeafDirectiveLine(text, 'badge')
+  if (!parsed) return []
+
+  const definition = layoutDirectiveRegistry.get('badge')
+  const resolved = resolveShieldsBadge(parsed.attributes)
+
+  return [
+    ...parsed.warnings,
+    ...(definition?.validateAttributes?.({ name: 'badge', attributes: parsed.attributes }) ?? []),
+    ...resolved.warnings,
+  ]
+}
+
 function getLeafDirectiveName(text: string): string | undefined {
   if (text.startsWith(':::')) return undefined
 
@@ -351,7 +369,7 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
       const leafMarkerStart = line.indexOf('::')
       const leafMarkerFrom = leafMarkerStart >= 0 ? lineStart + leafMarkerStart : lineStart
 
-      if (leafName && leafName !== 'button')
+      if (leafName && !SUPPORTED_LEAF_DIRECTIVE_NAMES.has(leafName))
         diagnostics.push({
           from: leafMarkerFrom,
           line: index + 1,
@@ -361,6 +379,15 @@ export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] 
         })
 
       for (const message of getButtonDiagnostics(expandedTrimmed))
+        diagnostics.push({
+          from: leafMarkerFrom,
+          line: index + 1,
+          message,
+          severity: 'warning',
+          to: markerTo,
+        })
+
+      for (const message of getBadgeDiagnostics(expandedTrimmed))
         diagnostics.push({
           from: leafMarkerFrom,
           line: index + 1,

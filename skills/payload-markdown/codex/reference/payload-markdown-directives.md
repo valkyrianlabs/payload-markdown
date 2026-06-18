@@ -31,6 +31,8 @@ Install, configure, ship.
 - `:::card`
 - `::button`
 - `:::buttons`
+- `::badge`
+- `:::badges`
 - `:::tabs`
 - `:::tab`
 - `:::section`
@@ -183,6 +185,60 @@ Use button links for clear actions. Do not use snippet-only names such as `::but
 :::buttons{align="center" stack="mobile" gap="md"}
 ::button[Read Docs]{href="/getting-started" variant="primary"}
 ::button[GitHub]{href="https://github.com/valkyrianlabs" variant="secondary" newTab=true}
+:::
+```
+
+## Badges
+
+Use badges for compact package, build, release, license, download, or status metadata. `::badge` renders an image from `https://img.shields.io`. When `href` is present, the renderer wraps the image in an anchor instead of using Shields' `link` query parameter.
+
+`::badge` common attributes:
+
+- `[Label]`: default image `alt` text
+- `alt`: overrides label-derived image alt text
+- `href`: optional link target
+- `newTab`: opens the anchor in a new tab
+- `style`, `logo`, `logoColor`, `logoSize`, `label`, `labelColor`, `color`, and `cacheSeconds`: encoded Shields query attributes
+
+Curated resolvers:
+
+- `type="static"` with `label`, `message`, and `color`
+- `type="npm"` with `target="version"`, `target="downloads"`, or `target="license"` and `package`
+- `type="npm" target="downloads"` accepts `interval`; default is `dw`
+- `type="github" target="workflow"` with `repo` and `workflow`
+- `type="github"` with `target="release"`, `target="license"`, or `target="stars"` and `repo`
+- `type="debian" target="version"` with `package`
+- `type="apt"` as an alias for `type="debian"`
+
+Escape hatches:
+
+- `path`: Shields path not covered by a curated resolver, such as `badge/coverage-95%25-brightgreen`
+- `src`: full `https://img.shields.io` URL only
+
+`:::badges` attributes:
+
+- `align`: `left`, `center`, or `right`
+- `gap`: `sm`, `md`, or `lg`
+- `wrap`: `true` or `false`
+
+```md
+:::badges{
+  align="center"
+  gap="md"
+  wrap=true
+}
+::badge[npm]{
+  type="npm"
+  target="version"
+  package="@valkyrianlabs/payload-markdown"
+  href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"
+}
+::badge[build]{
+  type="github"
+  target="workflow"
+  repo="valkyrianlabs/payload-markdown"
+  workflow="deploy.yml"
+}
 :::
 ```
 

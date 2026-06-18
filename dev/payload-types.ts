@@ -238,10 +238,6 @@ export interface MarkdownBlock {
        */
       size?: ('lg' | 'md' | 'sm') | null;
       /**
-       * Whether to center the block content within its wrapper.
-       */
-      centered?: boolean | null;
-      /**
        * Whether to apply horizontal gutter padding to the block wrapper.
        */
       enableGutter?: boolean | null;
@@ -333,11 +329,7 @@ export interface MarkdownBlock {
         /**
          * Whether to apply the plugin's enhanced code block formatting. When enabled, the renderer normalizes Shiki output for better integration with markdown prose styling. This includes adjustments such as background removal, spacing cleanup, line layout normalization, and other structural fixes needed for features like line numbers and consistent empty-line rendering. Set this to false if you want to preserve raw Shiki block styling as much as possible.
          */
-        prettyCodeBlocks?: boolean | null;
-        /**
-         * Whether to enable line highlighting for the code block. When enabled, you can specify lines to highlight by including a line number list in the code block's language declaration. For example, a declaration of "js{1,4-5}" would highlight lines 1, 4, and 5 in the block.
-         */
-        highlightLines?: boolean | null;
+        enhancedCodeBlocks?: boolean | null;
       };
     };
   };
@@ -611,7 +603,6 @@ export interface MarkdownBlockSelect<T extends boolean = true> {
               columnClassName?: T;
               variant?: T;
               size?: T;
-              centered?: T;
               enableGutter?: T;
               fullBleedCode?: T;
               mutedHeadings?: T;
@@ -620,8 +611,7 @@ export interface MarkdownBlockSelect<T extends boolean = true> {
                 | {
                     theme?: T;
                     showLineNumbers?: T;
-                    prettyCodeBlocks?: T;
-                    highlightLines?: T;
+                    enhancedCodeBlocks?: T;
                   };
             };
       };

@@ -1,12 +1,12 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from '../dist'
 import { Archive } from './blocks/ArchiveBlock/config.ts'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'

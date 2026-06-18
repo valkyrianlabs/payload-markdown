@@ -239,3 +239,58 @@ pre.shiki.md-code-enhanced {
 .pmd-buttons--gap-lg {
   gap: 1rem;
 }
+
+.pmd-badges {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  vertical-align: middle;
+}
+
+.pmd-badges--align-left {
+  justify-content: flex-start;
+}
+
+.pmd-badges--align-center {
+  justify-content: center;
+}
+
+.pmd-badges--align-right {
+  justify-content: flex-end;
+}
+
+.pmd-badges--gap-sm {
+  gap: 0.5rem;
+}
+
+.pmd-badges--gap-md {
+  gap: 0.75rem;
+}
+
+.pmd-badges--gap-lg {
+  gap: 1rem;
+}
+
+.pmd-badges--wrap-true {
+  flex-wrap: wrap;
+}
+
+.pmd-badges--wrap-false {
+  flex-wrap: nowrap;
+}
+
+.pmd-badge-link {
+  display: inline-flex;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.pmd-badge {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 0;
+  margin-bottom: 0;
+}

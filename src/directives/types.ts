@@ -7,6 +7,8 @@ import type { DirectiveThemeGroupName, ResolvedDirectiveTheme } from './themes.j
 
 export type LayoutDirectiveName = '2col' | '3col' | 'cell' | 'section'
 export type StaticDirectiveName =
+  | 'badge'
+  | 'badges'
   | 'button'
   | 'buttons'
   | 'callout'
@@ -50,6 +52,8 @@ export type DirectiveChild = ContainerDirective['children'][number]
 export type MarkdownDirectiveNode = ContainerDirective | LeafDirective
 
 export type LayoutDirectiveKind =
+  | 'badge'
+  | 'badges'
   | 'button'
   | 'buttons'
   | 'callout'
@@ -69,6 +73,7 @@ export type LayoutDirectiveRenderTagName =
   | 'article'
   | 'details'
   | 'div'
+  | 'img'
   | 'nav'
   | 'section'
 
