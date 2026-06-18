@@ -31,10 +31,11 @@ Typing or invoking completion around `:::` offers public directives from the dir
 - `:::cards`
 - `:::card`
 - `:::buttons`
+- `:::badges`
 - `:::tabs`
 - `:::tab`
 
-Typing or invoking completion around `::button` offers the leaf button directive and its attributes.
+Typing or invoking completion around `::button` or `::badge` offers the leaf directive and its attributes.
 
 Button completion may also show shortcut labels such as `::button_icon` and `::button_full`. These are autocomplete variants only. Selecting them inserts canonical `::button[...]` Markdown; `::button_icon` and `::button_full` are not valid directive names in source.
 
@@ -110,6 +111,16 @@ Button snippets use the leaf directive form:
 }
 ```
 
+Badge snippets use the same leaf directive form:
+
+```md
+::badge[npm version]{
+  type="npm"
+  target="version"
+  package="package-name"
+}
+```
+
 Expanded multiline attributes are preferred for readability:
 
 ```md
@@ -129,7 +140,7 @@ If both `[Label]` and `title` are present, the renderer uses `[Label]`. Matching
 
 Directive highlighting distinguishes supported pieces where the active theme can style them:
 
-- leaf directives such as `::button`
+- leaf directives such as `::button` and `::badge`
 - container directives such as `:::card`
 - directive labels such as `[Fast Setup]`
 - argument names such as `href=`
@@ -207,6 +218,7 @@ The editor provides lightweight, non-fatal directive diagnostics for issues such
 - invalid steps variant, layout, columns, or numbered value
 - invalid cards columns
 - invalid tabs defaults or duplicate tab values
+- invalid badge types, targets, or required Shields attributes
 - unknown theme, `cardTheme`, `cellTheme`, `stepTheme`, or `tabTheme`
 - obvious unclosed directives
 

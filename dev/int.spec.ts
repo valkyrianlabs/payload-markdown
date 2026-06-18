@@ -549,6 +549,8 @@ describe('layout directive registry', () => {
       'cell',
       'button',
       'buttons',
+      'badge',
+      'badges',
       'callout',
       'details',
       'toc',
@@ -577,6 +579,13 @@ describe('layout directive registry', () => {
     })
     expect(layoutDirectiveRegistry.parseMarkdownLine(':::buttons{align="center"}')).toMatchObject({
       name: 'buttons',
+      action: 'open',
+      attributes: {
+        align: 'center',
+      },
+    })
+    expect(layoutDirectiveRegistry.parseMarkdownLine(':::badges{align="center"}')).toMatchObject({
+      name: 'badges',
       action: 'open',
       attributes: {
         align: 'center',
@@ -703,9 +712,10 @@ describe('layout directive registry', () => {
     expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
-  it('highlights leaf button directives separately from container directives', () => {
+  it('highlights leaf directives separately from container directives', () => {
     const markdown = [
       '::button[Home]{href="/home"}',
+      '::badge[npm]{type="npm" target="version" package="payload"}',
       '',
       ':::buttons',
       '::button[Docs]{href="/docs"}',
@@ -717,7 +727,7 @@ describe('layout directive registry', () => {
       'ratio: 3:2',
     ].join('\n')
 
-    expect(countSyntaxNodes(markdown, 'LeafDirectiveLine')).toBe(2)
+    expect(countSyntaxNodes(markdown, 'LeafDirectiveLine')).toBe(3)
     expect(countSyntaxNodes(markdown, 'DirectiveLine')).toBe(2)
   })
 
@@ -816,6 +826,8 @@ Ignored body.
       'cell',
       'button',
       'buttons',
+      'badge',
+      'badges',
       'callout',
       'details',
       'toc',
@@ -837,6 +849,8 @@ Ignored body.
       '::button_icon',
       '::button_full',
       ':::buttons',
+      '::badge',
+      ':::badges',
       ':::callout',
       ':::details',
       ':::toc',
@@ -871,6 +885,7 @@ Ignored body.
 
     expect(snippets.some((snippet) => snippet.includes('${Content}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('::button[${Label}]'))).toBe(true)
+    expect(snippets.some((snippet) => snippet.includes('::badge[${npm version}]'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes('${Step title}'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::card[${Title}]'))).toBe(true)
     expect(snippets.some((snippet) => snippet.includes(':::tabs{'))).toBe(true)
@@ -886,6 +901,10 @@ Ignored body.
       .toEqual(expect.arrayContaining(['ariaLabel', 'href', 'icon', 'iconPosition', 'newTab', 'size', 'variant']))
     expect(getDirectiveAttributeCompletionOptions('buttons').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['align', 'gap', 'stack']))
+    expect(getDirectiveAttributeCompletionOptions('badge').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['href', 'newTab', 'package', 'path', 'src', 'target', 'type']))
+    expect(getDirectiveAttributeCompletionOptions('badges').map((completion) => completion.label))
+      .toEqual(expect.arrayContaining(['align', 'gap', 'wrap']))
     expect(getDirectiveAttributeCompletionOptions('steps').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant']))
     expect(getDirectiveAttributeCompletionOptions('tabs').map((completion) => completion.label))
@@ -919,6 +938,16 @@ Ignored body.
       .toEqual(['mobile', 'always', 'never'])
     expect(getDirectiveThemeValueCompletionOptions('buttons', 'gap').map((completion) => completion.label))
       .toEqual(['sm', 'md', 'lg'])
+    expect(getDirectiveThemeValueCompletionOptions('badge', 'type').map((completion) => completion.label))
+      .toEqual(['static', 'npm', 'github', 'debian', 'apt'])
+    expect(getDirectiveThemeValueCompletionOptions('badge', 'target').map((completion) => completion.label))
+      .toEqual(['version', 'downloads', 'license', 'workflow', 'release', 'stars'])
+    expect(getDirectiveThemeValueCompletionOptions('badge', 'interval').map((completion) => completion.label))
+      .toEqual(['dw', 'dm', 'dy', 'dt'])
+    expect(getDirectiveThemeValueCompletionOptions('badge', 'newTab').map((completion) => completion.label))
+      .toEqual(['true', 'false'])
+    expect(getDirectiveThemeValueCompletionOptions('badges', 'wrap').map((completion) => completion.label))
+      .toEqual(['true', 'false'])
     expect(getDirectiveThemeValueCompletionOptions('steps', 'stepTheme').map((completion) => completion.label))
       .toEqual(expect.arrayContaining(['default', 'cyan', 'glass']))
     expect(getDirectiveThemeValueCompletionOptions('steps', 'layout').map((completion) => completion.label))
@@ -1005,10 +1034,10 @@ Image ratio: 3:2.
   })
 
   it('leaves unknown leaf directives as markdown text with a diagnostic', async () => {
-    const result = await compileMarkdown('::badge[Beta]{tone="info"}')
+    const result = await compileMarkdown('::pill[Beta]{tone="info"}')
 
-    expect(hasWarning(result.warnings, 'Unknown directive "badge".')).toBe(true)
-    expect(result.html).toContain('::badge[Beta]{tone="info"}')
+    expect(hasWarning(result.warnings, 'Unknown directive "pill".')).toBe(true)
+    expect(result.html).toContain('::pill[Beta]{tone="info"}')
     expect(countDirective(result.html, 'button')).toBe(0)
   })
 
@@ -1183,6 +1212,171 @@ Check credentials.
     expect(result.html).toContain('pmd-buttons--align-left')
     expect(result.html).toContain('pmd-buttons--stack-mobile')
     expect(result.html).toContain('pmd-buttons--gap-md')
+  })
+
+  it('renders badges wrapper alignment gap and wrap classes', async () => {
+    const result = await compileMarkdown(`
+:::badges{align="center" gap="lg" wrap=false}
+::badge[npm]{
+  type="npm"
+  target="version"
+  package="@valkyrianlabs/payload-markdown"
+}
+:::
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(countDirective(result.html, 'badges')).toBe(1)
+    expect(countDirective(result.html, 'badge')).toBe(1)
+    expect(result.html).toContain('pmd-badges--align-center')
+    expect(result.html).toContain('pmd-badges--gap-lg')
+    expect(result.html).toContain('pmd-badges--wrap-false')
+    expect(result.html).toContain('pmd-badge')
+  })
+
+  it('renders npm version downloads and license badge URLs', async () => {
+    const result = await compileMarkdown(`
+::badge[npm]{
+  type="npm"
+  target="version"
+  package="@valkyrianlabs/payload-markdown"
+}
+::badge[npm downloads]{
+  type="npm"
+  target="downloads"
+  package="@valkyrianlabs/payload-markdown"
+}
+::badge[npm license]{
+  type="npm"
+  target="license"
+  package="@valkyrianlabs/payload-markdown"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('https://img.shields.io/npm/v/%40valkyrianlabs/payload-markdown')
+    expect(result.html).toContain('https://img.shields.io/npm/dw/%40valkyrianlabs/payload-markdown')
+    expect(result.html).toContain('https://img.shields.io/npm/l/%40valkyrianlabs/payload-markdown')
+  })
+
+  it('renders GitHub workflow badge URLs', async () => {
+    const result = await compileMarkdown(`
+::badge[build]{
+  type="github"
+  target="workflow"
+  repo="valkyrianlabs/payload-markdown"
+  workflow="deploy.yml"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain(
+      'https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml',
+    )
+  })
+
+  it('renders Debian and APT badge URLs', async () => {
+    const result = await compileMarkdown(`
+::badge[debian]{
+  type="debian"
+  target="version"
+  package="curl"
+}
+::badge[apt]{
+  type="apt"
+  target="version"
+  package="git"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('https://img.shields.io/debian/v/curl')
+    expect(result.html).toContain('https://img.shields.io/debian/v/git')
+  })
+
+  it('renders static badge URLs', async () => {
+    const result = await compileMarkdown(`
+::badge[docs]{
+  type="static"
+  label="docs"
+  message="ready"
+  color="blue"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('https://img.shields.io/badge/docs-ready-blue')
+  })
+
+  it('renders Shields path escape hatch URLs with encoded query attributes', async () => {
+    const result = await compileMarkdown(`
+::badge[coverage]{
+  path="badge/coverage-95-brightgreen"
+  style="flat-square"
+  labelColor="111"
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('https://img.shields.io/badge/coverage-95-brightgreen')
+    expect(result.html).toContain('style=flat-square')
+    expect(result.html).toContain('labelColor=111')
+  })
+
+  it('validates Shields src escape hatch host', async () => {
+    const valid = await compileMarkdown(
+      '::badge[custom]{src="https://img.shields.io/badge/custom-ok-blue"}',
+    )
+    const invalid = await compileMarkdown(
+      '::badge[custom]{src="https://example.com/badge/custom-ok-blue"}',
+    )
+
+    expect(valid.warnings).toEqual([])
+    expect(valid.html).toContain('https://img.shields.io/badge/custom-ok-blue')
+    expect(hasWarning(invalid.warnings, 'src must use https://img.shields.io/')).toBe(true)
+    expect(countDirective(invalid.html, 'badge')).toBe(0)
+  })
+
+  it('renders href and new-tab badge anchor behavior', async () => {
+    const result = await compileMarkdown(`
+::badge[npm]{
+  type="npm"
+  target="version"
+  package="@valkyrianlabs/payload-markdown"
+  href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"
+  newTab=true
+}
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<a')
+    expect(result.html).toContain('data-directive="badge"')
+    expect(result.html).toContain('href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"')
+    expect(result.html).toContain('target="_blank"')
+    expect(result.html).toContain('rel="noopener noreferrer"')
+    expect(result.html).toContain('<img')
+    expect(result.html).not.toContain('link=')
+  })
+
+  it('emits diagnostics for invalid badge attrs without crashing', async () => {
+    const missingPackage = await compileMarkdown('::badge[npm]{type="npm" target="version"}')
+    const missingWorkflow = await compileMarkdown(
+      '::badge[build]{type="github" target="workflow" repo="valkyrianlabs/payload-markdown"}',
+    )
+    const invalidWrapper = await compileMarkdown(`
+:::badges{align="middle" gap="huge" wrap="maybe"}
+::badge[npm]{type="npm" target="version" package="payload"}
+:::
+`)
+
+    expect(hasWarning(missingPackage.warnings, 'requires package for type="npm"')).toBe(true)
+    expect(hasWarning(missingWorkflow.warnings, 'requires workflow')).toBe(true)
+    expect(hasWarning(invalidWrapper.warnings, 'Invalid badges align "middle"')).toBe(true)
+    expect(hasWarning(invalidWrapper.warnings, 'Invalid badges gap "huge"')).toBe(true)
+    expect(hasWarning(invalidWrapper.warnings, 'Invalid badges wrap "maybe"')).toBe(true)
+    expect(invalidWrapper.html).toContain('pmd-badges--align-left')
+    expect(invalidWrapper.html).toContain('pmd-badges--gap-md')
+    expect(invalidWrapper.html).toContain('pmd-badges--wrap-true')
   })
 
   it('renders cards with default columns and multiple card children', async () => {
@@ -2438,6 +2632,10 @@ Body.
 
 ::button[]{href="/settings" icon="@brand/github"}
 
+::badge[Broken]{type="github" target="workflow" repo="valkyrianlabs/payload-markdown"}
+
+::not-leaf[Broken]
+
 :::steps {mode="bad" variant="timeline" layout="diagonal" columns="wide" numbered="maybe"}
 ### Step
 Body.
@@ -2478,6 +2676,8 @@ Standalone.
       'Directive "button" requires an href attribute.',
       'Malformed icon ref "bad/ref". Expected "@pack/name".',
       'Icon-only button requires an ariaLabel attribute.',
+      'Directive "badge" requires workflow for type="github" target="workflow".',
+      'Unknown directive "not-leaf".',
       'Unknown attribute "mode" on "steps".',
       'Unsupported steps variant "timeline". Falling back to "default".',
       'Unsupported steps layout "diagonal". Falling back to "stack".',

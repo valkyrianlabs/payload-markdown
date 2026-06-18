@@ -15,6 +15,7 @@ CONTAINER_DIRECTIVES = {
     "cards",
     "card",
     "buttons",
+    "badges",
     "tabs",
     "tab",
     "section",
@@ -22,8 +23,15 @@ CONTAINER_DIRECTIVES = {
     "3col",
     "cell",
 }
-LEAF_DIRECTIVES = {"button"}
+LEAF_DIRECTIVES = {"button", "badge"}
 ALL_DIRECTIVES = CONTAINER_DIRECTIVES | LEAF_DIRECTIVES
+BADGE_TYPES = {"static", "npm", "github", "debian", "apt"}
+BADGE_TARGETS = {
+    "npm": {"version", "downloads", "license"},
+    "github": {"workflow", "release", "license", "stars"},
+    "debian": {"version"},
+    "apt": {"version"},
+}
 
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 DIRECTIVE_RE = re.compile(r"^\s*::(?P<colons>:?)(?P<name>[A-Za-z0-9_-]+)\b(?P<rest>.*)$")
@@ -65,14 +73,29 @@ def parse_attrs(rest: str) -> dict[str, str]:
     return attrs
 
 
+def collect_attr_text(lines: list[tuple[int, str, bool]], start_index: int, rest: str) -> str:
+    if "{" not in rest or "}" in rest:
+        return rest
+
+    parts = [rest]
+    for _, next_line, in_fence in lines[start_index + 1 :]:
+        if in_fence:
+            break
+        parts.append(next_line)
+        if "}" in next_line:
+            break
+    return "\n".join(parts)
+
+
 def check_file(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     body = strip_frontmatter(text)
+    lines = list(iter_content_lines(body))
     warnings: list[str] = []
     h1_count = 0
     stack: list[tuple[str, int]] = []
 
-    for line_no, line, in_fence in iter_content_lines(body):
+    for index, (line_no, line, in_fence) in enumerate(lines):
         if in_fence:
             continue
 
@@ -117,9 +140,31 @@ def check_file(path: Path) -> list[str]:
         if name in CONTAINER_DIRECTIVES and not is_container:
             warnings.append(f"{path}:{line_no}: container directive should use three colons: {name}")
 
-        attrs = parse_attrs(rest)
+        attrs = parse_attrs(collect_attr_text(lines, index, rest))
         if name == "button" and "href" not in attrs:
             warnings.append(f"{path}:{line_no}: button directive should include href")
+        if name == "badge":
+            badge_type = attrs.get("type")
+            target = attrs.get("target")
+            src = attrs.get("src", "")
+            if "src" in attrs and not src.startswith("https://img.shields.io/"):
+                warnings.append(f"{path}:{line_no}: badge src must use https://img.shields.io")
+            if not badge_type and "path" not in attrs and "src" not in attrs:
+                warnings.append(f"{path}:{line_no}: badge directive should include type, path, or Shields src")
+            if badge_type and badge_type not in BADGE_TYPES:
+                warnings.append(f"{path}:{line_no}: unsupported badge type: {badge_type}")
+            if badge_type in BADGE_TARGETS and target not in BADGE_TARGETS[badge_type]:
+                warnings.append(f"{path}:{line_no}: unsupported badge target for {badge_type}: {target}")
+            if badge_type in {"npm", "debian", "apt"} and "package" not in attrs:
+                warnings.append(f"{path}:{line_no}: {badge_type} badge should include package")
+            if badge_type == "github" and "repo" not in attrs:
+                warnings.append(f"{path}:{line_no}: github badge should include repo")
+            if badge_type == "github" and target == "workflow" and "workflow" not in attrs:
+                warnings.append(f"{path}:{line_no}: github workflow badge should include workflow")
+            if badge_type == "static":
+                for required in ("label", "message", "color"):
+                    if required not in attrs:
+                        warnings.append(f"{path}:{line_no}: static badge should include {required}")
         if name == "tab" and "value" not in attrs:
             warnings.append(f"{path}:{line_no}: tab directive should include a stable value")
         if name == "card" and attrs.get("linkScope") == "full":

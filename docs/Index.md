@@ -10,20 +10,33 @@ tags:
 
 # Payload Markdown
 
-<span class="flex flex-row gap-x-3 [&_img]:my-0">
-  <a href="https://github.com/valkyrianlabs/payload-markdown/actions">
-    <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml">
-  </a>
-  <a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown">
-    <img alt="npm" src="https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown">
-  </a>
-  <a href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown">
-    <img alt="npm downloads" src="https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown">
-  </a>
-  <a href="https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file">
-    <img alt="license" src="https://img.shields.io/npm/l/@valkyrianlabs/payload-markdown">
-  </a>
-</span>
+:::badges
+::badge[GitHub Workflow Status]{
+  type="github"
+  target="workflow"
+  repo="valkyrianlabs/payload-markdown"
+  workflow="deploy.yml"
+  href="https://github.com/valkyrianlabs/payload-markdown/actions"
+}
+::badge[npm]{
+  type="npm"
+  target="version"
+  package="@valkyrianlabs/payload-markdown"
+  href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"
+}
+::badge[npm downloads]{
+  type="npm"
+  target="downloads"
+  package="@valkyrianlabs/payload-markdown"
+  href="https://www.npmjs.com/package/@valkyrianlabs/payload-markdown"
+}
+::badge[license]{
+  type="npm"
+  target="license"
+  package="@valkyrianlabs/payload-markdown"
+  href="https://github.com/valkyrianlabs/payload-markdown?tab=MIT-1-ov-file"
+}
+:::
 
 `@valkyrianlabs/payload-markdown` adds portable Markdown authoring to Payload CMS. It provides a CodeMirror-backed admin field, an optional reusable Payload block, server-rendered Markdown output, Shiki code highlighting, heading anchors, GFM support, and registry-backed content directives.
 
@@ -56,7 +69,7 @@ Use the server renderer for Markdown fields and the block component for `vlMdBlo
   eyebrow="Shape"
   href="/directives"
 }
-Use readable directives for callouts, details, TOCs, steps, cards, buttons, tabs, sections, columns, and cells.
+Use readable directives for callouts, details, TOCs, steps, cards, buttons, badges, tabs, sections, columns, and cells.
 :::
 
 :::

@@ -9,6 +9,8 @@ import type {
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
 import { getUnknownAttributeWarnings } from './attributeDiagnostics.js'
 import { parseDirectiveLine } from './attributes.js'
+import { badgeDirective } from './definitions/badge.js'
+import { badgesDirective } from './definitions/badges.js'
 import { buttonDirective } from './definitions/button.js'
 import { buttonsDirective } from './definitions/buttons.js'
 import { calloutDirective } from './definitions/callout.js'
@@ -29,6 +31,8 @@ const directiveDefinitions = [
   cellDirective,
   buttonDirective,
   buttonsDirective,
+  badgeDirective,
+  badgesDirective,
   calloutDirective,
   detailsDirective,
   tocDirective,

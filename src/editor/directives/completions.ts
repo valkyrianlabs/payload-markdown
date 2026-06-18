@@ -37,7 +37,7 @@ export function getDirectiveCompletionOptions() {
 export function getDirectiveAttributeCompletionOptions(name: string): Completion[] {
   const definition = layoutDirectiveRegistry.get(name)
   const attributes = definition?.allowedAttributes ?? []
-  const detailPrefix = name === 'button' ? '::button' : `:::${name}`
+  const detailPrefix = name === 'button' || name === 'badge' ? `::${name}` : `:::${name}`
 
   return attributes.map((attribute) =>
     snippetCompletion(`${attribute}="\${${attribute}}"`, {
@@ -54,7 +54,7 @@ export function getDirectiveThemeValueCompletionOptions(
 ): Completion[] {
   const definition = layoutDirectiveRegistry.get(name)
   const groupName = definition?.themeAttributes?.[attribute]
-  const detailPrefix = name === 'button' ? '::button' : `:::${name}`
+  const detailPrefix = name === 'button' || name === 'badge' ? `::${name}` : `:::${name}`
 
   if (!groupName)
     return (definition?.attributeValues?.[attribute] ?? []).map((value) => ({
@@ -74,9 +74,9 @@ function attributeCompletionSource(context: CompletionContext) {
   const line = context.state.doc.lineAt(context.pos)
   const beforeCursor = line.text.slice(0, context.pos - line.from)
   const containerMatch = beforeCursor.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{([^}]*)$/)
-  const buttonMatch = beforeCursor.match(/^\s*::button(?:\[[^\]]*\])?\s*\{([^}]*)$/)
+  const leafMatch = beforeCursor.match(/^\s*::(button|badge)(?:\[[^\]]*\])?\s*\{([^}]*)$/)
   const multilineMatch =
-    containerMatch || buttonMatch
+    containerMatch || leafMatch
       ? null
       : findOpenDirectiveAttributeBlock(context, beforeCursor)
   const directiveMatch = containerMatch
@@ -84,10 +84,10 @@ function attributeCompletionSource(context: CompletionContext) {
         name: containerMatch[1],
         attributesBeforeCursor: containerMatch[2],
       }
-    : buttonMatch
+    : leafMatch
       ? {
-          name: 'button',
-          attributesBeforeCursor: buttonMatch[1],
+          name: leafMatch[1],
+          attributesBeforeCursor: leafMatch[2],
         }
       : multilineMatch
 
@@ -95,7 +95,7 @@ function attributeCompletionSource(context: CompletionContext) {
 
   const { name, attributesBeforeCursor } = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|linkScope|newTab|size|stack|stepTheme|tabTheme|variant)=["']?([^"'\s}]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|interval|linkScope|newTab|size|stack|stepTheme|style|tabTheme|target|type|variant|wrap)=["']?([^"'\s}]*)$/,
   )
 
   if (valueMatch) {
@@ -143,10 +143,10 @@ function findOpenDirectiveAttributeBlock(
         attributesBeforeCursor,
       }
 
-    const buttonMatch = previousLine.match(/^\s*::button(?:\[[^\]]*\])?\s*\{/)
-    if (buttonMatch)
+    const leafMatch = previousLine.match(/^\s*::(button|badge)(?:\[[^\]]*\])?\s*\{/)
+    if (leafMatch)
       return {
-        name: 'button',
+        name: leafMatch[1],
         attributesBeforeCursor,
       }
   }

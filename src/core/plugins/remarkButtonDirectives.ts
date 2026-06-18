@@ -17,6 +17,8 @@ import {
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { normalizePayloadMarkdownIconRef } from '../../icons/refs.js'
 
+const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
+
 type MessageFile = {
   message: (reason: string) => unknown
 }
@@ -274,7 +276,8 @@ function splitParagraphButtonDirectives(
 
     if (!button) {
       const leafName = text ? getLeafDirectiveName(text) : undefined
-      if (leafName && leafName !== 'button') file.message(`Unknown directive "${leafName}".`)
+      if (leafName && !SUPPORTED_LEAF_DIRECTIVE_NAMES.has(leafName))
+        file.message(`Unknown directive "${leafName}".`)
 
       appendParagraphLine(paragraphLines, lineChildren)
       continue

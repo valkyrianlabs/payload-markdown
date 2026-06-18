@@ -10,7 +10,7 @@ tags:
 
 # Directives
 
-Directives are Markdown primitives powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, buttons, tabs, sections, columns, and cells.
+Directives are Markdown primitives powered by the plugin directive registry. They keep content portable while giving the renderer enough structure for components such as callouts, details, tables of contents, steps, cards, buttons, badges, tabs, sections, columns, and cells.
 
 :::toc[On this page]{depth="3" theme="compact"}
 :::
@@ -25,6 +25,8 @@ Directives are Markdown primitives powered by the plugin directive registry. The
 - `:::card`
 - `::button`
 - `:::buttons`
+- `::badge`
+- `:::badges`
 - `:::tabs`
 - `:::tab`
 - `:::section`
@@ -140,6 +142,10 @@ Card grids and standalone card content.
 
 :::card[Buttons]{href="/directives/buttons"}
 Link buttons and grouped primary links with local SVG icons.
+:::
+
+:::card[Badges]{href="/directives/badges"}
+img.shields.io badges with curated resolvers and strict Shields escape hatches.
 :::
 
 :::card[Tabs]{href="/directives/tabs"}

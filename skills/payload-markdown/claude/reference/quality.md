@@ -26,6 +26,7 @@ Use this checklist before returning generated docs.
 - Multiline attributes are used for dense directives.
 - `linkScope="title"` is used for cards containing buttons or links.
 - Button directives include `href`.
+- Badge directives use a curated resolver, `path`, or a Shields `src`.
 - Icon-only buttons include `ariaLabel`.
 - Tabs have stable `value` attributes.
 
