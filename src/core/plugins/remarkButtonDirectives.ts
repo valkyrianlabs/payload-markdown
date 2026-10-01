@@ -15,6 +15,7 @@ import {
   isButtonVariant,
 } from '../../directives/definitions/button.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
+import { getSafeHref } from '../../directives/urls.js'
 import { normalizePayloadMarkdownIconRef } from '../../icons/refs.js'
 
 const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
@@ -182,7 +183,7 @@ function makeButtonDirective(
   const definition = layoutDirectiveRegistry.get('button')
   const attributes = parsed.attributes
   const label = parsed.label.trim()
-  const href = getAttribute(attributes, 'href')
+  const href = getSafeHref(getAttribute(attributes, 'href'))
   const variant = isButtonVariant(attributes.variant) ? attributes.variant : DEFAULT_BUTTON_VARIANT
   const size = isButtonSize(attributes.size) ? attributes.size : DEFAULT_BUTTON_SIZE
   const iconPosition = isButtonIconPosition(attributes.iconPosition)

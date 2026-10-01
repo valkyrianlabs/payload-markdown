@@ -6,6 +6,7 @@ import type { LayoutDirectiveDefinition } from '../types.js'
 import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
+import { getSafeHref, getUnsafeHrefWarnings } from '../urls.js'
 
 export const CARD_BODY_CLASS_NAMES = 'space-y-3 [&>:first-child]:mt-0 [&>:last-child]:mb-0'
 export const CARD_TITLE_CLASS_NAMES = 'mb-3 text-lg font-semibold tracking-tight'
@@ -113,7 +114,9 @@ export const cardDirective: LayoutDirectiveDefinition = {
   allowedAttributes: ['eyebrow', 'href', 'icon', 'linkScope', 'newTab', 'theme', 'title'],
   applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
-    const href = typeof node.properties.dataHref === 'string' ? node.properties.dataHref : undefined
+    // Re-validate at the hast stage: this is where the live <a href> is built.
+    const href = getSafeHref(node.properties.dataHref)
+    if (!href) delete node.properties.dataHref
     const linkScope =
       typeof node.properties.dataLinkScope === 'string' && isCardLinkScope(node.properties.dataLinkScope)
         ? node.properties.dataLinkScope
@@ -181,7 +184,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     return {
       dataDirective: 'card',
       dataEyebrow: getAttribute(node, 'eyebrow'),
-      dataHref: getAttribute(node, 'href'),
+      dataHref: getSafeHref(getAttribute(node, 'href')),
       dataIcon: getAttribute(node, 'icon'),
       dataLinkScope: getLinkScope(node),
       dataNewTab: 'newTab' in (node.attributes ?? {})
@@ -200,7 +203,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     theme: 'card',
   },
   validateAttributes({ attributes }) {
-    const warnings: string[] = []
+    const warnings: string[] = [...getUnsafeHrefWarnings('card', attributes)]
 
     if (typeof attributes.linkScope === 'string' && !isCardLinkScope(attributes.linkScope))
       warnings.push(

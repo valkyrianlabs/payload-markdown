@@ -6,6 +6,7 @@ import { hasUnclosedDirectiveAttributeBlock } from '../../directives/attributes.
 import { parseLeafDirectiveLine } from '../../directives/leafSyntax.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { resolveShieldsBadge } from '../../directives/shields.js'
+import { getSafeHref } from '../../directives/urls.js'
 
 type MessageFile = {
   message: (reason: string) => unknown
@@ -149,7 +150,7 @@ function makeBadgeDirective(line: string, file: MessageFile): LeafDirective | un
   const definition = layoutDirectiveRegistry.get('badge')
   const attributes = parsed.attributes
   const label = parsed.label.trim()
-  const href = getAttribute(attributes, 'href')
+  const href = getSafeHref(getAttribute(attributes, 'href'))
   const newTab = getBooleanAttribute(attributes, 'newTab')
   const alt = getAttribute(attributes, 'alt') ?? label
 

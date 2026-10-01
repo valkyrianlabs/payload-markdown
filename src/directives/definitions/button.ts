@@ -1,6 +1,7 @@
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { getUnknownAttributeWarnings } from '../attributeDiagnostics.js'
+import { getUnsafeHrefWarnings } from '../urls.js'
 
 export const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link'] as const
 export const BUTTON_SIZES = ['sm', 'md', 'lg'] as const
@@ -115,6 +116,7 @@ export const buttonDirective: LayoutDirectiveDefinition = {
 
     if (typeof attributes.href !== 'string' || !attributes.href.trim())
       warnings.push('Directive "button" requires an href attribute.')
+    else warnings.push(...getUnsafeHrefWarnings('button', attributes))
 
     return warnings
   },
