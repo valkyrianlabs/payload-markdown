@@ -191,7 +191,7 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   const Tag = as
   const containerId = `payload-markdown-${randomUUID()}`
 
-  if (result.warnings.length > 0 && errorFallback) return errorFallback
+  if ((result.errors?.length ?? 0) > 0 && errorFallback) return errorFallback
 
   const resolvedWrapperClassName = buildWrapperClassName({
     enableGutter,

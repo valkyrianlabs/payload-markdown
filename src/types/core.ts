@@ -142,12 +142,20 @@ export type PayloadMarkdownIconsConfig = {
  */
 export type RenderMarkdownResult = {
   /**
+   * Fatal compilation errors. When this is non-empty, `html` is the generic
+   * failure placeholder rather than rendered content. `compileMarkdown`
+   * always sets it (empty when rendering succeeded).
+   */
+  errors?: string[]
+
+  /**
    * The rendered HTML output.
    */
   html: string
 
   /**
-   * Non-fatal warnings produced during rendering.
+   * Diagnostics produced during rendering. Includes non-fatal warnings and,
+   * for backwards compatibility, the messages of any `errors`.
    */
   warnings: string[]
 }
@@ -269,7 +277,9 @@ export type BaseMarkdownRendererProps = {
   emptyFallback?: ReactNode
 
   /**
-   * Content rendered when markdown compilation fails and a fallback is desired.
+   * Content rendered when markdown compilation fails (`errors` is non-empty)
+   * and a fallback is desired. Non-fatal warnings, such as an unknown theme
+   * or attribute, do not trigger it.
    */
   errorFallback?: ReactNode
 

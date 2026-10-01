@@ -309,7 +309,6 @@ export async function compileMarkdown(
   markdown: string,
   config: MarkdownRenderConfig = {},
 ): Promise<RenderMarkdownResult> {
-  const warnings: string[] = []
   const pipelineNonce = createPipelineNonce()
 
   try {
@@ -334,15 +333,20 @@ export async function compileMarkdown(
       .process(markdown)
 
     return {
+      errors: [],
       html: String(file),
       warnings: file.messages.map((message) => message.reason),
     }
   } catch (error) {
-    warnings.push(error instanceof Error ? error.message : 'Failed to render markdown.')
+    const message = error instanceof Error ? error.message : 'Failed to render markdown.'
+
+    // Real compile failures were previously swallowed; log them server-side.
+    console.error('[payload-markdown] Failed to render markdown:', error)
 
     return {
+      errors: [message],
       html: '<p>Failed to render markdown.</p>',
-      warnings,
+      warnings: [message],
     }
   }
 }
