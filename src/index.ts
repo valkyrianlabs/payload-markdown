@@ -18,65 +18,92 @@ import {
   DEFAULT_TOC_THEMES,
 } from './directives/themes.js'
 import { markdownField } from './field/MarkdownField/config.js'
-import { setPayloadMarkdownSettings } from './runtime/index.js'
+import { clearPayloadMarkdownSettings, setPayloadMarkdownSettings } from './runtime/index.js'
 
 function ensureMarkdownBlock(config: Config) {
-  if (!config.blocks) config.blocks = []
-
-  const alreadyExists = config.blocks.some((block) => block.slug === MarkdownBlock.slug)
+  const blocks = config.blocks ?? []
+  const alreadyExists = blocks.some((block) => block.slug === MarkdownBlock.slug)
   if (alreadyExists) return
 
-  config.blocks.push(MarkdownBlock)
+  // Copy-on-write: never mutate the caller's config arrays (CORE-18).
+  config.blocks = [...blocks, MarkdownBlock]
 }
 
-function ensureMarkdownField(
+function withMarkdownField(
   collection: CollectionConfig,
   fieldName: string,
   fieldOptions?: Omit<MarkdownFieldOptions, 'name'>,
-) {
+): CollectionConfig {
   const alreadyExists = collection.fields.some(
     (field) => 'name' in field && field.name === fieldName,
   )
 
-  if (alreadyExists) return
+  if (alreadyExists) return collection
 
-  collection.fields.push(
-    markdownField({
-      name: fieldName,
-      label: 'Markdown',
-      ...(fieldOptions || {}),
-    }),
-  )
-}
-
-function ensureBlockInBlocksField(field: Field, block: Block) {
-  if (field.type !== 'blocks') return
-
-  if (!field.blocks) field.blocks = []
-
-  const alreadyExists = field.blocks.some((entry) => entry.slug === block.slug)
-  if (alreadyExists) return
-
-  field.blocks.push(block)
-}
-
-function walkFieldsAndInstallBlock(fields: Field[], block: Block) {
-  for (const field of fields) {
-    ensureBlockInBlocksField(field, block)
-
-    if ('fields' in field && Array.isArray(field.fields))
-      walkFieldsAndInstallBlock(field.fields, block)
-
-    if (field.type === 'tabs' && Array.isArray(field.tabs)) {
-      for (const tab of field.tabs)
-        if ('fields' in tab && Array.isArray(tab.fields))
-          walkFieldsAndInstallBlock(tab.fields, block)
-    }
+  return {
+    ...collection,
+    fields: [
+      ...collection.fields,
+      markdownField({
+        name: fieldName,
+        label: 'Markdown',
+        ...(fieldOptions || {}),
+      }),
+    ],
   }
 }
 
-function ensureMarkdownBlockInCollectionBlocks(collection: CollectionConfig) {
-  walkFieldsAndInstallBlock(collection.fields, MarkdownBlock)
+/**
+ * Returns `fields` with `block` added to every reachable blocks field. Field
+ * objects and arrays on the modified paths are copied; the caller's objects
+ * are never mutated (CORE-18).
+ */
+function withBlockInstalled(fields: Field[], block: Block): Field[] {
+  let changed = false
+
+  const next = fields.map((field): Field => {
+    let updated: Field = field
+
+    if (field.type === 'blocks') {
+      const blocks = field.blocks ?? []
+
+      if (!blocks.some((entry) => entry.slug === block.slug)) {
+        updated = { ...field, blocks: [...blocks, block] }
+      }
+    }
+
+    if ('fields' in updated && Array.isArray(updated.fields)) {
+      const nestedFields = withBlockInstalled(updated.fields, block)
+      if (nestedFields !== updated.fields) updated = { ...updated, fields: nestedFields } as Field
+    }
+
+    if (updated.type === 'tabs' && Array.isArray(updated.tabs)) {
+      let tabsChanged = false
+      const tabs = updated.tabs.map((tab) => {
+        if (!('fields' in tab) || !Array.isArray(tab.fields)) return tab
+
+        const tabFields = withBlockInstalled(tab.fields, block)
+        if (tabFields === tab.fields) return tab
+
+        tabsChanged = true
+        return { ...tab, fields: tabFields }
+      })
+
+      if (tabsChanged) updated = { ...updated, tabs }
+    }
+
+    if (updated !== field) changed = true
+
+    return updated
+  })
+
+  return changed ? next : fields
+}
+
+function withMarkdownBlockInCollectionBlocks(collection: CollectionConfig): CollectionConfig {
+  const fields = withBlockInstalled(collection.fields, MarkdownBlock)
+
+  return fields === collection.fields ? collection : { ...collection, fields }
 }
 
 function collectionHasBlocksField(fields: Field[]): boolean {
@@ -123,7 +150,12 @@ export const payloadMarkdown =
   (incomingConfig: Config): Config => {
     const config = { ...incomingConfig }
 
-    if (pluginOptions.enabled === false) return config
+    if (pluginOptions.enabled === false) {
+      // A disabled plugin must not leave a previous configuration's render
+      // defaults active (CORE-18).
+      clearPayloadMarkdownSettings()
+      return config
+    }
 
     setPayloadMarkdownSettings(pluginOptions)
 
@@ -131,19 +163,22 @@ export const payloadMarkdown =
 
     if (!pluginOptions.collections || !config.collections) return config
 
-    for (const [collectionSlug, collectionOptions] of Object.entries(pluginOptions.collections)) {
-      if (!collectionOptions) continue
+    const collectionOptionsBySlug = pluginOptions.collections
 
-      const collection = config.collections.find((entry) => entry.slug === collectionSlug)
-      if (!collection) continue
+    config.collections = config.collections.map((collection) => {
+      const collectionOptions = collectionOptionsBySlug[collection.slug]
+      if (!collectionOptions) return collection
 
       const resolved = resolveCollectionInstallBehavior(collection, collectionOptions)
+      let next = collection
 
-      if (resolved.installIntoBlocks) ensureMarkdownBlockInCollectionBlocks(collection)
+      if (resolved.installIntoBlocks) next = withMarkdownBlockInCollectionBlocks(next)
 
       if (resolved.installField)
-        ensureMarkdownField(collection, resolved.fieldName, resolved.fieldOptions)
-    }
+        next = withMarkdownField(next, resolved.fieldName, resolved.fieldOptions)
+
+      return next
+    })
 
     return config
   }

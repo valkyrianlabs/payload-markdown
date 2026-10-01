@@ -1,10 +1,9 @@
 import type { MarkdownBlockProps } from '../../types/core.js'
 
 import { MarkdownRenderer } from '../../components/MarkdownRenderer/Component.js'
-import { resolveMarkdownBlockDefaults } from '../../runtime/index.js'
 
 export const MarkdownBlockComponent = ({ collectionSlug, content }: MarkdownBlockProps) => {
-  const resolvedConfig = resolveMarkdownBlockDefaults(collectionSlug)
-
-  return <MarkdownRenderer markdown={content} {...resolvedConfig} scope='blocks' />
+  // MarkdownRenderer resolves the block-scope defaults for collectionSlug
+  // itself; resolving them here as well merged class names twice (CORE-18).
+  return <MarkdownRenderer collectionSlug={collectionSlug} markdown={content} scope='blocks' />
 }
