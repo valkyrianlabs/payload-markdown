@@ -2,11 +2,18 @@ import type { Diagnostic } from '@codemirror/lint'
 
 import { linter } from '@codemirror/lint'
 
+import type { MarkdownEditorDirectiveConfig } from '../directiveConfig.js'
+
 import { lintMarkdownDirectives } from '../../directives/diagnostics.js'
 
-export const directiveDiagnostics = linter((view): Diagnostic[] => {
+/**
+ * Directive lint source that knows the field's configured themes and icon
+ * packs (CORE-8), so custom themes are not reported as unknown.
+ */
+export const createDirectiveDiagnostics = (config: MarkdownEditorDirectiveConfig = {}) =>
+  linter((view): Diagnostic[] => {
   try {
-    return lintMarkdownDirectives(view.state.doc.toString()).map((diagnostic) => ({
+    return lintMarkdownDirectives(view.state.doc.toString(), config).map((diagnostic) => ({
       from: diagnostic.from,
       message: diagnostic.message,
       severity: diagnostic.severity,
@@ -25,3 +32,5 @@ export const directiveDiagnostics = linter((view): Diagnostic[] => {
     ]
   }
 })
+
+export const directiveDiagnostics = createDirectiveDiagnostics()

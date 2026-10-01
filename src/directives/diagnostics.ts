@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import { unified } from 'unified'
 
+import type { MarkdownDirectiveThemes } from '../types/core.js'
 import type { TabsDefaultCandidate } from './definitions/tab.js'
 import type { ScannedDirectiveLine, SourceIndex } from './lineScanner.js'
 
@@ -47,7 +48,27 @@ type OpenFrame = {
 
 type LintState = {
   currentHeadingDepth?: number
+  options: LintMarkdownDirectivesOptions
   stack: OpenFrame[]
+}
+
+export type LintMarkdownDirectivesOptions = {
+  /**
+   * Configured icon pack aliases. When provided, icon refs to other packs are
+   * reported exactly like the renderer does ("Unknown icon pack").
+   */
+  iconPacks?: readonly string[]
+  /** Configured directive themes (names are what matters). */
+  themes?: MarkdownDirectiveThemes
+}
+
+function getIconPackDiagnostics(icon: unknown, options: LintMarkdownDirectivesOptions): string[] {
+  if (typeof icon !== 'string' || !options.iconPacks) return []
+
+  const normalized = normalizePayloadMarkdownIconRef(icon)
+  if (!normalized.icon || options.iconPacks.includes(normalized.icon.packAlias)) return []
+
+  return [`Unknown icon pack "${normalized.icon.packAlias}".`]
 }
 
 const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
@@ -263,32 +284,32 @@ function updateOpenStack(
   return popFrames(stack, index)
 }
 
-function getThemeDiagnostics(text: string): string[] {
+function getThemeDiagnostics(text: string, options: LintMarkdownDirectivesOptions): string[] {
   const token = layoutDirectiveRegistry.parseMarkdownLineDetailed(text).token
   if (!token || token.action !== 'open') return []
 
   const definition = layoutDirectiveRegistry.get(token.name)
-  if (!definition?.themeAttributes) return []
+  const diagnostics: string[] = [...getIconPackDiagnostics(token.attributes?.icon, options)]
 
-  const diagnostics: string[] = []
+  if (!definition?.themeAttributes) return diagnostics
 
   for (const [attribute, groupName] of Object.entries(definition.themeAttributes)) {
     if (!groupName) continue
 
     const value = token.attributes?.[attribute]
     if (typeof value !== 'string' || !value.trim()) continue
-    if (hasDirectiveTheme(groupName, value)) continue
+    if (hasDirectiveTheme(groupName, value, options.themes)) continue
 
     const label = attribute === 'theme' ? 'theme' : attribute
     diagnostics.push(
-      `Unknown ${label} "${value}" on "${token.name}". Falling back to "${getDirectiveFallbackThemeName(groupName)}".`,
+      `Unknown ${label} "${value}" on "${token.name}". Falling back to "${getDirectiveFallbackThemeName(groupName, options.themes)}".`,
     )
   }
 
   return diagnostics
 }
 
-function getButtonDiagnostics(text: string): string[] {
+function getButtonDiagnostics(text: string, options: LintMarkdownDirectivesOptions): string[] {
   const parsed = parseButtonDirectiveLine(text)
   if (!parsed) return []
 
@@ -307,7 +328,7 @@ function getButtonDiagnostics(text: string): string[] {
   if (!parsed.label.trim() && typeof parsed.attributes.ariaLabel !== 'string')
     diagnostics.push('Icon-only button requires an ariaLabel attribute.')
 
-  return diagnostics
+  return [...diagnostics, ...getIconPackDiagnostics(icon, options)]
 }
 
 function getBadgeDiagnostics(text: string): string[] {
@@ -333,7 +354,7 @@ function lintContainerLine(state: LintState, scanned: ScannedDirectiveLine, push
   const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(scanned.text)
 
   for (const message of result.diagnostics) report(message)
-  for (const message of getThemeDiagnostics(scanned.text)) report(message)
+  for (const message of getThemeDiagnostics(scanned.text, state.options)) report(message)
   for (const message of updateOpenStack(state, scanned.text, scanned.startLine, scanned.from))
     report(message)
 
@@ -362,7 +383,9 @@ function lintLeafLine(state: LintState, scanned: ScannedDirectiveLine, push: Dia
   }
 
   const messages =
-    leafName === 'button' ? getButtonDiagnostics(scanned.text) : getBadgeDiagnostics(scanned.text)
+    leafName === 'button'
+      ? getButtonDiagnostics(scanned.text, state.options)
+      : getBadgeDiagnostics(scanned.text)
 
   for (const message of messages) report(message)
 }
@@ -400,9 +423,12 @@ function lintParagraph(
  * the renderer's "Auto-closing unclosed layout block: X" is reported here as
  * "Unclosed directive "X"." at the opening marker.
  */
-export function lintMarkdownDirectives(markdown: string): DirectiveDiagnostic[] {
+export function lintMarkdownDirectives(
+  markdown: string,
+  options: LintMarkdownDirectivesOptions = {},
+): DirectiveDiagnostic[] {
   const diagnostics: DirectiveDiagnostic[] = []
-  const state: LintState = { stack: [] }
+  const state: LintState = { options, stack: [] }
   const index = createSourceIndex(markdown)
   const tree = markdownParser.parse(markdown)
 

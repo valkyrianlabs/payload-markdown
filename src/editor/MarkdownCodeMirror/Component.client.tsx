@@ -5,18 +5,22 @@ import { EditorState } from '@codemirror/state'
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view'
 import React, { useEffect, useRef } from 'react'
 
+import type { MarkdownEditorDirectiveConfig } from '../directiveConfig.js'
+
 import { directiveCloseLabels } from '../directives/closeLabels.js'
-import { directiveCompletions } from '../directives/completions.js'
-import { directiveDiagnostics } from '../directives/diagnostics.js'
+import { createDirectiveCompletions } from '../directives/completions.js'
+import { createDirectiveDiagnostics } from '../directives/diagnostics.js'
 import { payloadMarkdownTheme } from '../themes/payload.js'
 
 type MarkdownCodeMirrorClientProps = {
+  directiveConfig?: MarkdownEditorDirectiveConfig
   onChangeAction: (value: string) => void
   placeholder?: string
   value?: string
 }
 
 export const MarkdownCodeMirrorClient: React.FC<MarkdownCodeMirrorClientProps> = ({
+  directiveConfig,
   onChangeAction,
   placeholder = 'Write markdown...',
   value = '',
@@ -36,8 +40,8 @@ export const MarkdownCodeMirrorClient: React.FC<MarkdownCodeMirrorClientProps> =
         cmPlaceholder(placeholder),
         payloadMarkdownTheme,
         directiveCloseLabels,
-        directiveCompletions,
-        directiveDiagnostics,
+        createDirectiveCompletions(directiveConfig),
+        createDirectiveDiagnostics(directiveConfig),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           onChangeAction(update.state.doc.toString())
@@ -55,7 +59,7 @@ export const MarkdownCodeMirrorClient: React.FC<MarkdownCodeMirrorClientProps> =
       viewRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChangeAction, placeholder])
+  }, [directiveConfig, onChangeAction, placeholder])
 
   useEffect(() => {
     const view = viewRef.current

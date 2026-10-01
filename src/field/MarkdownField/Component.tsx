@@ -3,8 +3,9 @@
 import type { TextFieldClientComponent } from 'payload'
 
 import { useField } from '@payloadcms/ui'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
+import { readEditorDirectiveConfig } from '../../editor/directiveConfig.js'
 import { MarkdownEditor } from '../../editor/MarkdownEditor.js'
 
 const SAVE_DEBOUNCE_MS = 800
@@ -15,6 +16,13 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
   const { setValue, value } = useField<string>({ path })
 
   const [draftValue, setDraftValue] = useState<string>(value ?? '')
+  // Configured themes and icon packs, injected by the plugin (CORE-8). Keyed
+  // by content so a new-but-equal config object does not rebuild the editor.
+  const directiveConfigKey = JSON.stringify(field.admin?.custom ?? null)
+  const directiveConfig = useMemo(
+    () => readEditorDirectiveConfig(JSON.parse(directiveConfigKey)),
+    [directiveConfigKey],
+  )
 
   // Sync in external value changes only when they actually differ.
   useEffect(() => {
@@ -36,6 +44,7 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
   }, [draftValue, value, setValue])
 
   return <MarkdownEditor
+      directiveConfig={directiveConfig}
       label={field.label}
       onChangeAction={setDraftValue}
       placeholder={

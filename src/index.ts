@@ -1,8 +1,9 @@
 import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
+import type { MarkdownEditorDirectiveConfig } from './editor/directiveConfig.js'
 import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.js'
 
-import { MarkdownBlock } from './blocks/MarkdownBlock/config.js'
+import { createMarkdownBlock, MarkdownBlock } from './blocks/MarkdownBlock/config.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
 import {
   DEFAULT_CALLOUT_THEMES,
@@ -17,16 +18,41 @@ import {
   DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
 } from './directives/themes.js'
+import {
+  createEditorDirectiveConfig,
+  PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY,
+} from './editor/directiveConfig.js'
 import { markdownField } from './field/MarkdownField/config.js'
-import { clearPayloadMarkdownSettings, setPayloadMarkdownSettings } from './runtime/index.js'
+import {
+  clearPayloadMarkdownSettings,
+  resolveMarkdownBlockDefaults,
+  resolveMarkdownFieldDefaults,
+  setPayloadMarkdownSettings,
+} from './runtime/index.js'
 
-function ensureMarkdownBlock(config: Config) {
+function ensureMarkdownBlock(config: Config, block: Block) {
   const blocks = config.blocks ?? []
-  const alreadyExists = blocks.some((block) => block.slug === MarkdownBlock.slug)
+  const alreadyExists = blocks.some((entry) => entry.slug === block.slug)
   if (alreadyExists) return
 
   // Copy-on-write: never mutate the caller's config arrays (CORE-18).
-  config.blocks = [...blocks, MarkdownBlock]
+  config.blocks = [...blocks, block]
+}
+
+function withEditorConfig(
+  fieldOptions: Omit<MarkdownFieldOptions, 'name'> | undefined,
+  editorConfig: MarkdownEditorDirectiveConfig,
+): Omit<MarkdownFieldOptions, 'name'> {
+  return {
+    ...(fieldOptions ?? {}),
+    admin: {
+      ...(fieldOptions?.admin ?? {}),
+      custom: {
+        ...(fieldOptions?.admin?.custom ?? {}),
+        [PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY]: editorConfig,
+      },
+    },
+  }
 }
 
 function withMarkdownField(
@@ -100,8 +126,11 @@ function withBlockInstalled(fields: Field[], block: Block): Field[] {
   return changed ? next : fields
 }
 
-function withMarkdownBlockInCollectionBlocks(collection: CollectionConfig): CollectionConfig {
-  const fields = withBlockInstalled(collection.fields, MarkdownBlock)
+function withMarkdownBlockInCollectionBlocks(
+  collection: CollectionConfig,
+  block: Block,
+): CollectionConfig {
+  const fields = withBlockInstalled(collection.fields, block)
 
   return fields === collection.fields ? collection : { ...collection, fields }
 }
@@ -159,7 +188,12 @@ export const payloadMarkdown =
 
     setPayloadMarkdownSettings(pluginOptions)
 
-    ensureMarkdownBlock(config)
+    // The admin editor gets the resolved theme names and icon pack aliases
+    // for its scope through field.admin.custom (CORE-8).
+    ensureMarkdownBlock(
+      config,
+      createMarkdownBlock(createEditorDirectiveConfig(resolveMarkdownBlockDefaults())),
+    )
 
     if (!pluginOptions.collections || !config.collections) return config
 
@@ -172,10 +206,23 @@ export const payloadMarkdown =
       const resolved = resolveCollectionInstallBehavior(collection, collectionOptions)
       let next = collection
 
-      if (resolved.installIntoBlocks) next = withMarkdownBlockInCollectionBlocks(next)
+      if (resolved.installIntoBlocks)
+        next = withMarkdownBlockInCollectionBlocks(
+          next,
+          createMarkdownBlock(
+            createEditorDirectiveConfig(resolveMarkdownBlockDefaults(collection.slug)),
+          ),
+        )
 
       if (resolved.installField)
-        next = withMarkdownField(next, resolved.fieldName, resolved.fieldOptions)
+        next = withMarkdownField(
+          next,
+          resolved.fieldName,
+          withEditorConfig(
+            resolved.fieldOptions,
+            createEditorDirectiveConfig(resolveMarkdownFieldDefaults(collection.slug)),
+          ),
+        )
 
       return next
     })
