@@ -1,0 +1,10 @@
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="brand-icon">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.5"/>
+    </linearGradient>
+    <path id="p" d="M0 0h16v16H0z"/>
+  </defs>
+  <use href="#p" fill="url(#g)"/>
+  <use xlink:href="#p" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -140,7 +140,7 @@ Only local SVG packs are supported. The plugin does not integrate FortAwesome pa
 
 Paid or pro icon files should stay local and gitignored. CI-safe tests and fixtures should use tiny committed SVG fixtures outside `public/icons`, and local paid-icon checks should be opt-in only.
 
-The server renderer emits sanitized inline SVG in the rendered HTML. If your app needs a bundler-backed static import registry for SVG component workflows, use the advanced icon registry helper to generate static imports from your local pack layout. Those imports rely on your host app's SVG support, such as Next, SVGR, Webpack, Turbopack, or an equivalent loader. Keep generated files that import paid icons out of source control.
+The server renderer emits sanitized inline SVG in the rendered HTML. Icon files are parsed with an HTML parser and filtered through a strict SVG allowlist: only the first top-level `<svg>` is kept; `<script>`, `<style>`, `<foreignObject>`, animation elements, images, event-handler attributes, and non-`#fragment` `href`s are removed. Icons that rely on an embedded `<style>` block (for example duotone class rules) should express those styles as SVG presentation attributes or in your site CSS. If your app needs a bundler-backed static import registry for SVG component workflows, use the advanced icon registry helper to generate static imports from your local pack layout. Those imports rely on your host app's SVG support, such as Next, SVGR, Webpack, Turbopack, or an equivalent loader. Keep generated files that import paid icons out of source control.
 
 ## Collection Options
 

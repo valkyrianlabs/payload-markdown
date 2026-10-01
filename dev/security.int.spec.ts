@@ -1,4 +1,7 @@
 import { fromHtml } from 'hast-util-from-html'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { visit } from 'unist-util-visit'
 import { describe, expect, it } from 'vitest'
 
@@ -160,5 +163,93 @@ describe('CORE-5: DOM clobbering protection for author raw HTML', () => {
     expect(result.html).not.toContain('user-content-user-content')
     expect(result.html).toContain('id="tabs-trigger-npm"')
     expect(result.html).toContain('id="tabs-panel-npm"')
+  })
+})
+
+describe('CORE-4: icon SVGs are parsed and sanitized structurally', () => {
+  const evilDir = path.resolve('tests/fixtures/icons/evil')
+  const evilIcons = fs.readdirSync(evilDir).filter((file) => file.endsWith('.svg'))
+  const iconConfig = {
+    icons: {
+      baseDir: 'tests/fixtures/icons',
+      packs: [
+        { alias: 'evil', path: 'evil' },
+        { alias: 'brand', path: 'brand' },
+      ],
+    },
+  }
+
+  it('has adversarial fixtures', () => {
+    expect(evilIcons.length).toBeGreaterThanOrEqual(13)
+  })
+
+  for (const file of evilIcons) {
+    it(`neutralizes evil icon ${file}`, async () => {
+      const name = file.replace(/\.svg$/, '')
+      const result = await compileMarkdown(`::button[Go]{href="/x" icon="@evil/${name}"}`, iconConfig)
+      const tree = fromHtml(result.html, { fragment: true })
+      const tagNames: string[] = []
+      const propertyNames: string[] = []
+
+      visit(tree, 'element', (node) => {
+        tagNames.push(node.tagName)
+        for (const [key, value] of Object.entries(node.properties ?? {})) {
+          propertyNames.push(key)
+          if (['href', 'xLinkHref'].includes(key) && node.tagName !== 'a')
+            expect(String(value).startsWith('#')).toBe(true)
+        }
+      })
+
+      expect(result.warnings).toEqual([])
+      expect(tagNames.filter((tagName) => tagName === 'svg')).toHaveLength(1)
+      for (const forbidden of [
+        'script',
+        'style',
+        'foreignObject',
+        'animate',
+        'animateTransform',
+        'set',
+        'iframe',
+        'img',
+        'image',
+        'div',
+      ])
+        expect(tagNames).not.toContain(forbidden)
+      expect(propertyNames.filter((key) => /^on/i.test(key))).toEqual([])
+      expect(result.html).not.toMatch(/javascript:|alert\(|evil\.example|data-x/i)
+      expectNoScriptableUrl(result.html)
+      expect(result.html).toContain('>Go</a>')
+    })
+  }
+
+  it('keeps legitimate gradients, fragment refs and authored classes', async () => {
+    const result = await compileMarkdown('::button[Go]{href="/x" icon="@brand/gradient"}', iconConfig)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain(
+              'class="brand-icon pmd-button__icon pmd-button__icon--left" aria-hidden="true" focusable="false"',
+    )
+    expect(result.html).toContain('<linearGradient id="g" x1="0" x2="1" gradientUnits="objectBoundingBox">')
+    expect(result.html).toContain('<use href="#p" fill="url(#g)"></use>')
+    expect(result.html).toContain('<use xlink:href="#p" stroke="currentColor" stroke-width="2" stroke-linecap="round"></use>')
+  })
+
+  it('re-reads an icon when the file changes', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pmd-icons-'))
+    const iconFile = path.join(dir, 'pack', 'dot.svg')
+    const config = { icons: { baseDir: dir, packs: [{ alias: 'tmp', path: 'pack' }] } }
+
+    fs.mkdirSync(path.dirname(iconFile))
+    fs.writeFileSync(iconFile, '<svg viewBox="0 0 1 1"><path d="M0"/></svg>')
+
+    const first = await compileMarkdown('::button[Go]{href="/x" icon="@tmp/dot"}', config)
+    fs.writeFileSync(iconFile, '<svg viewBox="0 0 2 2"><circle r="1"/></svg>')
+    fs.utimesSync(iconFile, new Date(Date.now() + 5000), new Date(Date.now() + 5000))
+    const second = await compileMarkdown('::button[Go]{href="/x" icon="@tmp/dot"}', config)
+
+    expect(first.html).toContain('<path d="M0"></path>')
+    expect(second.html).toContain('<circle r="1"></circle>')
+    expect(second.html).not.toContain('<path d="M0">')
+    fs.rmSync(dir, { force: true, recursive: true })
   })
 })
