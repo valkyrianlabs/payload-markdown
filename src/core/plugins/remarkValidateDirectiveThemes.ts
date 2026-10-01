@@ -7,7 +7,7 @@ import { visit } from 'unist-util-visit'
 import type { MarkdownRenderConfig } from '../../types/core.js'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
-import { hasDirectiveTheme } from '../../directives/themes.js'
+import { getDirectiveFallbackThemeName, hasDirectiveTheme } from '../../directives/themes.js'
 
 type MessageFile = {
   message: (reason: string) => unknown
@@ -36,7 +36,7 @@ function warnUnknownThemes(node: ContainerDirective, file: MessageFile, config: 
     const label = attribute === 'theme' ? 'theme' : attribute
 
     file.message(
-      `Unknown ${label} "${value}" on "${node.name}". Falling back to "default".`,
+      `Unknown ${label} "${value}" on "${node.name}". Falling back to "${getDirectiveFallbackThemeName(groupName, config.themes)}".`,
     )
   }
 }

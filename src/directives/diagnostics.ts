@@ -20,7 +20,7 @@ import {
 } from './lineScanner.js'
 import { layoutDirectiveRegistry } from './registry.js'
 import { resolveShieldsBadge } from './shields.js'
-import { hasDirectiveTheme } from './themes.js'
+import { getDirectiveFallbackThemeName, hasDirectiveTheme } from './themes.js'
 import { isSafeHref } from './urls.js'
 
 export type DirectiveDiagnostic = {
@@ -281,7 +281,7 @@ function getThemeDiagnostics(text: string): string[] {
 
     const label = attribute === 'theme' ? 'theme' : attribute
     diagnostics.push(
-      `Unknown ${label} "${value}" on "${token.name}". Falling back to "default".`,
+      `Unknown ${label} "${value}" on "${token.name}". Falling back to "${getDirectiveFallbackThemeName(groupName)}".`,
     )
   }
 

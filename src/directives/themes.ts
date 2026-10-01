@@ -206,6 +206,14 @@ export function slugThemeName(name: string): string {
     .replace(/^-+|-+$/g, '') || 'default'
 }
 
+/** Name of the theme an unthemed or unknown-themed directive falls back to. */
+export function getDirectiveFallbackThemeName(
+  groupName: DirectiveThemeGroupName,
+  themes?: MarkdownDirectiveThemes,
+): string {
+  return resolveDirectiveTheme(groupName, undefined, themes).name
+}
+
 export function getDirectiveThemeNames(
   groupName: DirectiveThemeGroupName,
   themes?: MarkdownDirectiveThemes,
@@ -229,7 +237,11 @@ export function resolveDirectiveTheme(
   const items = getThemeItems(groupName, themes)
   const requested = requestedName?.trim() || 'default'
   const found = items.find((theme) => theme.name === requested)
-  const fallback = items.find((theme) => theme.name === 'default') ?? DEFAULT_DIRECTIVE_THEMES[groupName][0]
+  // Prefer a theme named "default", then the first available theme. With
+  // extendDefaults: false that is the first configured item, never a
+  // built-in the configuration disabled (CORE-17).
+  const fallback =
+    items.find((theme) => theme.name === 'default') ?? items[0] ?? DEFAULT_DIRECTIVE_THEMES[groupName][0]
   const resolved = found ?? fallback
   const slug = slugThemeName(resolved.name)
   const hookClassName = `vl-md-${groupName}`
@@ -257,11 +269,18 @@ export function mergeMarkdownDirectiveThemes(
       const current = normalizeThemeGroup(merged[groupName])
       const incoming = normalizeThemeGroup(next)
       const byName = new Map(current.items.map((theme) => [theme.name, theme]))
+      // A layer only changes extendDefaults when it sets it explicitly; a
+      // collection that just adds a theme must not re-enable built-ins that
+      // a broader layer disabled (CORE-17).
+      const explicitExtendDefaults =
+        !Array.isArray(next) && typeof next.extendDefaults === 'boolean'
+          ? next.extendDefaults
+          : undefined
 
       for (const item of incoming.items) byName.set(item.name, item)
 
       merged[groupName] = {
-        extendDefaults: incoming.extendDefaults,
+        extendDefaults: explicitExtendDefaults ?? current.extendDefaults,
         items: [...byName.values()],
       }
     }
