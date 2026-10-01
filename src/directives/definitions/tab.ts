@@ -3,7 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { getDirectiveLabel, getDirectiveLabelOrAttribute } from '../labels.js'
-import { resolveDirectiveTheme, slugThemeName } from '../themes.js'
+import { resolveDirectiveTheme } from '../themes.js'
 
 function getAttribute(node: ContainerDirective, name: string): string | undefined {
   const value = node.attributes?.[name]
@@ -17,30 +17,75 @@ export function getTabLabel(node: ContainerDirective, index: number): string {
 
 type TabAttributes = null | Record<string, boolean | null | string | undefined> | undefined
 
-export function getTabValueFromAttributes(attributes: TabAttributes, index: number): string {
-  const value = attributes?.value
-  const label = attributes?.label
-  const raw =
-    typeof value === 'string' && value.trim()
-      ? value.trim()
-      : typeof label === 'string' && label.trim()
-        ? label.trim()
-        : `tab-${index + 1}`
+/**
+ * Slug used for tab values. ASCII labels slug exactly as before; labels with
+ * no ASCII letters or digits (for example `日本`) fall back to the tab's
+ * position (`tab-2`) instead of all colliding on `default`. The editor linter
+ * uses the same function.
+ */
+export function slugTabValue(raw: string, index: number): string {
+  return toTabSlug(raw) || `tab-${index + 1}`
+}
 
-  return slugThemeName(raw)
+/** ASCII slug of a tab value, or an empty string when nothing remains. */
+export function toTabSlug(raw: string): string {
+  return raw
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/** Authored text a tab value is derived from: `value`, then the label. */
+export function getTabRawValue(
+  attributes: TabAttributes,
+  label?: string,
+): string | undefined {
+  const value = attributes?.value
+  const attributeLabel = attributes?.label
+
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  if (typeof label === 'string' && label.trim()) return label.trim()
+  if (typeof attributeLabel === 'string' && attributeLabel.trim()) return attributeLabel.trim()
+
+  return undefined
+}
+
+export function getTabValueFromAttributes(attributes: TabAttributes, index: number): string {
+  return slugTabValue(getTabRawValue(attributes) ?? `tab-${index + 1}`, index)
 }
 
 export function getTabValue(node: ContainerDirective, index: number): string {
-  const value = node.attributes?.value
-  const label = getDirectiveLabel(node) ?? getAttribute(node, 'label')
-  const raw =
-    typeof value === 'string' && value.trim()
-      ? value.trim()
-      : typeof label === 'string' && label.trim()
-        ? label.trim()
-        : `tab-${index + 1}`
+  return slugTabValue(
+    getTabRawValue(node.attributes, getDirectiveLabel(node)) ?? `tab-${index + 1}`,
+    index,
+  )
+}
 
-  return slugThemeName(raw)
+export type TabsDefaultCandidate = {
+  label?: string
+  raw?: string
+  value: string
+}
+
+/**
+ * Resolves a `:::tabs{default="…"}` request to a tab value. Matches the
+ * slugged value first (the historical behaviour) and then the authored
+ * value/label text, so non-ASCII defaults such as `default="中文"` work.
+ */
+export function resolveTabsDefault(
+  requested: string | undefined,
+  tabs: TabsDefaultCandidate[],
+): string | undefined {
+  const trimmed = requested?.trim()
+  if (!trimmed) return undefined
+
+  const slug = toTabSlug(trimmed)
+
+  return (
+    (slug ? tabs.find((tab) => tab.value === slug)?.value : undefined) ??
+    tabs.find((tab) => tab.raw === trimmed || tab.label === trimmed)?.value
+  )
 }
 
 export function isTabDisabled(attributes: TabAttributes): boolean {
@@ -81,9 +126,9 @@ export const tabDirective: LayoutDirectiveDefinition = {
     return {
       dataDirective: 'tab',
       dataDisabled: isTabDisabled(node.attributes) ? 'true' : undefined,
-      dataLabel: getTabLabel(node, 0),
+      dataLabel: getTabLabel(node, node.data?.vlTabIndex ?? 0),
       dataTheme: getAttribute(node, 'theme'),
-      dataValue: getTabValue(node, 0),
+      dataValue: getTabValue(node, node.data?.vlTabIndex ?? 0),
     }
   },
   kind: 'tab',

@@ -11,6 +11,8 @@ declare module 'mdast-util-directive' {
     vlCellHeadingDepth?: number
     vlDirectiveLabel?: string
     vlParentHeadingDepth?: number
+    /** Position of a `tab` among its parent `tabs` block's tab children. */
+    vlTabIndex?: number
   }
 
   interface LeafDirectiveData {

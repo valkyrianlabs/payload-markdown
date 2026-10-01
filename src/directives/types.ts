@@ -88,6 +88,13 @@ export type LayoutDirectiveClassHelpers = {
     cellTheme?: ResolvedDirectiveTheme,
   ) => ElementContent[]
   mergeClassNames: (...values: Array<string | undefined>) => string[]
+  /**
+   * Reserves a group of element ids that must stay unique within one render
+   * (CORE-20). Returns the bases unchanged when all are free; otherwise every
+   * base gets the same smallest free `-n` suffix. Ids already present in the
+   * tree (headings, footnotes) are pre-reserved.
+   */
+  reserveIds: (bases: string[]) => string[]
 }
 
 export type LayoutDirectiveEditorMetadata = {

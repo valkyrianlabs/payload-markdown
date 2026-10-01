@@ -4,10 +4,12 @@ import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import { unified } from 'unified'
 
+import type { TabsDefaultCandidate } from './definitions/tab.js'
 import type { ScannedDirectiveLine, SourceIndex } from './lineScanner.js'
 
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
 import { parseButtonDirectiveLine } from './buttonSyntax.js'
+import { getTabRawValue, resolveTabsDefault, slugTabValue } from './definitions/tab.js'
 import { getLeafDirectiveName, getLeafDirectiveProblem, parseLeafDirectiveLine } from './leafSyntax.js'
 import {
   createSourceIndex,
@@ -38,6 +40,7 @@ type OpenFrame = {
   line: number
   name: string
   parentHeadingDepth?: number
+  tabCandidates?: TabsDefaultCandidate[]
   tabCount?: number
   tabValues?: Map<string, number>
 }
@@ -63,22 +66,7 @@ function getTabValue(
   index: number,
   label?: string,
 ): string {
-  const value = attributes?.value
-  const attributeLabel = attributes?.label
-  const raw =
-    typeof value === 'string' && value.trim()
-      ? value.trim()
-      : typeof label === 'string' && label.trim()
-        ? label.trim()
-        : typeof attributeLabel === 'string' && attributeLabel.trim()
-          ? attributeLabel.trim()
-          : `tab-${index + 1}`
-
-  return raw
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || `tab-${index + 1}`
+  return slugTabValue(getTabRawValue(attributes, label) ?? `tab-${index + 1}`, index)
 }
 
 const TOC_CONTENT_DIAGNOSTIC =
@@ -101,11 +89,8 @@ function finalizeTabsFrame(frame: OpenFrame): string[] {
   for (const [value, count] of tabValues)
     if (count > 1) diagnostics.push(`Duplicate tab value "${value}" in "tabs".`)
 
-  if (frame.defaultValue) {
-    const defaultValue = getTabValue({ value: frame.defaultValue }, 0)
-    if (!tabValues.has(defaultValue))
-      diagnostics.push(`Invalid tabs default "${frame.defaultValue}". Falling back to the first tab.`)
-  }
+  if (frame.defaultValue && !resolveTabsDefault(frame.defaultValue, frame.tabCandidates ?? []))
+    diagnostics.push(`Invalid tabs default "${frame.defaultValue}". Falling back to the first tab.`)
 
   return diagnostics
 }
@@ -202,6 +187,12 @@ function updateOpenStack(
         const nextIndex = tabsFrame.tabCount ?? 0
         const value = getTabValue(token.attributes, nextIndex, token.label)
 
+        tabsFrame.tabCandidates ??= []
+        tabsFrame.tabCandidates.push({
+          label: getTabRawValue({ label: token.attributes?.label ?? '' }, token.label) ?? `Tab ${nextIndex + 1}`,
+          raw: getTabRawValue(token.attributes),
+          value,
+        })
         tabsFrame.tabCount = nextIndex + 1
         tabsFrame.tabValues ??= new Map<string, number>()
         tabsFrame.tabValues.set(value, (tabsFrame.tabValues.get(value) ?? 0) + 1)

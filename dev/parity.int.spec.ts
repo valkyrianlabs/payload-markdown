@@ -48,6 +48,8 @@ export const PARITY_VECTORS: Record<string, string> = {
   strayCloser: 'text\n\n:::',
   strayEndcol: ':::endcol',
   tableDirective: '| a | b |\n| - | - |\n| :::callout | x |',
+  tabsDefaultUnicode: ':::tabs{default="日本"}\n:::tab[日本]\na\n:::\n:::tab[中文]\nb\n:::\n:::',
+  tabsDefaultUnknown: ':::tabs{default="missing"}\n:::tab[日本]\na\n:::\n:::',
   tabsDuplicateValues: ':::tabs\n:::tab[A]{value="same"}\na\n:::\n:::tab[B]{value="same"}\nb\n:::\n:::',
   tocWithContent: '# A\n\n:::toc\nAuthored note.\n:::',
   unclosedToc: '# A\n\n:::toc\n\n## B\n\nText',

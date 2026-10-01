@@ -4,8 +4,15 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
-import { resolveDirectiveTheme, slugThemeName } from '../themes.js'
-import { getTabValue } from './tab.js'
+import { resolveDirectiveTheme } from '../themes.js'
+import {
+  getTabLabel as getTabDirectiveLabel,
+  getTabRawValue,
+  getTabValue,
+  resolveTabsDefault,
+  slugTabValue,
+  toTabSlug,
+} from './tab.js'
 
 type TabModel = {
   disabled: boolean
@@ -57,28 +64,34 @@ function getRequestedDefault(node: Element): string | undefined {
   return getStringProperty(node.properties, 'dataDefault')
 }
 
-function makeUniqueValue(rawValue: string, seen: Map<string, number>): string {
-  const base = slugThemeName(rawValue)
+function makeUniqueValue(rawValue: string, index: number, seen: Map<string, number>): string {
+  const base = slugTabValue(rawValue, index)
   const count = seen.get(base) ?? 0
   seen.set(base, count + 1)
 
   return count === 0 ? base : `${base}-${count}`
 }
 
-function collectTabs(node: Element): TabModel[] {
+function collectTabs(
+  node: Element,
+  reserveIds: (bases: string[]) => string[],
+): TabModel[] {
   const seen = new Map<string, number>()
 
   return node.children.filter(isTabElement).map((child, index) => {
     const rawValue = getStringProperty(child.properties, 'dataValue') ?? `tab-${index + 1}`
-    const value = makeUniqueValue(rawValue, seen)
+    const value = makeUniqueValue(rawValue, index, seen)
+    // Ids are unique per render: a second identical tabs block (or a heading
+    // such as "Tabs panel npm") pushes these ids to a -n suffix.
+    const [panelId, triggerId] = reserveIds([`tabs-panel-${value}`, `tabs-trigger-${value}`])
 
     return {
       disabled: getBooleanProperty(child.properties, 'dataDisabled'),
       label: getTabLabel(child, index),
       node: child,
-      panelId: `tabs-panel-${value}`,
+      panelId,
       themeName: getStringProperty(child.properties, 'dataTheme'),
-      triggerId: `tabs-trigger-${value}`,
+      triggerId,
       value,
     }
   })
@@ -157,13 +170,22 @@ function makeTabList(tabs: TabModel[], activeValue: string): Element {
 }
 
 function findActiveTab(tabs: TabModel[], requestedDefault?: string): TabModel | undefined {
-  const requested = requestedDefault ? slugThemeName(requestedDefault) : undefined
+  // remarkLayoutDirectives already resolved authored defaults to a tab value.
+  const requested = requestedDefault ? toTabSlug(requestedDefault) || undefined : undefined
   const requestedMatch = requested
     ? tabs.find((tab) => tab.value === requested && !tab.disabled) ??
       tabs.find((tab) => tab.value === requested)
     : undefined
 
   return requestedMatch ?? tabs.find((tab) => !tab.disabled) ?? tabs[0]
+}
+
+function getTabsDefaultCandidates(node: ContainerDirective) {
+  return getDirectTabDirectives(node).map((tab, index) => ({
+    label: getTabDirectiveLabel(tab, index),
+    raw: getTabRawValue(tab.attributes),
+    value: getTabValue(tab, index),
+  }))
 }
 
 function getDirectTabDirectives(node: ContainerDirective): ContainerDirective[] {
@@ -175,8 +197,8 @@ function getDirectTabDirectives(node: ContainerDirective): ContainerDirective[] 
 export const tabsDirective: LayoutDirectiveDefinition = {
   name: 'tabs',
   allowedAttributes: ['default', 'tabTheme', 'theme'],
-  applyHast(node, config, { mergeClassNames }) {
-    const tabs = collectTabs(node)
+  applyHast(node, config, { mergeClassNames, reserveIds }) {
+    const tabs = collectTabs(node, reserveIds)
     const activeTab = findActiveTab(tabs, getRequestedDefault(node))
     const theme = resolveDirectiveTheme(
       'tabs',
@@ -224,9 +246,13 @@ export const tabsDirective: LayoutDirectiveDefinition = {
       ':::tabs{\n  default="${pnpm}"\n}\n\n:::tab[${pnpm}]{\n  value="${pnpm}"\n}\n```bash\npnpm add ${package-name}\n```\n:::\n\n:::tab[${npm}]{\n  value="${npm}"\n}\n```bash\nnpm install ${package-name}\n```\n:::\n\n:::\n${}',
   },
   getMdastRenderProperties(node) {
+    const requestedDefault =
+      typeof node.attributes?.default === 'string' ? node.attributes.default : undefined
+
     return {
-      dataDefault:
-        typeof node.attributes?.default === 'string' ? node.attributes.default : undefined,
+      dataDefault: requestedDefault
+        ? (resolveTabsDefault(requestedDefault, getTabsDefaultCandidates(node)) ?? requestedDefault)
+        : undefined,
       dataDirective: 'tabs',
       dataTabTheme:
         typeof node.attributes?.tabTheme === 'string' ? node.attributes.tabTheme : undefined,
@@ -241,6 +267,12 @@ export const tabsDirective: LayoutDirectiveDefinition = {
   themeAttributes: {
     tabTheme: 'tab',
     theme: 'tabs',
+  },
+  transformMdast(node) {
+    getDirectTabDirectives(node).forEach((tab, index) => {
+      const data = (tab.data ??= {})
+      data.vlTabIndex = index
+    })
   },
   validateMdast(node) {
     const warnings: string[] = []
@@ -257,11 +289,11 @@ export const tabsDirective: LayoutDirectiveDefinition = {
     for (const [value, count] of values)
       if (count > 1) warnings.push(`Duplicate tab value "${value}" in "tabs".`)
 
-    if (typeof node.attributes?.default === 'string') {
-      const requested = slugThemeName(node.attributes.default)
-      if (!values.has(requested))
-        warnings.push(`Invalid tabs default "${node.attributes.default}". Falling back to the first tab.`)
-    }
+    if (
+      typeof node.attributes?.default === 'string' &&
+      !resolveTabsDefault(node.attributes.default, getTabsDefaultCandidates(node))
+    )
+      warnings.push(`Invalid tabs default "${node.attributes.default}". Falling back to the first tab.`)
 
     return warnings
   },
