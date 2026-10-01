@@ -70,6 +70,11 @@ const countSyntaxNodes = (markdown: string, name: string): number => {
   return count
 }
 
+
+// ```bash is not in DEFAULT_CODE_LANGS; the renderer reports the plain-text fallback (CORE-14).
+const BASH_NOT_LOADED_WARNING =
+  'Code block language "bash" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.'
+
 describe('payloadMarkdown', () => {
   beforeEach(() => {
     clearPayloadMarkdownSettings()
@@ -1983,7 +1988,7 @@ Nested card.
 :::
 `)
 
-    expect(result.warnings).toEqual([])
+    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
     expect(result.html).toContain('vl-md-tabs--theme-glass')
     expect(result.html).toContain('vl-md-tab--theme-muted')
     expect(result.html).toContain('vl-md-tab--theme-glass')
@@ -2105,7 +2110,7 @@ Add it to \`payload.config.ts\` with **markdown** enabled.
 :::
 `)
 
-    expect(result.warnings).toEqual([])
+    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('<ol')
     expect(result.html).toContain('data-step="1"')
@@ -2155,7 +2160,7 @@ Add it to \`payload.config.ts\`.
 :::
 `)
 
-    expect(result.warnings).toEqual([])
+    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('data-variant="cards"')
     expect(result.html).toContain('data-layout="stack"')

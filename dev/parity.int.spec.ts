@@ -17,6 +17,10 @@ import { lintMarkdownDirectives } from '../src/directives/diagnostics'
  * Message mapping: the renderer's "Auto-closing unclosed layout block: X" is
  * the editor's "Unclosed directive "X"." at the opening marker.
  */
+function isCodeDiagnostic(warning: string): boolean {
+  return /^(?:Code block language|Unknown Shiki|Failed to load the configured Shiki)/.test(warning)
+}
+
 function toEditorMessage(rendererWarning: string): string {
   const autoClose = rendererWarning.match(/^Auto-closing unclosed layout block: (.+)$/)
 
@@ -64,7 +68,8 @@ describe('CORE-9: editor diagnostics cover renderer warnings', () => {
       const rendered = await compileMarkdown(markdown)
       const editorMessages = lintMarkdownDirectives(markdown).map((diagnostic) => diagnostic.message)
 
-      for (const warning of rendered.warnings) expect(editorMessages).toContain(toEditorMessage(warning))
+      for (const warning of rendered.warnings.filter((entry) => !isCodeDiagnostic(entry)))
+        expect(editorMessages).toContain(toEditorMessage(warning))
     })
   }
 

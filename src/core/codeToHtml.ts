@@ -1,6 +1,12 @@
 import type { Element, ElementContent, Text } from 'hast'
 
-import { createHighlighter, type ShikiTransformer } from 'shiki'
+import {
+  bundledLanguagesInfo,
+  bundledThemes,
+  createHighlighter,
+  type HighlighterGeneric,
+  type ShikiTransformer,
+} from 'shiki'
 
 import type { CodeBlockOptions } from '../types/core.js'
 
@@ -22,13 +28,22 @@ export const DEFAULT_CODE_LANGS: readonly string[] = [
   'sql',
 ]
 
-const highlighterCache = new Map<string, ReturnType<typeof createHighlighter>>()
+/** Fence languages Shiki renders as plain text without loading a grammar. */
+const PLAIN_TEXT_LANGS = new Set(['plain', 'plaintext', 'text', 'txt'])
+
+const BUNDLED_LANGUAGE_NAMES = new Set(
+  bundledLanguagesInfo.flatMap((language) => [language.id, ...(language.aliases ?? [])]),
+)
+
+type Highlighter = HighlighterGeneric<string, string>
+
+const highlighterCache = new Map<string, Promise<Highlighter>>()
 
 function getHighlighterCacheKey(theme: string, langs: readonly string[]) {
   return `${theme}::${[...langs].sort().join(',')}`
 }
 
-function getHighlighter(theme: string, langs: readonly string[]) {
+function getHighlighter(theme: string, langs: readonly string[]): Promise<Highlighter> {
   const cacheKey = getHighlighterCacheKey(theme, langs)
   const existing = highlighterCache.get(cacheKey)
   if (existing) return existing
@@ -36,10 +51,90 @@ function getHighlighter(theme: string, langs: readonly string[]) {
   const created = createHighlighter({
     langs: [...langs],
     themes: [theme],
-  })
+  }) as Promise<Highlighter>
 
   highlighterCache.set(cacheKey, created)
+
+  // Never keep a rejected promise: the next render retries instead of
+  // failing for the life of the process (CORE-11).
+  created.catch(() => {
+    if (highlighterCache.get(cacheKey) === created) highlighterCache.delete(cacheKey)
+  })
+
   return created
+}
+
+export type ResolvedHighlighterConfig = {
+  langs: string[]
+  theme: string
+  warnings: string[]
+}
+
+/**
+ * Validates the configured Shiki theme and languages against the bundled
+ * sets. Unknown entries fall back (theme) or are skipped (langs) with a
+ * diagnostic, so one bad config value cannot break every code block.
+ * Language names are matched case-insensitively.
+ */
+export function resolveHighlighterConfig(
+  theme: string | undefined,
+  langs: readonly string[] | undefined,
+): ResolvedHighlighterConfig {
+  const warnings: string[] = []
+  const requestedTheme = theme?.trim() || DEFAULT_CODE_THEME
+  let resolvedTheme = requestedTheme
+
+  if (!Object.hasOwn(bundledThemes, requestedTheme)) {
+    warnings.push(
+      `Unknown Shiki theme "${requestedTheme}". Falling back to "${DEFAULT_CODE_THEME}".`,
+    )
+    resolvedTheme = DEFAULT_CODE_THEME
+  }
+
+  const resolvedLangs: string[] = []
+
+  for (const lang of langs ?? DEFAULT_CODE_LANGS) {
+    if (typeof lang !== 'string' || !lang.trim()) continue
+
+    const trimmed = lang.trim()
+    const normalized = BUNDLED_LANGUAGE_NAMES.has(trimmed) ? trimmed : trimmed.toLowerCase()
+
+    if (PLAIN_TEXT_LANGS.has(normalized)) continue
+
+    if (!BUNDLED_LANGUAGE_NAMES.has(normalized)) {
+      warnings.push(`Unknown Shiki language "${trimmed}" in code langs. It was ignored.`)
+      continue
+    }
+
+    if (!resolvedLangs.includes(normalized)) resolvedLangs.push(normalized)
+  }
+
+  return { langs: resolvedLangs, theme: resolvedTheme, warnings }
+}
+
+/**
+ * Maps a fence language to a loaded Shiki language: exact match, then
+ * case-insensitive match (aliases such as `js`/`javascript` are loaded
+ * together). Anything else renders as plain text with a diagnostic (CORE-14).
+ */
+export function resolveFenceLanguage(
+  lang: string | undefined,
+  loadedLanguages: ReadonlySet<string>,
+): { lang: string; warning?: string } {
+  const raw = lang?.trim()
+
+  if (!raw) return { lang: DEFAULT_CODE_LANG }
+  if (loadedLanguages.has(raw)) return { lang: raw }
+
+  const lower = raw.toLowerCase()
+
+  if (PLAIN_TEXT_LANGS.has(lower)) return { lang: DEFAULT_CODE_LANG }
+  if (loadedLanguages.has(lower)) return { lang: lower }
+
+  return {
+    lang: DEFAULT_CODE_LANG,
+    warning: `Code block language "${raw}" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.`,
+  }
 }
 
 function countLines(code: string): number {
@@ -178,29 +273,63 @@ function buildTransformers(
   return transformers
 }
 
-export async function codeToHtml(code: string, options: CodeBlockOptions = {}) {
+export type HighlightCodeResult = {
+  html: string
+  warnings: string[]
+}
+
+async function loadHighlighter(
+  options: CodeBlockOptions,
+): Promise<{ highlighter: Highlighter; theme: string; warnings: string[] }> {
+  const config = resolveHighlighterConfig(options.theme, options.langs)
+
+  try {
+    return {
+      highlighter: await getHighlighter(config.theme, config.langs),
+      theme: config.theme,
+      warnings: config.warnings,
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+
+    return {
+      highlighter: await getHighlighter(DEFAULT_CODE_THEME, DEFAULT_CODE_LANGS),
+      theme: DEFAULT_CODE_THEME,
+      warnings: [
+        ...config.warnings,
+        `Failed to load the configured Shiki highlighter (${reason}). Falling back to the default theme and languages.`,
+      ],
+    }
+  }
+}
+
+/**
+ * Highlights one fenced code block and reports configuration or language
+ * fallbacks as warnings instead of throwing.
+ */
+export async function highlightCode(
+  code: string,
+  options: CodeBlockOptions = {},
+): Promise<HighlightCodeResult> {
   const resolvedOptions = resolveCodeBlockOptions(options)
-
-  const lang = resolvedOptions.lang?.trim() || DEFAULT_CODE_LANG
-  const langs = resolvedOptions.langs ?? DEFAULT_CODE_LANGS
-  const theme = resolvedOptions.theme?.trim() || DEFAULT_CODE_THEME
-
-  const highlighter = await getHighlighter(theme, langs)
+  const { highlighter, theme, warnings } = await loadHighlighter(resolvedOptions)
+  const fence = resolveFenceLanguage(resolvedOptions.lang, new Set(highlighter.getLoadedLanguages()))
   const normalizedCode = code.replace(/\n+$/, '')
   const totalLines = countLines(normalizedCode)
   const transformers = buildTransformers(resolvedOptions, totalLines)
 
-  try {
-    return highlighter.codeToHtml(normalizedCode, {
-      lang,
+  if (fence.warning) warnings.push(fence.warning)
+
+  return {
+    html: highlighter.codeToHtml(normalizedCode, {
+      lang: fence.lang,
       theme,
       transformers,
-    })
-  } catch {
-    return highlighter.codeToHtml(normalizedCode, {
-      lang: DEFAULT_CODE_LANG,
-      theme,
-      transformers,
-    })
+    }),
+    warnings,
   }
+}
+
+export async function codeToHtml(code: string, options: CodeBlockOptions = {}): Promise<string> {
+  return (await highlightCode(code, options)).html
 }

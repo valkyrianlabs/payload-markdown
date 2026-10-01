@@ -1,5 +1,3 @@
-import type { Root } from 'mdast'
-
 import fs from 'node:fs'
 import path from 'node:path'
 import remarkGfm from 'remark-gfm'
@@ -113,8 +111,11 @@ describe('CORE-2: only source lines starting with a marker open directives', () 
       const markdown = stripFrontmatter(fs.readFileSync(file, 'utf8'))
       const result = await compileMarkdown(markdown)
       const renderedHeadings = result.html.match(/data-heading-anchor="/g)?.length ?? 0
+      // Code fence languages outside code.langs (bash, md) are reported as
+      // informational fallbacks (CORE-14); everything else must be clean.
+      const warnings = result.warnings.filter((warning) => !warning.startsWith('Code block language'))
 
-      expect({ file: path.relative(docsDir, file), warnings: result.warnings }).toEqual({
+      expect({ file: path.relative(docsDir, file), warnings }).toEqual({
         file: path.relative(docsDir, file),
         warnings: [],
       })

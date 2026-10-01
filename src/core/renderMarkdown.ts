@@ -15,7 +15,7 @@ import { visit } from 'unist-util-visit'
 import type { MarkdownRenderConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
 
 import { resolveRenderMarkdownOptions } from './codeConfig.js'
-import { codeToHtml } from './codeToHtml.js'
+import { highlightCode } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
@@ -69,8 +69,11 @@ function parseHtmlFragment(html: string): RootContent[] {
 }
 
 function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
-  return async function transformer(tree: Root): Promise<void> {
-    const work: Array<Promise<void>> = []
+  return async function transformer(
+    tree: Root,
+    file: { message: (reason: string) => unknown },
+  ): Promise<void> {
+    const work: Array<Promise<string[]>> = []
 
     visit(tree, 'element', (node, index, parent) => {
       if (typeof index !== 'number' || !hasChildren(parent) || !isPreElement(node)) return
@@ -83,18 +86,21 @@ function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
 
       work.push(
         (async () => {
-          const highlighted = await codeToHtml(code, {
+          const highlighted = await highlightCode(code, {
             ...options,
             lang
           })
 
-          const replacementNodes = parseHtmlFragment(highlighted)
+          const replacementNodes = parseHtmlFragment(highlighted.html)
           parent.children.splice(index, 1, ...replacementNodes)
+
+          return highlighted.warnings
         })(),
       )
     })
 
-    await Promise.all(work)
+    // Report each distinct diagnostic once per render, in document order.
+    for (const warning of new Set((await Promise.all(work)).flat())) file.message(warning)
   }
 }
 
@@ -341,6 +347,7 @@ export async function compileMarkdown(
     const message = error instanceof Error ? error.message : 'Failed to render markdown.'
 
     // Real compile failures were previously swallowed; log them server-side.
+    // eslint-disable-next-line no-console
     console.error('[payload-markdown] Failed to render markdown:', error)
 
     return {
