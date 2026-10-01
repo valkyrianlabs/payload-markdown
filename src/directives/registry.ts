@@ -101,6 +101,12 @@ function getLabelConflictDiagnostics(
   ]
 }
 
+export function getUnexpectedTextDiagnostic(marker: string, text: string): string {
+  const preview = text.length > 40 ? `${text.slice(0, 40)}…` : text
+
+  return `Unexpected text "${preview}" after "${marker}". Directive attributes must be wrapped in {…}; the line is rendered as text.`
+}
+
 function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
   const trimmed = text.trim()
   const closeToken = closeMarkers.get(trimmed)
@@ -123,6 +129,12 @@ function parseMarkdownLineDetailed(text: string): ParseMarkdownLineResult {
   if (!isSupportedDirectiveName(parsed.name))
     return {
       diagnostics: [`Unknown directive "${parsed.name}".`],
+      token: null,
+    }
+
+  if (parsed.unexpectedText)
+    return {
+      diagnostics: [getUnexpectedTextDiagnostic(`:::${parsed.name}`, parsed.unexpectedText)],
       token: null,
     }
 

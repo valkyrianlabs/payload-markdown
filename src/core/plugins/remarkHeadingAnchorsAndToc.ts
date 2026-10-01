@@ -61,7 +61,9 @@ function applyTocContent(tree: Root, headings: HeadingAnchor[]) {
     const title = resolveTocTitle(node)
     const visibleHeadings = headings.filter((heading) => heading.depth <= depth)
 
-    node.children = [makeParagraph(title), makeTocList(visibleHeadings)]
+    // Authored children are never discarded: they render after the generated
+    // list (remarkLayoutDirectives already reported them via validateMdast).
+    node.children = [makeParagraph(title), makeTocList(visibleHeadings), ...node.children]
   })
 }
 

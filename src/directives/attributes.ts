@@ -1,3 +1,5 @@
+import { decodeDirectiveAttributeValue, directiveLabelToText } from './inlineText.js'
+
 export type DirectiveAttributeValue = boolean | string
 
 export type DirectiveAttributes = Record<string, DirectiveAttributeValue>
@@ -7,6 +9,12 @@ export type ParsedDirectiveLine = {
   label?: string
   name: string
   rawAttributes?: string
+  /**
+   * Text after the marker that is neither a `{…}` attribute block nor
+   * `key=value` / `#id` / `.class` tokens, such as prose that happens to start
+   * with `:::name`. Such lines must not open a directive.
+   */
+  unexpectedText?: string
   warnings: string[]
 }
 
@@ -39,21 +47,35 @@ function stripEnclosingBraces(value: string): { value: string; warnings: string[
 
 function stripQuotes(value: string): string {
   if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
   )
-    return value.slice(1, -1)
+    return decodeDirectiveAttributeValue(value.slice(1, -1), value[0] as "'" | '"')
 
-  return value
+  return decodeDirectiveAttributeValue(value, null)
 }
 
 function tokenizeAttributes(value: string): TokenizeAttributesResult {
   const tokens: string[] = []
   const warnings: string[] = []
   let current = ''
+  let escaped = false
   let quote: "'" | '"' | null = null
 
   for (const char of value) {
+    if (escaped) {
+      escaped = false
+      current += char
+      continue
+    }
+
+    if (char === '\\' && quote) {
+      escaped = true
+      current += char
+      continue
+    }
+
     if ((char === '"' || char === "'") && quote === null) {
       quote = char
       current += char
@@ -79,6 +101,20 @@ function tokenizeAttributes(value: string): TokenizeAttributesResult {
   if (quote) warnings.push('Malformed directive attributes: quoted value is not closed.')
 
   return { tokens, warnings }
+}
+
+/**
+ * Assigns an own property even for keys such as `__proto__`, so authored
+ * attribute names can never change the object's prototype and always show up
+ * in `Object.keys` (and therefore in unknown-attribute diagnostics).
+ */
+function setAttribute(attributes: DirectiveAttributes, key: string, value: DirectiveAttributeValue) {
+  Object.defineProperty(attributes, key, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  })
 }
 
 function appendClassName(attributes: DirectiveAttributes, className: string) {
@@ -170,7 +206,7 @@ export function parseDirectiveAttributesDetailed(value = ''): {
     const equalIndex = token.indexOf('=')
 
     if (equalIndex < 0) {
-      attributes[token] = true
+      setAttribute(attributes, token, true)
       continue
     }
 
@@ -180,7 +216,7 @@ export function parseDirectiveAttributesDetailed(value = ''): {
     if (!key) continue
 
     if (key === 'class') appendClassName(attributes, stripQuotes(rawValue))
-    else attributes[key] = stripQuotes(rawValue)
+    else setAttribute(attributes, key, stripQuotes(rawValue))
   }
 
   return {
@@ -191,6 +227,69 @@ export function parseDirectiveAttributesDetailed(value = ''): {
 
 export function parseDirectiveAttributes(value = ''): DirectiveAttributes {
   return parseDirectiveAttributesDetailed(value).attributes
+}
+
+/**
+ * Finds the `]` that closes the `[` at index 0, allowing nested balanced
+ * brackets and backslash escapes. Returns -1 when the label is not closed.
+ */
+export function findDirectiveLabelEnd(value: string): number {
+  let depth = 0
+
+  for (let index = 0; index < value.length; ++index) {
+    const char = value[index]
+
+    if (char === '\\') {
+      index += 1
+      continue
+    }
+
+    if (char === '[') depth += 1
+    else if (char === ']') {
+      depth -= 1
+      if (depth === 0) return index
+    }
+  }
+
+  return -1
+}
+
+/**
+ * Splits `[label]rest` into the label's plain text and the remaining text.
+ * Returns `undefined` for the label when `value` does not start with `[`, and
+ * `null` when the label is not closed.
+ */
+export function readDirectiveLabel(
+  value: string,
+): { label: string | undefined; rest: string } | null {
+  if (!value.startsWith('[')) return { label: undefined, rest: value }
+
+  const labelEnd = findDirectiveLabelEnd(value)
+  if (labelEnd < 0) return null
+
+  return {
+    label: directiveLabelToText(value.slice(1, labelEnd)),
+    rest: value.slice(labelEnd + 1),
+  }
+}
+
+function isAttributeShorthandToken(token: string): boolean {
+  if (/^[#.]\S/.test(token)) return true
+
+  const equalIndex = token.indexOf('=')
+
+  return equalIndex > 0
+}
+
+function getUnexpectedText(rawAttributes: string | undefined): string | undefined {
+  if (!rawAttributes) return undefined
+
+  const trimmed = rawAttributes.trim()
+  if (!trimmed || trimmed.startsWith('{')) return undefined
+
+  const { tokens } = tokenizeAttributes(trimmed)
+
+  return tokens.every(isAttributeShorthandToken) ? undefined : trimmed
 }
 
 export function parseDirectiveLine(text: string): null | ParsedDirectiveLine {
@@ -208,17 +307,24 @@ export function parseDirectiveLine(text: string): null | ParsedDirectiveLine {
 
   body = body.slice(name.length).trimStart()
 
-  let label: string | undefined
+  const labelResult = readDirectiveLabel(body)
+  if (!labelResult) return null
 
-  if (body.startsWith('[')) {
-    const labelEnd = body.indexOf(']')
-    if (labelEnd < 0) return null
-
-    label = body.slice(1, labelEnd)
-    body = body.slice(labelEnd + 1).trimStart()
-  }
+  const label = labelResult.label
+  body = labelResult.rest.trimStart()
 
   const rawAttributes = body ? body : undefined
+  const unexpectedText = getUnexpectedText(rawAttributes)
+
+  if (unexpectedText)
+    return {
+      name,
+      attributes: {},
+      label,
+      rawAttributes,
+      unexpectedText,
+      warnings: [],
+    }
 
   const attributes = parseDirectiveAttributesDetailed(rawAttributes)
 

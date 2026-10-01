@@ -80,4 +80,11 @@ export const tocDirective: LayoutDirectiveDefinition = {
 
     return warnings
   },
+  validateMdast(node) {
+    return node.children.length > 0
+      ? [
+          'Directive "toc" contains authored content; it is rendered after the generated table of contents. Close ":::toc" with ":::" on the next line.',
+        ]
+      : []
+  },
 }

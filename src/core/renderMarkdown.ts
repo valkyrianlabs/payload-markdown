@@ -24,12 +24,10 @@ import {
   rehypeMarkPipelineElements,
   rehypeTrustBoundary,
 } from './plugins/rehypeTrustBoundary.js'
-import { remarkBadgeDirectives } from './plugins/remarkBadgeDirectives.js'
-import { remarkButtonDirectives } from './plugins/remarkButtonDirectives.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
+import { remarkDirectiveLines } from './plugins/remarkDirectiveLines.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
-import { remarkLiftLayoutDirectives } from './plugins/remarkLiftLayoutDirectives.js'
 import { remarkValidateDirectiveThemes } from './plugins/remarkValidateDirectiveThemes.js'
 
 function extractCodeLanguage(
@@ -318,9 +316,7 @@ export async function compileMarkdown(
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkLiftLayoutDirectives)
-      .use(remarkButtonDirectives, config)
-      .use(remarkBadgeDirectives)
+      .use(remarkDirectiveLines, config)
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkValidateDirectiveThemes, config)
