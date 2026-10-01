@@ -1,4 +1,4 @@
-import type { Paragraph, PhrasingContent, Text } from 'mdast'
+import type { Nodes, Paragraph, PhrasingContent, Root, Text } from 'mdast'
 
 import { hasUnclosedDirectiveAttributeBlock } from './attributes.js'
 
@@ -216,4 +216,89 @@ export function joinPhrasingLines(lines: PhrasingLine[]): PhrasingContent[] {
   })
 
   return children
+}
+
+export type NestedDirectiveContainer = 'blockquote' | 'footnote' | 'list item' | 'table'
+
+export type NestedDirectiveMarker = {
+  container: NestedDirectiveContainer
+  from: number
+  line: number
+  marker: string
+  to: number
+}
+
+function getMarkerName(text: string): string {
+  const trimmed = text.trim()
+  const match = trimmed.match(/^(:{2,3}[\w-]*)/)
+
+  return match?.[1] ?? trimmed.slice(0, 3)
+}
+
+function getContainerName(node: Nodes): NestedDirectiveContainer | undefined {
+  switch (node.type) {
+    case 'blockquote':
+      return 'blockquote'
+    case 'footnoteDefinition':
+      return 'footnote'
+    case 'listItem':
+      return 'list item'
+    case 'table':
+      return 'table'
+    default:
+      return undefined
+  }
+}
+
+/**
+ * Directive markers are only recognised at the top level of the document.
+ * This finds marker lines inside lists, blockquotes, tables and footnotes, so
+ * the renderer and the editor can report them instead of silently printing
+ * literal `:::` text (CORE-9).
+ */
+export function findNestedDirectiveMarkers(tree: Root, index: SourceIndex): NestedDirectiveMarker[] {
+  const markers: NestedDirectiveMarker[] = []
+
+  const inspectLines = (paragraph: Paragraph, container: NestedDirectiveContainer) => {
+    for (const line of splitParagraphIntoLines(paragraph)) {
+      if (!line.leadingText || !getDirectiveMarkerKind(line.leadingText)) continue
+
+      const lineNumber = line.startLine ?? paragraph.position?.start.line ?? 1
+      const sourceLine = getSourceLine(index, lineNumber) ?? ''
+      const lineStart = index.lineStarts[lineNumber] ?? 0
+      const column = sourceLine.indexOf(line.leadingText.trimStart().slice(0, 3))
+
+      markers.push({
+        container,
+        from: lineStart + Math.max(0, column),
+        line: lineNumber,
+        marker: getMarkerName(line.leadingText),
+        to: lineStart + sourceLine.length,
+      })
+    }
+  }
+
+  const walk = (node: Nodes, container: NestedDirectiveContainer | undefined) => {
+    const nextContainer = getContainerName(node) ?? container
+
+    if (node.type === 'paragraph') {
+      if (nextContainer) inspectLines(node, nextContainer)
+      return
+    }
+
+    if (node.type === 'tableCell') {
+      inspectLines({ type: 'paragraph', children: node.children, position: node.position }, 'table')
+      return
+    }
+
+    if ('children' in node) for (const child of node.children as Nodes[]) walk(child, nextContainer)
+  }
+
+  for (const child of tree.children) walk(child, undefined)
+
+  return markers
+}
+
+export function getNestedDirectiveMarkerDiagnostic(marker: NestedDirectiveMarker): string {
+  return `Directive marker "${marker.marker}" inside a ${marker.container} is not supported and is rendered as text. Directives must start at the beginning of a top-level line.`
 }

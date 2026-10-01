@@ -7,6 +7,8 @@ import type { MarkdownRenderConfig } from '../../types/core.js'
 import { getLeafDirectiveName, getLeafDirectiveProblem } from '../../directives/leafSyntax.js'
 import {
   createSourceIndex,
+  findNestedDirectiveMarkers,
+  getNestedDirectiveMarkerDiagnostic,
   joinPhrasingLines,
   scanDirectiveLineAt,
   splitParagraphIntoLines,
@@ -118,7 +120,8 @@ function splitParagraph(
  * become leaf directive nodes. Detection is source-based (see lineScanner).
  *
  * Warnings keep the historical order: container-line diagnostics, then
- * button/unknown-leaf diagnostics, then badge diagnostics.
+ * button/unknown-leaf diagnostics, then badge diagnostics, followed by
+ * markers found inside lists, blockquotes, tables or footnotes.
  */
 export const remarkDirectiveLines: Plugin<[MarkdownRenderConfig?], Root> = (
   config: MarkdownRenderConfig = {},
@@ -126,6 +129,7 @@ export const remarkDirectiveLines: Plugin<[MarkdownRenderConfig?], Root> = (
   return (tree, file) => {
     const index = createSourceIndex(String(file.value ?? ''))
     const warnings: WarningBuckets = { badge: [], button: [], layout: [] }
+    const nestedMarkers = findNestedDirectiveMarkers(tree, index)
 
     tree.children = tree.children.flatMap((node): RootContent[] =>
       node.type === 'paragraph' ? splitParagraph(node, index, warnings, config) : [node],
@@ -133,5 +137,7 @@ export const remarkDirectiveLines: Plugin<[MarkdownRenderConfig?], Root> = (
 
     for (const warning of [...warnings.layout, ...warnings.button, ...warnings.badge])
       file.message(warning)
+
+    for (const marker of nestedMarkers) file.message(getNestedDirectiveMarkerDiagnostic(marker))
   }
 }
