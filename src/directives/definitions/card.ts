@@ -50,7 +50,7 @@ function getLinkProperties(href: string, newTab: boolean): Element['properties']
     href,
     ...(newTab
       ? {
-          rel: 'noopener noreferrer',
+          rel: ['noopener', 'noreferrer'],
           target: '_blank',
         }
       : {}),

@@ -97,7 +97,7 @@ function makeTabTrigger(tab: TabModel, active: boolean): Element {
     properties: {
       id: tab.triggerId,
       type: 'button',
-      ariaControls: tab.panelId,
+      ariaControls: [tab.panelId],
       ariaSelected: active ? 'true' : 'false',
       className,
       dataTabTrigger: '',
