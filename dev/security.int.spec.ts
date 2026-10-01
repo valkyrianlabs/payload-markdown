@@ -103,3 +103,62 @@ describe('CORE-1: directive hrefs are protocol-checked', () => {
     )
   })
 })
+
+describe('CORE-3: raw HTML cannot impersonate pipeline markers', () => {
+  it('strips reserved data-* markers from raw HTML before directive transforms', async () => {
+    const cases = [
+      '<article data-vl-layout="card" data-href="javascript:alert(1)" data-title="Evil">x</article>',
+      '<section data-vl-layout="cards" data-href="javascript:alert(2)">x</section>',
+      '<div data-vl-layout="callout" data-title="Injected" data-icon="@x/y">hi</div>',
+      '<button data-tab-trigger data-tab-value="x">t</button>',
+      '<span data-pmd-icon-ref="@fa-duotone/book-open" class="x">i</span>',
+      '<div data-pmd-pipeline="guess" data-vl-layout="callout" data-title="Forged">hi</div>',
+    ]
+
+    for (const markdown of cases) {
+      const result = await compileMarkdown(markdown, {
+        icons: { baseDir: 'tests/fixtures/icons', packs: [{ alias: 'fa-duotone', path: 'fa-duotone' }] },
+      })
+
+      expectNoScriptableUrl(result.html)
+      expect(result.html).not.toMatch(/data-(vl-layout|href|title|icon|pmd|tab-)/)
+      expect(result.html).not.toContain('vl-md-')
+      expect(result.html).not.toContain('<svg')
+      expect(result.warnings).toEqual([])
+    }
+  })
+
+  it('still renders legitimate directives containing raw HTML identically', async () => {
+    const result = await compileMarkdown(':::callout[Title]\n<b data-vl-layout="card">bold</b> text\n:::')
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toContain('<div data-vl-layout="callout"')
+    expect(result.html).toContain('<b>bold</b> text')
+  })
+})
+
+describe('CORE-5: DOM clobbering protection for author raw HTML', () => {
+  it('prefixes raw-HTML id and name values', async () => {
+    const result = await compileMarkdown(
+      '<div id="payload-markdown-x"></div>\n\n<a id="foo" name="foo">a</a>\n\n<img name="getElementById" src="x">',
+    )
+
+    expect(result.html).toContain('<div id="user-content-payload-markdown-x"></div>')
+    expect(result.html).toContain('<a id="user-content-foo" name="user-content-foo">a</a>')
+    expect(result.html).toContain('<img name="user-content-getElementById" src="x">')
+    expect(result.html).not.toMatch(/name="getElementById"/)
+  })
+
+  it('keeps generated heading, footnote and tab ids unprefixed', async () => {
+    const result = await compileMarkdown(
+      '# Install\n\nText[^1]\n\n[^1]: Note.\n\n:::tabs\n:::tab[npm]\na\n:::\n:::',
+    )
+
+    expect(result.html).toContain('<h1 id="install" data-heading-anchor="install">Install</h1>')
+    expect(result.html).toContain('id="user-content-fnref-1"')
+    expect(result.html).toContain('href="#user-content-fn-1"')
+    expect(result.html).not.toContain('user-content-user-content')
+    expect(result.html).toContain('id="tabs-trigger-npm"')
+    expect(result.html).toContain('id="tabs-panel-npm"')
+  })
+})

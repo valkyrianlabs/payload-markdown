@@ -19,6 +19,11 @@ import { codeToHtml } from './codeToHtml.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
+import {
+  createPipelineNonce,
+  rehypeMarkPipelineElements,
+  rehypeTrustBoundary,
+} from './plugins/rehypeTrustBoundary.js'
 import { remarkBadgeDirectives } from './plugins/remarkBadgeDirectives.js'
 import { remarkButtonDirectives } from './plugins/remarkButtonDirectives.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
@@ -283,6 +288,9 @@ const sanitizeSchema: Schema = {
     ],
     summary: [...getAttributeDefinitions(defaultSchema.attributes?.summary ?? []), 'className'],
   },
+  // Clobber protection for author raw HTML is applied by rehypeTrustBoundary
+  // (raw-HTML ids/names get the default `user-content-` prefix there), so the
+  // pipeline's own heading, footnote and tab ids stay unprefixed.
   clobberPrefix: '',
   tagNames: [
     ...(defaultSchema.tagNames ?? []),
@@ -304,6 +312,7 @@ export async function compileMarkdown(
   config: MarkdownRenderConfig = {},
 ): Promise<RenderMarkdownResult> {
   const warnings: string[] = []
+  const pipelineNonce = createPipelineNonce()
 
   try {
     const file = await unified()
@@ -317,7 +326,9 @@ export async function compileMarkdown(
       .use(remarkValidateDirectiveThemes, config)
       .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeMarkPipelineElements, pipelineNonce)
       .use(rehypeRaw)
+      .use(rehypeTrustBoundary, pipelineNonce)
       .use(rehypeStripAuthoredInlineStyles)
       .use(rehypeShikiCodeBlocks, resolveRenderMarkdownOptions(config))
       .use(rehypeSanitize, sanitizeSchema)
