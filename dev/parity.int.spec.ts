@@ -24,6 +24,9 @@ function toEditorMessage(rendererWarning: string): string {
 }
 
 export const PARITY_VECTORS: Record<string, string> = {
+  badgeConstructorType: '::badge[x]{type="constructor"}',
+  badgeHasOwnPropertyType: '::badge[x]{type="hasOwnProperty"}',
+  badgePrototypeType: '::badge[x]{type="toString"}',
   bareWordsAfterMarker: ':::toc is generated from headings.\n\n## A',
   blockquoteDirective: '> :::callout\n> q\n> :::',
   closerInsideCallout: ':::callout\nhi\n:::endcol\nafter',

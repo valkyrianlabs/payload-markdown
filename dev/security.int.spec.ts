@@ -253,3 +253,20 @@ describe('CORE-4: icon SVGs are parsed and sanitized structurally', () => {
     fs.rmSync(dir, { force: true, recursive: true })
   })
 })
+
+describe('CORE-12: prototype keys in badge types', () => {
+  for (const type of ['constructor', 'toString', 'hasOwnProperty', '__proto__', 'valueOf']) {
+    it(`reports type="${type}" as unsupported without crashing`, async () => {
+      const markdown = `# Page\n\n::badge[x]{type="${type}"}\n\nAfter.`
+      const result = await compileMarkdown(markdown)
+
+      expect(result.html).not.toContain('Failed to render markdown.')
+      expect(result.html).toContain('<p>After.</p>')
+      expect(result.warnings).toContain(`Unsupported badge type "${type}".`)
+      expect(() => lintMarkdownDirectives(markdown)).not.toThrow()
+      expect(lintMarkdownDirectives(markdown).map((diagnostic) => diagnostic.message)).toContain(
+        `Unsupported badge type "${type}".`,
+      )
+    })
+  }
+})

@@ -345,7 +345,9 @@ export function resolveShieldsBadge(attributes: DirectiveAttributes): ShieldsBad
       warnings: ['Directive "badge" requires type, path, or src.'],
     }
 
-  const resolver = shieldsBadgeResolvers[type]
+  // Own-property lookup: "constructor", "toString" or "__proto__" must not
+  // resolve to Object.prototype members.
+  const resolver = Object.hasOwn(shieldsBadgeResolvers, type) ? shieldsBadgeResolvers[type] : undefined
   if (!resolver)
     return {
       warnings: [`Unsupported badge type "${type}".`],
