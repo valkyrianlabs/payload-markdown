@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { compileMarkdown } from '../src/core/renderMarkdown'
 
 const shikiControl = vi.hoisted(() => ({
-  codeToHtmlOptions: [] as Array<Record<string, unknown>>,
+  codeToHtmlOptions: [] as Array<{ tokenizeTimeLimit?: number }>,
   failThemeOnce: new Set<string>(),
 }))
 
@@ -26,10 +26,10 @@ vi.mock('shiki', async (importOriginal) => {
       return actual.createHighlighter(options).then((highlighter) => {
         const codeToHtml = highlighter.codeToHtml.bind(highlighter)
 
-        highlighter.codeToHtml = ((code: string, codeOptions: Record<string, unknown>) => {
+        highlighter.codeToHtml = (code, codeOptions) => {
           shikiControl.codeToHtmlOptions.push(codeOptions)
-          return codeToHtml(code, codeOptions as Parameters<typeof codeToHtml>[1])
-        }) as typeof highlighter.codeToHtml
+          return codeToHtml(code, codeOptions)
+        }
 
         return highlighter
       })
