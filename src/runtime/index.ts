@@ -388,8 +388,52 @@ export function resolveMarkdownFieldDefaults(
   return resolveCollectionMarkdownConfigs(collectionSlug, settings).field
 }
 
+const OVERRIDE_CLASS_KEYS = ['className', 'columnClassName', 'sectionClassName', 'wrapperClassName'] as const
+
+/**
+ * Applies a highest-precedence config layer (per-block `md-params`). Set values
+ * win field by field: class names replace the inherited value instead of being
+ * appended, scalars and code options replace when defined. Empty or undefined
+ * values inherit, so an override never wipes global or collection settings it
+ * does not set.
+ */
+export function applyMarkdownOverrides(
+  base: MarkdownRenderConfig | undefined,
+  overrides: MarkdownRenderConfig | undefined,
+): MarkdownRenderConfig | undefined {
+  if (!overrides) return base
+
+  const next: MarkdownRenderConfig = { ...(base ?? {}) }
+
+  for (const key of OVERRIDE_CLASS_KEYS) {
+    const value = overrides[key]
+    if (typeof value === 'string' && value.trim()) next[key] = value.trim()
+  }
+
+  if (overrides.variant !== undefined) next.variant = overrides.variant
+  if (overrides.size !== undefined) next.size = overrides.size
+  if (overrides.enableGutter !== undefined) next.enableGutter = overrides.enableGutter
+  if (overrides.mutedHeadings !== undefined) next.mutedHeadings = overrides.mutedHeadings
+  if (overrides.fullBleedCode !== undefined) next.fullBleedCode = overrides.fullBleedCode
+
+  // Code options: fold the inherited legacy `options.*` and `code` together,
+  // then apply the override's keys on top, so `code` (which wins over legacy
+  // options at render time) carries every inherited value.
+  const code = mergeCodeConfigFromRenderConfigs(base, overrides)
+  if (code) next.code = code
+
+  if (overrides.icons !== undefined) next.icons = overrides.icons
+
+  const themes = mergeMarkdownDirectiveThemes(base?.themes, overrides.themes)
+  if (themes) next.themes = themes
+
+  return next
+}
+
 export type ResolveMarkdownRenderConfigOptions = {
   collectionSlug?: string
+  /** Highest-precedence layer (see `applyMarkdownOverrides`). */
+  overrides?: MarkdownRenderConfig
   scope?: 'blocks' | 'field'
   /** Explicit settings source; wins over the process registry. `false` ignores plugin settings. */
   settings?: false | null | PayloadMarkdownSettingsSource
@@ -409,5 +453,7 @@ export function resolveMarkdownRenderConfig<T extends ResolveMarkdownRenderConfi
       ? resolveMarkdownBlockDefaults(options.collectionSlug, settings)
       : resolveMarkdownFieldDefaults(options.collectionSlug, settings)
 
-  return mergeMarkdownRenderConfigs(defaults, options) ?? options
+  const merged = mergeMarkdownRenderConfigs(defaults, options) ?? options
+
+  return applyMarkdownOverrides(merged, options.overrides) ?? merged
 }

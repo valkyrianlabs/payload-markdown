@@ -1,9 +1,11 @@
 import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
 import type { MarkdownEditorDirectiveConfig } from './editor/directiveConfig.js'
+import type { PayloadMarkdownResolvedSettings } from './runtime/index.js'
 import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.js'
 
 import { createMarkdownBlock, MarkdownBlock } from './blocks/MarkdownBlock/config.js'
+import { resolveEffectiveMarkdownBlockParams } from './blocks/MarkdownBlock/params.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
 import {
   DEFAULT_CALLOUT_THEMES,
@@ -175,6 +177,23 @@ function resolveCollectionInstallBehavior(
   }
 }
 
+/**
+ * The markdown block for one install scope (global or a collection): its
+ * editor gets the scope's themes and icon packs, and its params pre-fill from
+ * the scope's effective block defaults.
+ */
+function createMarkdownBlockForScope(
+  collectionSlug: string | undefined,
+  settings: PayloadMarkdownResolvedSettings,
+) {
+  const blockDefaults = resolveMarkdownBlockDefaults(collectionSlug, settings)
+
+  return createMarkdownBlock(
+    createEditorDirectiveConfig(blockDefaults),
+    resolveEffectiveMarkdownBlockParams(blockDefaults),
+  )
+}
+
 export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
   (incomingConfig: Config): Config => {
@@ -200,7 +219,7 @@ export const payloadMarkdown =
     // settings this config owns.
     ensureMarkdownBlock(
       config,
-      createMarkdownBlock(createEditorDirectiveConfig(resolveMarkdownBlockDefaults(undefined, settings))),
+      createMarkdownBlockForScope(undefined, settings),
     )
 
     if (!pluginOptions.collections || !config.collections) return config
@@ -219,9 +238,7 @@ export const payloadMarkdown =
       if (resolved.installIntoBlocks)
         next = withMarkdownBlockInCollectionBlocks(
           next,
-          createMarkdownBlock(
-            createEditorDirectiveConfig(resolveMarkdownBlockDefaults(collection.slug, settings)),
-          ),
+          createMarkdownBlockForScope(collection.slug, settings),
         )
 
       if (resolved.installField)

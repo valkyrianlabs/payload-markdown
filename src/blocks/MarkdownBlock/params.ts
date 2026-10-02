@@ -1,32 +1,31 @@
-import type { MarkdownRenderConfig, MarkdownSize, MarkdownVariant } from '../../types/core.js'
+import type {
+  MarkdownBlockParams,
+  MarkdownBlockParamsConfig,
+  MarkdownRenderConfig,
+  MarkdownSize,
+  MarkdownVariant,
+} from '../../types/core.js'
 
-/**
- * Stored shape of the per-block "Markdown Blocks Params" group (`md-params`)
- * created by vlMdConfig(). Values come from the database, so every property
- * may be missing or null.
- */
-export type MarkdownBlockParams = {
-  config?: {
-    className?: null | string
-    columnClassName?: null | string
-    enableGutter?: boolean | null
-    fullBleedCode?: boolean | null
-    mutedHeadings?: boolean | null
-    options?: {
-      enhancedCodeBlocks?: boolean | null
-      showLineNumbers?: boolean | null
-      theme?: null | string
-    } | null
-    sectionClassName?: null | string
-    size?: null | string
-    variant?: null | string
-    wrapperClassName?: null | string
-  } | null
-  enable?: boolean | null
-}
+import { resolveFullBleedCode, resolveRenderMarkdownOptions } from '../../core/codeConfig.js'
+import { DEFAULT_CODE_THEME } from '../../core/codeToHtml.js'
+import { CODE_BLOCK_THEME_OPTIONS } from '../../field/CodeBlockConfig/config.js'
+
+export type { MarkdownBlockParams, MarkdownBlockParamsConfig }
+
+export { MARKDOWN_BLOCK_DEFAULTS_ADMIN_CUSTOM_KEY } from './constants.js'
+
+/** Renderer defaults for values no config layer sets (mirrors `MarkdownRenderer`). */
+const RENDERER_DEFAULTS = {
+  enableGutter: false,
+  fullBleedCode: false,
+  mutedHeadings: false,
+  size: 'lg',
+  variant: 'blog',
+} as const
 
 const SIZES: readonly MarkdownSize[] = ['lg', 'md', 'sm']
 const VARIANTS: readonly MarkdownVariant[] = ['blog', 'compact', 'docs', 'unstyled']
+const THEME_VALUES = new Set(CODE_BLOCK_THEME_OPTIONS.map((option) => option.value))
 
 function text(value: null | string | undefined): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
@@ -37,14 +36,14 @@ function flag(value: boolean | null | undefined): boolean | undefined {
 }
 
 /**
- * Maps stored `md-params` to renderer config. Decision-neutral helper: it is
- * NOT applied by MarkdownBlockComponent today (wiring it would make existing
- * saved params start affecting live pages; see the CORE-6 decision). It fixes
- * the field-name mismatch in one place: the admin field is `showLineNumbers`,
- * the renderer option is `code.lineNumbers`; `theme` maps to
- * `code.shikiTheme` and `enhancedCodeBlocks` to `code.enhanced`.
+ * Maps stored `md-params` to the renderer's highest-precedence override layer
+ * (`MarkdownRenderer`'s `overrides`). Only set values are returned, so empty
+ * fields inherit the global and collection defaults. The admin field names map
+ * to the renderer's: `showLineNumbers` → `code.lineNumbers`, `theme` →
+ * `code.shikiTheme`, `enhancedCodeBlocks` → `code.enhanced`, `fullBleedCode` →
+ * `code.fullBleed`.
  *
- * Returns `undefined` when params are disabled or empty.
+ * Returns `undefined` when params are not enabled or set nothing.
  */
 export function resolveMarkdownBlockParams(
   params: MarkdownBlockParams | null | undefined,
@@ -75,4 +74,39 @@ export function resolveMarkdownBlockParams(
   if (Object.keys(code).length > 0) resolved.code = code
 
   return Object.keys(resolved).length > 0 ? resolved : undefined
+}
+
+/**
+ * The `md-params.config` values that describe how a block renders with
+ * `enable` unchecked: the global + collection block defaults, with the
+ * renderer's built-in defaults for anything unset. The admin pre-fills the
+ * block's fields with these when "Enable Blocks Params" is checked, so enabling
+ * changes nothing until a field is edited.
+ */
+export function resolveEffectiveMarkdownBlockParams(
+  defaults: MarkdownRenderConfig | undefined,
+): MarkdownBlockParamsConfig {
+  const config = defaults ?? {}
+  const code = resolveRenderMarkdownOptions(config)
+  const enhancedCodeBlocks = code.enhancedCodeBlocks ?? true
+  const theme = text(code.theme) ?? DEFAULT_CODE_THEME
+
+  return {
+    className: config.className ?? '',
+    columnClassName: config.columnClassName ?? '',
+    enableGutter: config.enableGutter ?? RENDERER_DEFAULTS.enableGutter,
+    fullBleedCode: resolveFullBleedCode(config) ?? RENDERER_DEFAULTS.fullBleedCode,
+    mutedHeadings: config.mutedHeadings ?? RENDERER_DEFAULTS.mutedHeadings,
+    options: {
+      enhancedCodeBlocks,
+      // Same rule as the code renderer: line numbers only render on enhanced blocks.
+      showLineNumbers: enhancedCodeBlocks ? (code.lineNumbers ?? true) : false,
+      // The field is a select; a configured theme outside its options is left unset (inherited).
+      theme: THEME_VALUES.has(theme) ? theme : null,
+    },
+    sectionClassName: config.sectionClassName ?? '',
+    size: config.size ?? RENDERER_DEFAULTS.size,
+    variant: config.variant ?? RENDERER_DEFAULTS.variant,
+    wrapperClassName: config.wrapperClassName ?? '',
+  }
 }

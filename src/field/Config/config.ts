@@ -1,16 +1,30 @@
 import type { Field, GroupField } from 'payload'
 
+import type { MarkdownBlockParamsConfig } from '../../types/core.js'
+
+import {
+  MARKDOWN_BLOCK_DEFAULTS_ADMIN_CUSTOM_KEY,
+  MARKDOWN_BLOCK_PARAMS_ENABLE_FIELD_COMPONENT,
+} from '../../blocks/MarkdownBlock/constants.js'
 import { vlMdCodeBlockConfig } from '../CodeBlockConfig/config.js'
 import { vlMdTailwindField } from '../Tailwind/config.js'
 
 export type BlocksParamsOptions = {
   admin?: Partial<GroupField['admin']>
+  /**
+   * What the block renders with when params are disabled (see
+   * `resolveEffectiveMarkdownBlockParams`). When given, checking "Enable
+   * Blocks Params" in the admin pre-fills the fields with these values and
+   * unchecking clears them. The markdown block installed by the plugin passes
+   * its collection's effective defaults.
+   */
+  effectiveDefaults?: MarkdownBlockParamsConfig
   label?: string
   name?: string
 }
 
 export function vlMdConfig(options: BlocksParamsOptions = {}): Field {
-  const { name = 'md-params', admin, label = 'Markdown Blocks Params' } = options
+  const { name = 'md-params', admin, effectiveDefaults, label = 'Markdown Blocks Params' } = options
 
   return {
     name,
@@ -21,10 +35,16 @@ export function vlMdConfig(options: BlocksParamsOptions = {}): Field {
         name: 'enable',
         type: 'checkbox',
         admin: {
+          ...(effectiveDefaults
+            ? {
+                components: { Field: MARKDOWN_BLOCK_PARAMS_ENABLE_FIELD_COMPONENT },
+                custom: { [MARKDOWN_BLOCK_DEFAULTS_ADMIN_CUSTOM_KEY]: effectiveDefaults },
+              }
+            : {}),
           description:
-            'Whether to enable custom parameters for markdown blocks. ' +
-            'This is required to use any of the other block parameter fields, but can be left disabled ' +
-            'if you only need the default styles and behavior.',
+            'Override this block\'s rendering. When checked, the fields start from what the block ' +
+            'currently renders with (global and collection settings), so you can change just the ' +
+            'values you need.',
         },
         label: 'Enable Blocks Params',
       },

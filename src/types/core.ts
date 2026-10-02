@@ -299,6 +299,14 @@ export type BaseMarkdownRendererProps = {
  */
 export type MarkdownRendererProps = {
   collectionSlug?: string
+  /**
+   * Highest-precedence config layer, applied after the plugin's global and
+   * collection defaults and the other props. Unlike the lower layers, a set
+   * class name replaces the inherited one instead of being appended; empty or
+   * undefined values inherit. Markdown blocks pass their enabled `md-params`
+   * here.
+   */
+  overrides?: MarkdownRenderConfig
   scope?: MarkdownRendererScope
   /**
    * Plugin settings to render with: the settings object, a Payload config or
@@ -342,6 +350,39 @@ export interface MarkdownBlockData {
    * Optional Payload-generated block identifier.
    */
   id?: null | string
+
+  /**
+   * Per-block "Markdown Blocks Params" (`md-params`). Applied only when
+   * `enable` is true; set fields override the plugin's global and collection
+   * block defaults, empty fields inherit them.
+   */
+  'md-params'?: MarkdownBlockParams | null
+}
+
+/**
+ * Stored shape of the per-block `md-params` group created by `vlMdConfig()`.
+ * Values come from the database, so every property may be missing or null.
+ */
+export type MarkdownBlockParams = {
+  config?: MarkdownBlockParamsConfig | null
+  enable?: boolean | null
+}
+
+export type MarkdownBlockParamsConfig = {
+  className?: null | string
+  columnClassName?: null | string
+  enableGutter?: boolean | null
+  fullBleedCode?: boolean | null
+  mutedHeadings?: boolean | null
+  options?: {
+    enhancedCodeBlocks?: boolean | null
+    showLineNumbers?: boolean | null
+    theme?: null | string
+  } | null
+  sectionClassName?: null | string
+  size?: null | string
+  variant?: null | string
+  wrapperClassName?: null | string
 }
 
 /**

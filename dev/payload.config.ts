@@ -56,7 +56,17 @@ const buildDevConfig = async () => {
     plugins: [
       payloadMarkdown({
         collections: {
-          pages: true,
+          // Block-scope defaults for page markdown blocks; the e2e suite checks that
+          // per-block params start from these and override only what an editor changes.
+          pages: {
+            config: {
+              blocks: {
+                className: 'dev-pages-block',
+                mutedHeadings: true,
+                size: 'sm',
+              },
+            },
+          },
           posts: {
             config: {
               className: '[&_li::marker]:!text-cyan-200/90',
