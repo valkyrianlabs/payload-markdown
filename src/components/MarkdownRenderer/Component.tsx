@@ -8,7 +8,7 @@ import type {
 } from '../../types/core.js'
 
 import { resolveFullBleedCode } from '../../core/codeConfig.js'
-import { compileMarkdown } from '../../core/renderMarkdown.js'
+import { renderMarkdownDocument } from '../../core/renderMarkdown.js'
 import {
   mergeMarkdownRenderConfigs,
   resolveMarkdownBlockDefaults,
@@ -187,11 +187,11 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   } = resolvedProps
   const fullBleedCode = resolveFullBleedCode(resolvedProps) ?? false
 
-  const result = await compileMarkdown(markdown, resolvedProps)
+  const result = await renderMarkdownDocument(markdown, resolvedProps)
   const Tag = as
   const containerId = `payload-markdown-${randomUUID()}`
 
-  if ((result.errors?.length ?? 0) > 0 && errorFallback) return errorFallback
+  if (result.errors.length > 0 && errorFallback) return errorFallback
 
   const resolvedWrapperClassName = buildWrapperClassName({
     enableGutter,

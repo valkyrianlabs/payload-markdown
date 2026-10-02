@@ -9,6 +9,7 @@ import {
   resolvePayloadMarkdownIcon,
   validatePayloadMarkdownIconsConfig,
 } from '../../icons/resolve.js'
+import { reportDiagnostic } from '../diagnostics.js'
 
 function isElement(node: unknown): node is Element {
   return Boolean(
@@ -26,7 +27,8 @@ export const rehypeResolveIcons: Plugin<[MarkdownRenderConfig?], Root> = (
   config: MarkdownRenderConfig = {},
 ) => {
   return (tree, file) => {
-    for (const warning of validatePayloadMarkdownIconsConfig(config.icons)) file.message(warning)
+    for (const warning of validatePayloadMarkdownIconsConfig(config.icons))
+      reportDiagnostic(file, warning, { code: 'icon-config', source: 'icon' })
 
     visit(tree, 'element', (node, index, parent) => {
       if (!isElement(node)) return
@@ -42,7 +44,10 @@ export const rehypeResolveIcons: Plugin<[MarkdownRenderConfig?], Root> = (
           : 'pmd-icon'
       const resolved = resolvePayloadMarkdownIcon(iconRef, config.icons, className)
 
-      for (const warning of resolved.warnings) file.message(warning)
+      const start = node.position?.start
+      const place = start ? { column: start.column, line: start.line } : undefined
+
+      for (const warning of resolved.warnings) reportDiagnostic(file, warning, { place, source: 'icon' })
 
       if (!parent || typeof index !== 'number') return
 

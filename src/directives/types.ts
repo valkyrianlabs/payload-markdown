@@ -23,26 +23,29 @@ export type MarkdownDirectiveName = LayoutDirectiveName | StaticDirectiveName
 export type GridDirectiveName = '2col' | '3col'
 export type LayoutName = MarkdownDirectiveName
 
+/** Layout token data: `vlPlace` is the marker's 1-based source position. */
+export type LayoutTokenData = { vlPlace?: { column: number; line: number } } & Data
+
 export type LayoutToken =
   | {
       action: 'close'
-      data?: Data
+      data?: LayoutTokenData
       type: 'vlLayoutToken'
     }
   | {
       action: 'closeGrid'
-      data?: Data
+      data?: LayoutTokenData
       type: 'vlLayoutToken'
     }
   | {
       action: 'closeSection'
-      data?: Data
+      data?: LayoutTokenData
       type: 'vlLayoutToken'
     }
   | {
       action: 'open'
       attributes?: Record<string, boolean | string>
-      data?: Data
+      data?: LayoutTokenData
       label?: string
       name: LayoutName
       type: 'vlLayoutToken'
