@@ -12,10 +12,14 @@ import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 
+import type { HeadingAnchor } from '../directives/headingAnchors.js'
 import type { MarkdownRenderConfig, RenderMarkdownOptions, RenderMarkdownResult } from '../types/core.js'
+import type { DiagnosticFile, DiagnosticPlace, RenderDiagnostic } from './diagnostics.js'
+import type { MarkdownLink } from './renderData.js'
 
 import { resolveRenderMarkdownOptions } from './codeConfig.js'
 import { highlightCode } from './codeToHtml.js'
+import { reportDiagnostic, toRenderDiagnostic } from './diagnostics.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
 import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
@@ -24,11 +28,13 @@ import {
   rehypeMarkPipelineElements,
   rehypeTrustBoundary,
 } from './plugins/rehypeTrustBoundary.js'
+import { remarkCollectRenderData } from './plugins/remarkCollectRenderData.js'
 import { remarkCompileLayouts } from './plugins/remarkCompileLayouts.js'
 import { remarkDirectiveLines } from './plugins/remarkDirectiveLines.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkValidateDirectiveThemes } from './plugins/remarkValidateDirectiveThemes.js'
+import { getRenderData } from './renderData.js'
 
 function extractCodeLanguage(
   className?: Array<number | string> | boolean | null | number | string  ,
@@ -68,12 +74,15 @@ function parseHtmlFragment(html: string): RootContent[] {
   return fragment.children
 }
 
+type CodeDiagnostic = {
+  place?: DiagnosticPlace
+  reason: string
+  severity: 'info' | 'warning'
+}
+
 function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
-  return async function transformer(
-    tree: Root,
-    file: { message: (reason: string) => unknown },
-  ): Promise<void> {
-    const work: Array<Promise<string[]>> = []
+  return async function transformer(tree: Root, file: DiagnosticFile): Promise<void> {
+    const work: Array<Promise<CodeDiagnostic[]>> = []
 
     visit(tree, 'element', (node, index, parent) => {
       if (typeof index !== 'number' || !hasChildren(parent) || !isPreElement(node)) return
@@ -83,6 +92,8 @@ function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
 
       const code = toString(codeNode)
       const lang = extractCodeLanguage(codeNode.properties?.className)
+      const start = node.position?.start
+      const place = start ? { column: start.column, line: start.line } : undefined
 
       work.push(
         (async () => {
@@ -94,13 +105,31 @@ function rehypeShikiCodeBlocks(options: RenderMarkdownOptions = {}) {
           const replacementNodes = parseHtmlFragment(highlighted.html)
           parent.children.splice(index, 1, ...replacementNodes)
 
-          return highlighted.warnings
+          const info = new Set(highlighted.info ?? [])
+
+          return highlighted.warnings.map((reason) => ({
+            place,
+            reason,
+            severity: info.has(reason) ? ('info' as const) : ('warning' as const),
+          }))
         })(),
       )
     })
 
-    // Report each distinct diagnostic once per render, in document order.
-    for (const warning of new Set((await Promise.all(work)).flat())) file.message(warning)
+    // Report each distinct diagnostic once per render, in document order (the
+    // first occurrence's position is kept).
+    const seen = new Set<string>()
+
+    for (const diagnostic of (await Promise.all(work)).flat()) {
+      if (seen.has(diagnostic.reason)) continue
+      seen.add(diagnostic.reason)
+
+      reportDiagnostic(file, diagnostic.reason, {
+        place: diagnostic.place,
+        severity: diagnostic.severity,
+        source: 'code',
+      })
+    }
   }
 }
 
@@ -311,10 +340,36 @@ const sanitizeSchema: Schema = {
   ],
 }
 
-export async function compileMarkdown(
+const FAILED_RENDER_HTML = '<p>Failed to render markdown.</p>'
+
+/**
+ * Structured result of `renderMarkdown`.
+ */
+export type RenderedMarkdown = {
+  /** Every diagnostic, in report order, with a source and (when known) a position. */
+  diagnostics: RenderDiagnostic[]
+  /** Fatal compilation errors; when non-empty, `html` is the failure placeholder. */
+  errors: string[]
+  /** Heading anchors in document order; `id` is the exact id emitted in `html`. */
+  headings: HeadingAnchor[]
+  html: string
+  /** Authored URLs in document order. */
+  links: MarkdownLink[]
+  /** Plain text of the document without directive markup or raw HTML. */
+  text: string
+  /** `diagnostics` messages (kept for compatibility; includes errors). */
+  warnings: string[]
+}
+
+/**
+ * Headless renderer: compiles markdown to sanitized HTML and returns the
+ * structured data the pipeline collects. Pure server code (no CSS, no React);
+ * `MarkdownRenderer` is a thin wrapper around it.
+ */
+export async function renderMarkdownDocument(
   markdown: string,
   config: MarkdownRenderConfig = {},
-): Promise<RenderMarkdownResult> {
+): Promise<RenderedMarkdown> {
   const pipelineNonce = createPipelineNonce()
 
   try {
@@ -325,6 +380,7 @@ export async function compileMarkdown(
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkValidateDirectiveThemes, config)
+      .use(remarkCollectRenderData)
       .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeMarkPipelineElements, pipelineNonce)
@@ -338,10 +394,17 @@ export async function compileMarkdown(
       .use(rehypeStringify)
       .process(markdown)
 
+    const data = getRenderData(file)
+    const diagnostics = file.messages.map(toRenderDiagnostic)
+
     return {
+      diagnostics,
       errors: [],
+      headings: data.headings ?? [],
       html: String(file),
-      warnings: file.messages.map((message) => message.reason),
+      links: data.links ?? [],
+      text: data.text ?? '',
+      warnings: diagnostics.map((diagnostic) => diagnostic.message),
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to render markdown.'
@@ -351,9 +414,26 @@ export async function compileMarkdown(
     console.error('[payload-markdown] Failed to render markdown:', error)
 
     return {
+      diagnostics: [{ code: 'render-failed', message, severity: 'error', source: 'render' }],
       errors: [message],
-      html: '<p>Failed to render markdown.</p>',
+      headings: [],
+      html: FAILED_RENDER_HTML,
+      links: [],
+      text: '',
       warnings: [message],
     }
   }
+}
+
+/**
+ * Compiles markdown to sanitized HTML. Same pipeline as `renderMarkdownDocument`,
+ * returning only `{ html, warnings, errors }`.
+ */
+export async function compileMarkdown(
+  markdown: string,
+  config: MarkdownRenderConfig = {},
+): Promise<RenderMarkdownResult> {
+  const { errors, html, warnings } = await renderMarkdownDocument(markdown, config)
+
+  return { errors, html, warnings }
 }

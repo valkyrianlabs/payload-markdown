@@ -67,6 +67,11 @@ function getDirectiveDefinition(name: string): LayoutDirectiveDefinition | undef
   return directiveDefinitions.find((definition) => definition.name === name)
 }
 
+/** Leaf directives (`::name[label]{…}`): definitions without a `:::` open marker. */
+const leafDirectiveNames: readonly string[] = directiveDefinitions
+  .filter((definition) => !('openMarker' in definition) || !definition.openMarker)
+  .map((definition) => definition.name)
+
 function isSupportedDirectiveName(name: string): name is MarkdownDirectiveName {
   return directiveDefinitions.some((definition) => definition.name === name)
 }
@@ -75,7 +80,8 @@ function getPublicDefinitions(): LayoutDirectiveDefinition[] {
   return directiveDefinitions.filter((definition) => definition.public)
 }
 
-const preferredLabelAttributes = new Map<string, string>([
+/** Attribute a container directive's `[label]` stands for. */
+export const DIRECTIVE_LABEL_ATTRIBUTES: ReadonlyMap<string, string> = new Map<string, string>([
   ['callout', 'title'],
   ['card', 'title'],
   ['details', 'title'],
@@ -88,7 +94,7 @@ function getLabelConflictDiagnostics(
   label: string | undefined,
   attributes: Record<string, boolean | string>,
 ): string[] {
-  const labelAttribute = preferredLabelAttributes.get(name)
+  const labelAttribute = DIRECTIVE_LABEL_ATTRIBUTES.get(name)
   if (!labelAttribute) return []
 
   const normalizedLabel = label?.trim()
@@ -206,7 +212,15 @@ function parseMarkdownLine(text: string): LayoutToken | null {
 export const layoutDirectiveRegistry = {
   all: directiveDefinitions,
 
+  /** Close markers and the layout token action each produces. */
+  closeMarkers: [...closeMarkers].map(([marker, token]) => ({ action: token.action, marker })),
+
   get: getDirectiveDefinition,
+
+  /** Editor close-label text for a container directive (`endcard`, `endcol`, …). */
+  getCloseLabel(name: string): string {
+    return name === '2col' || name === '3col' ? 'endcol' : `end${name}`
+  },
 
   getPublicDefinitions,
 
@@ -214,7 +228,13 @@ export const layoutDirectiveRegistry = {
     return name === '2col' || name === '3col'
   },
 
+  isLeafDirectiveName(name: string): boolean {
+    return leafDirectiveNames.includes(name)
+  },
+
   isSupportedDirectiveName,
+
+  leafDirectiveNames,
 
   parseMarkdownLine,
 

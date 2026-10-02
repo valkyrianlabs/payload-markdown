@@ -115,3 +115,33 @@ The render pipeline uses `remark-gfm`, `rehype-raw`, and `rehype-sanitize`. Mark
 :::details[When warnings matter]
 Rendering reports warnings for malformed directives, invalid directive attributes, unknown themes, and renderer failures. Fatal failures are also listed in `errors` and logged on the server. `MarkdownRenderer` returns `errorFallback` only when compilation fails and `errorFallback` is provided; non-fatal warnings still render the HTML.
 :::
+
+## Headless Rendering
+
+`@valkyrianlabs/payload-markdown/render` renders Markdown without React, Next.js or CSS imports, so it works in plain Node scripts, search indexers, feeds, emails and docs tooling:
+
+```ts
+import { renderMarkdown } from '@valkyrianlabs/payload-markdown/render'
+
+const result = await renderMarkdown(markdown)
+
+result.html // sanitized HTML, identical to MarkdownRenderer's inner HTML
+result.headings // [{ depth, id, text }]: the heading ids emitted in html
+result.text // plain text without directive markup or raw HTML
+result.links // [{ url, kind: 'link' | 'image' | 'definition' | 'directive' }]
+result.diagnostics // [{ message, severity, source, line?, column?, code? }]
+result.warnings // diagnostic messages, as before
+result.errors // fatal errors; html is a placeholder when non-empty
+```
+
+`renderMarkdown(markdown, config)` applies the same plugin defaults as `MarkdownRenderer`: pass `scope`, `collectionSlug` and, when a process builds several Payload configs, `settings` (a Payload config or instance). See [Where Settings Live](/configuration/plugin-config#where-settings-live).
+
+`diagnostics` carry a `source` (`directive`, `theme`, `icon`, `code` or `render`), a `severity` (`error`, `warning` or `info`) and, when the pipeline knows it, the 1-based `line` and `column` in the Markdown source. The same entry also exports `compileMarkdown` (`{ html, warnings, errors }`) and the heading anchor helpers `extractHeadingAnchors`, `slugifyHeading` and `createHeadingSlugger`.
+
+## Stylesheet
+
+`MarkdownRenderer` imports its stylesheet for Next.js apps. Other consumers of the HTML, such as headless renders, can import the same file explicitly:
+
+```ts
+import '@valkyrianlabs/payload-markdown/styles.css'
+```

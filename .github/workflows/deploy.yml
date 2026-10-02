@@ -6,34 +6,112 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+# Pull request code (possibly from forks) runs on GitHub-hosted runners only.
+# The persistent self-hosted runners also run Production release jobs, so they
+# only run trusted code from pushes to main.
+#
+# This workflow is the package contract: every gate below must stay green for
+# a change to land (lint, build, dev-app typecheck, unit/integration tests,
+# plain-Node imports of the published subpaths, type resolution of the packed
+# tarball, and the Playwright suite against Postgres).
 jobs:
   build-and-test:
-    runs-on: [self-hosted, Linux, X64, ubuntu-latest-lts]
+    name: Build, lint, typecheck, test
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - uses: actions/cache@v3
-        with:
-          path: .next/cache
-          key: ${{ runner.os }}-next-${{ hashFiles('package.json', 'pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-next-
 
       - name: Install dependencies
         run: |
+          set -euo pipefail
           corepack enable
           pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Build
         run: |
+          set -euo pipefail
           export NEXT_CPU_COUNT=$(nproc)
           pnpm build
 
+      - name: Typecheck dev app
+        run: pnpm exec tsc -p dev/tsconfig.json --noEmit
+
+      # Runs after the build so the dist-backed checks (plain-Node exports,
+      # generated directive spec, built/source settings sharing) are not skipped.
       - name: Run tests
+        run: pnpm test:int
+
+      # Imports ".", "./render" and "./advanced" in plain Node through the
+      # package self-reference, walks the ./render module graph for CSS/React,
+      # and resolves the bundler-only "./server", "./client", "./styles.css"
+      # and "./directive-spec.json".
+      - name: Plain-Node export smoke
+        run: pnpm test:exports
+
+      - name: Check published types (arethetypeswrong)
+        run: pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: payload_markdown_e2e
+          POSTGRES_PASSWORD: postgres
+        # Random host port: the self-hosted runners are persistent and may
+        # already have something on 5432.
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports['5432'] }}/payload_markdown_e2e
+      PAYLOAD_SECRET: ci-secret
+      # playwright.config.js reuses an existing server on its port; use one
+      # that nothing else on a persistent runner listens on.
+      PLAYWRIGHT_PORT: '3931'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
         run: |
           set -euo pipefail
-          pnpm test:int
+          corepack enable
+          pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
+          pnpm exec playwright install --with-deps chromium
+
+      # The dev app's import map loads the package through its own exports
+      # (dist), so the package is built before the dev server starts.
+      - name: Build
+        run: pnpm build
+
+      - name: Run Playwright
+        run: pnpm test:e2e --reporter=line
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-test-results
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7

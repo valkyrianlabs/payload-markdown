@@ -8,10 +8,7 @@ import type { MarkdownRenderConfig } from '../../types/core.js'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getDirectiveFallbackThemeName, hasDirectiveTheme } from '../../directives/themes.js'
-
-type MessageFile = {
-  message: (reason: string) => unknown
-}
+import { type DiagnosticFile, reportDiagnostic } from '../diagnostics.js'
 
 function isContainerDirective(node: unknown): node is ContainerDirective {
   return Boolean(
@@ -22,7 +19,11 @@ function isContainerDirective(node: unknown): node is ContainerDirective {
   )
 }
 
-function warnUnknownThemes(node: ContainerDirective, file: MessageFile, config: MarkdownRenderConfig) {
+function warnUnknownThemes(
+  node: ContainerDirective,
+  file: DiagnosticFile,
+  config: MarkdownRenderConfig,
+) {
   const definition = layoutDirectiveRegistry.get(node.name)
   if (!definition?.themeAttributes) return
 
@@ -35,8 +36,10 @@ function warnUnknownThemes(node: ContainerDirective, file: MessageFile, config: 
 
     const label = attribute === 'theme' ? 'theme' : attribute
 
-    file.message(
+    reportDiagnostic(
+      file,
       `Unknown ${label} "${value}" on "${node.name}". Falling back to "${getDirectiveFallbackThemeName(groupName, config.themes)}".`,
+      { code: 'unknown-theme', place: node.data?.vlPlace, source: 'theme' },
     )
   }
 }

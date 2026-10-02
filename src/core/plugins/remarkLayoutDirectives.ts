@@ -6,6 +6,7 @@ import { visit } from 'unist-util-visit'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { setDirectiveRenderData } from '../../directives/renderData.js'
+import { type DiagnosticFile, reportDiagnostic } from '../diagnostics.js'
 
 type MarkdownDirectiveNode = ContainerDirective | LeafDirective
 
@@ -24,11 +25,7 @@ function isContainerDirective(node: MarkdownDirectiveNode): node is ContainerDir
   return node.type === 'containerDirective'
 }
 
-type WarningSink = {
-  message: (reason: string) => unknown
-}
-
-function transformDirective(node: MarkdownDirectiveNode, file: WarningSink) {
+function transformDirective(node: MarkdownDirectiveNode, file: DiagnosticFile) {
   if (node.type === 'leafDirective' && node.name !== 'button') return
 
   const definition = layoutDirectiveRegistry.get(node.name)
@@ -40,7 +37,8 @@ function transformDirective(node: MarkdownDirectiveNode, file: WarningSink) {
     : undefined
 
   if (isContainerDirective(node)) {
-    for (const warning of definition.validateMdast?.(node) ?? []) file.message(warning)
+    for (const warning of definition.validateMdast?.(node) ?? [])
+      reportDiagnostic(file, warning, { place: node.data?.vlPlace, source: 'directive' })
 
     definition.transformMdast?.(node, {
       isSupportedDirectiveName: (name) => layoutDirectiveRegistry.isSupportedDirectiveName(name),

@@ -1,19 +1,10 @@
 import { randomUUID } from 'node:crypto'
 
-import type {
-  MarkdownRendererProps,
-  MarkdownRendererScope,
-  MarkdownSize,
-  MarkdownVariant,
-} from '../../types/core.js'
+import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from '../../types/core.js'
 
 import { resolveFullBleedCode } from '../../core/codeConfig.js'
-import { compileMarkdown } from '../../core/renderMarkdown.js'
-import {
-  mergeMarkdownRenderConfigs,
-  resolveMarkdownBlockDefaults,
-  resolveMarkdownFieldDefaults,
-} from '../../runtime/index.js'
+import { renderMarkdownDocument } from '../../core/renderMarkdown.js'
+import { resolveMarkdownRenderConfig } from '../../runtime/index.js'
 import { DIRECTIVE_SURFACE_RENDERER_PRE_CLASS } from '../../styles/directiveSurface.js'
 import { MarkdownRendererClient } from './Component.client.js'
 import './index.css'
@@ -155,12 +146,6 @@ function buildMarkdownClassName({
   )
 }
 
-function resolveScopedDefaults(scope: MarkdownRendererScope, collectionSlug?: string) {
-  return scope === 'blocks'
-    ? resolveMarkdownBlockDefaults(collectionSlug)
-    : resolveMarkdownFieldDefaults(collectionSlug)
-}
-
 export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   const {
     as = 'article',
@@ -174,8 +159,9 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
 
   if (!markdown || !markdown.trim()) return emptyFallback
 
-  const resolvedProps =
-    mergeMarkdownRenderConfigs(resolveScopedDefaults(scope, collectionSlug), rawProps) ?? rawProps
+  // Plugin defaults come from the explicit `settings` source when given,
+  // otherwise from the process-wide settings registry.
+  const resolvedProps = resolveMarkdownRenderConfig({ ...rawProps, collectionSlug, scope })
 
   const {
     className,
@@ -187,11 +173,11 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
   } = resolvedProps
   const fullBleedCode = resolveFullBleedCode(resolvedProps) ?? false
 
-  const result = await compileMarkdown(markdown, resolvedProps)
+  const result = await renderMarkdownDocument(markdown, resolvedProps)
   const Tag = as
   const containerId = `payload-markdown-${randomUUID()}`
 
-  if ((result.errors?.length ?? 0) > 0 && errorFallback) return errorFallback
+  if (result.errors.length > 0 && errorFallback) return errorFallback
 
   const resolvedWrapperClassName = buildWrapperClassName({
     enableGutter,

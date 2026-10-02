@@ -25,15 +25,15 @@ jobs:
       url: https://www.npmjs.com/package/${{ vars.NPM_PACKAGE_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -224,6 +224,16 @@ jobs:
           set -euo pipefail
           export NEXT_CPU_COUNT="$(nproc)"
           pnpm build
+
+      # The same contract gates as Build and Test, before anything is published.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck dev app
+        run: pnpm exec tsc -p dev/tsconfig.json --noEmit
+
+      - name: Plain-Node export smoke
+        run: pnpm test:exports
 
       - name: Validate package contents
         shell: bash

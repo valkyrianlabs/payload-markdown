@@ -8,6 +8,9 @@ Payload Markdown directives are Markdown-native structure. Use labels for visibl
 - Use multiline attributes when a directive has more than one or two attributes.
 - Boolean attributes may be bare only where the directive supports them.
 - Close container directives with `:::` unless a specific structural closer is clearer.
+- Start directive lines at the beginning of a top-level line. Markers inside list items or blockquotes render as text.
+- Wrap attributes in `{…}`. Other text after `:::name` makes the line render as text.
+- `directive-spec.json` in this folder lists every directive, attribute, allowed value and close marker; it is generated from the renderer.
 
 Example:
 

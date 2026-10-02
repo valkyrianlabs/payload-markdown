@@ -13,6 +13,28 @@ export const SHIELDS_BADGE_QUERY_ATTRIBUTES = [
   'cacheSeconds',
 ] as const
 
+/**
+ * Targets each curated badge type resolves (`static` has none). The
+ * directive spec publishes these; `dev/spec.int.spec.ts` checks them against
+ * the resolvers below.
+ */
+export const SHIELDS_BADGE_TARGETS: Readonly<Record<string, readonly string[]>> = {
+  apt: ['version'],
+  debian: ['version'],
+  github: ['workflow', 'release', 'license', 'stars'],
+  npm: ['version', 'downloads', 'license'],
+  static: [],
+}
+
+/** Attributes each curated badge type requires (`workflow` also needs `workflow`). */
+export const SHIELDS_BADGE_REQUIRED_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = {
+  apt: ['package', 'target'],
+  debian: ['package', 'target'],
+  github: ['repo', 'target'],
+  npm: ['package', 'target'],
+  static: ['label', 'message', 'color'],
+}
+
 export type ShieldsBadgeResolution = {
   src?: string
   warnings: string[]

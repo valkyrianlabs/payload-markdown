@@ -275,6 +275,8 @@ function buildTransformers(
 
 export type HighlightCodeResult = {
   html: string
+  /** The subset of `warnings` that is informational (a fence language that is not loaded). */
+  info?: string[]
   warnings: string[]
 }
 
@@ -321,6 +323,7 @@ export async function highlightCode(
   if (fence.warning) warnings.push(fence.warning)
 
   return {
+    ...(fence.warning ? { info: [fence.warning] } : {}),
     html: highlighter.codeToHtml(normalizedCode, {
       lang: fence.lang,
       theme,

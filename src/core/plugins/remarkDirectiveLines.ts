@@ -1,8 +1,9 @@
 import type { Paragraph, Root, RootContent } from 'mdast'
 import type { Plugin } from 'unified'
 
-import type { PhrasingLine, SourceIndex } from '../../directives/lineScanner.js'
+import type { PhrasingLine, ScannedDirectiveLine, SourceIndex } from '../../directives/lineScanner.js'
 import type { MarkdownRenderConfig } from '../../types/core.js'
+import type { DiagnosticPlace } from '../diagnostics.js'
 
 import { getLeafDirectiveName, getLeafDirectiveProblem } from '../../directives/leafSyntax.js'
 import {
@@ -14,23 +15,31 @@ import {
   splitParagraphIntoLines,
 } from '../../directives/lineScanner.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
+import { placeAt, reportDiagnostic } from '../diagnostics.js'
 import { makeBadgeDirective } from './directiveBadge.js'
 import { makeButtonDirective } from './directiveButton.js'
 
-const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
-
-type WarningBuckets = {
-  badge: string[]
-  button: string[]
-  layout: string[]
+type PlacedWarning = {
+  place?: DiagnosticPlace
+  reason: string
 }
 
-function makeSink(target: string[]) {
+type WarningBuckets = {
+  badge: PlacedWarning[]
+  button: PlacedWarning[]
+  layout: PlacedWarning[]
+}
+
+function makeSink(target: PlacedWarning[], place: DiagnosticPlace | undefined) {
   return {
     message(reason: string) {
-      target.push(reason)
+      target.push({ place, reason })
     },
   }
+}
+
+function getScannedPlace(scanned: ScannedDirectiveLine, index: SourceIndex): DiagnosticPlace {
+  return placeAt(scanned.startLine, index.lineStarts[scanned.startLine] ?? 0, scanned.from)
 }
 
 function splitParagraph(
@@ -65,13 +74,19 @@ function splitParagraph(
       continue
     }
 
+    const place = getScannedPlace(scanned, index)
+    const push = (bucket: PlacedWarning[], reason: string) => bucket.push({ place, reason })
+
     if (scanned.kind === 'container') {
       const result = layoutDirectiveRegistry.parseMarkdownLineDetailed(scanned.text)
 
-      warnings.layout.push(...result.diagnostics)
+      for (const reason of result.diagnostics) push(warnings.layout, reason)
 
-      if (result.token) lineIndex = emit(result.token, scanned.phrasingEnd)
-      else pending.push(lines[lineIndex])
+      if (result.token) {
+        // The open/close marker's position, for compile-stage diagnostics.
+        result.token.data = { ...result.token.data, vlPlace: place }
+        lineIndex = emit(result.token, scanned.phrasingEnd)
+      } else pending.push(lines[lineIndex])
 
       continue
     }
@@ -83,8 +98,8 @@ function splitParagraph(
       continue
     }
 
-    if (!SUPPORTED_LEAF_DIRECTIVE_NAMES.has(leafName)) {
-      warnings.button.push(`Unknown directive "${leafName}".`)
+    if (!layoutDirectiveRegistry.isLeafDirectiveName(leafName)) {
+      push(warnings.button, `Unknown directive "${leafName}".`)
       pending.push(lines[lineIndex])
       continue
     }
@@ -93,15 +108,15 @@ function splitParagraph(
     const problem = getLeafDirectiveProblem(scanned.text, leafName)
 
     if (problem) {
-      bucket.push(problem)
+      push(bucket, problem)
       pending.push(lines[lineIndex])
       continue
     }
 
     const directive =
       leafName === 'button'
-        ? makeButtonDirective(scanned.text, makeSink(bucket), config)
-        : makeBadgeDirective(scanned.text, makeSink(bucket))
+        ? makeButtonDirective(scanned.text, makeSink(bucket, place), config)
+        : makeBadgeDirective(scanned.text, makeSink(bucket, place))
 
     if (directive) lineIndex = emit(directive as RootContent, scanned.phrasingEnd)
     else pending.push(lines[lineIndex])
@@ -135,9 +150,14 @@ export const remarkDirectiveLines: Plugin<[MarkdownRenderConfig?], Root> = (
       node.type === 'paragraph' ? splitParagraph(node, index, warnings, config) : [node],
     )
 
-    for (const warning of [...warnings.layout, ...warnings.button, ...warnings.badge])
-      file.message(warning)
+    for (const { place, reason } of [...warnings.layout, ...warnings.button, ...warnings.badge])
+      reportDiagnostic(file, reason, { place, source: 'directive' })
 
-    for (const marker of nestedMarkers) file.message(getNestedDirectiveMarkerDiagnostic(marker))
+    for (const marker of nestedMarkers)
+      reportDiagnostic(file, getNestedDirectiveMarkerDiagnostic(marker), {
+        code: 'nested-directive-marker',
+        place: placeAt(marker.line, index.lineStarts[marker.line] ?? 0, marker.from),
+        source: 'directive',
+      })
   }
 }

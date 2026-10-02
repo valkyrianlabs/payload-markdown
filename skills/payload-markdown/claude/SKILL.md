@@ -26,6 +26,7 @@ This package stores the Claude variant at `skills/payload-markdown/claude`. When
 - Read `reference/formatting.md` for frontmatter, headings, links, prose, and fenced examples.
 - Read `reference/payload-markdown-directives.md` for supported directive syntax and recipes.
 - Read `reference/quality.md` before final review or docs drift audits.
+- `reference/directive-spec.json` is the machine-readable directive spec generated from the renderer: directive names, open and close markers, attributes with types and allowed values, theme groups, badge types and targets, and parser constraints. Prefer it over memory when unsure whether an attribute or value exists.
 
 ## Authoring Defaults
 
@@ -53,5 +54,7 @@ Run the helper on changed Markdown files:
 ```bash
 python3 skills/payload-markdown/claude/scripts/check_payload_markdown_doc.py docs/**/*.md
 ```
+
+The checker reads `reference/directive-spec.json` (falling back to built-in tables when it is missing) and reports unknown directives, attributes and values, text after a container marker that is not `[label]` or `{…}`, markers inside list items or blockquotes, stray closers, and unclosed containers.
 
 If the downstream project uses `@valkyrianlabs/payload-markdown-docs`, also run its docs validation command when available.
