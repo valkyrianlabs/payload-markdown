@@ -10,7 +10,7 @@ Check that the workflow uses `--github-oidc`, grants `id-token: write`, and uses
 
 ## OIDC repository or ref not allowed
 
-Check `Docs Globals > Trusted` for owner/repository trust and the docs set branch for ref trust.
+Check GitHub OIDC records in `Docs Globals > Access` for owner/repository trust and the docs set branch for ref trust.
 
 ## OIDC replay
 
@@ -48,6 +48,26 @@ A generated docs record was edited outside the docs sync workflow. The sync abor
 
 Use only supported fields and simple YAML.
 
+## Route collision inside the docs package
+
+`pmdocs validate` reports `route_collision` when two files derive the same
+route, for example `index.md` and `Index.md`, or `guide.md` and
+`guide/index.md`. Rename or remove one of them. For grouped or product-nested
+docs sets pass `--route-base` so local routes match the server.
+
+## Skipped or hidden files
+
+`pmdocs validate` lists every file it leaves out (symlinks, `node_modules`,
+root-level `build`/`dist`/`.next`, non-lowercase `.md` extensions) and every
+hidden file it includes. Use `--skip-hidden` to leave hidden files out.
+
 ## Non-root-relative link
 
 Internal docs links should look like `/workflow/signed-push`, not `workflow/signed-push` or a production URL.
+
+## Public asset route 404
+
+If `/api/llms.txt` works but `/llms.txt` or docs-set skill URLs return HTML 404,
+the consuming Next app is missing committed public asset route files. Run
+`pmdocs install routes --payload-app "src/app/(payload)"`,
+commit the generated files, deploy them, and purge any cached 404 responses.
