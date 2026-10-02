@@ -73,13 +73,17 @@ describe('CI workflows enforce the package contract', () => {
       'pnpm test:int',
       'pnpm test:exports',
       'pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only',
-      'pnpm exec playwright install --with-deps chromium',
+      'pnpm exec playwright install chromium',
       'pnpm test:e2e --reporter=line',
     ])
       expect(commands).toContain(gate)
 
     // Tests run after the build so the dist-backed checks are not skipped.
     expect(commands.indexOf('pnpm test:int')).toBeGreaterThan(commands.indexOf('pnpm build'))
+    // System deps go through plain apt-get (allowed by the self-hosted runner's sudoers),
+    // never `--with-deps`, which needs `sudo sh -c`.
+    expect(commands.filter((command) => command.includes('--with-deps'))).toEqual([])
+    expect(commands).toContain('sudo -n apt-get install -y --no-install-recommends $deps')
     expect(deploy).toContain('image: postgres:16')
     expect(deploy).toContain('--health-cmd "pg_isready -U postgres"')
     expect(deploy).toContain("job.services.postgres.ports['5432']")

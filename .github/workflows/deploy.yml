@@ -108,7 +108,22 @@ jobs:
           set -euo pipefail
           corepack enable
           pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
-          pnpm exec playwright install --with-deps chromium
+
+      # `playwright install --with-deps` runs `sudo -- sh -c "apt-get ..."`, which the
+      # self-hosted runner's sudoers policy (apt-get only) rightly does not allow. Ask
+      # Playwright for its package list and call the allowed apt-get commands directly.
+      - name: Install Playwright Chromium and its system dependencies
+        run: |
+          set -euo pipefail
+          deps="$(pnpm exec playwright install-deps --dry-run chromium \
+            | sed -n 's/.*--no-install-recommends \(.*\)"$/\1/p')"
+          if [ -z "$deps" ]; then
+            echo "::error::Could not read Playwright's system dependency list."
+            exit 1
+          fi
+          sudo -n apt-get update
+          sudo -n apt-get install -y --no-install-recommends $deps
+          pnpm exec playwright install chromium
 
       # The dev app's import map loads the package through its own exports
       # (dist), so the package is built before the dev server starts.
