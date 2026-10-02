@@ -68,11 +68,20 @@ import {
   compileMarkdown,
   createHeadingSlugger,
   extractHeadingAnchors,
+  getDirectiveSpec,
   readPayloadMarkdownSettings,
   renderMarkdown,
   slugifyHeading,
 } from '@valkyrianlabs/payload-markdown/render'
 ```
+
+Directive spec (generated from the directive registry at build time; the same data `getDirectiveSpec()` returns):
+
+```ts
+import spec from '@valkyrianlabs/payload-markdown/directive-spec.json' with { type: 'json' }
+```
+
+The spec lists every directive (`kind`, open and close markers, `[label]` attribute), its attributes with a `type` (`url`, `enum`, `string`, `boolean` or `number`), allowed values and theme group, the built-in theme names, badge types and targets, tab-value and heading-slug rules, and parser constraints. `specVersion` changes only when the JSON shape changes.
 
 Stylesheet export:
 

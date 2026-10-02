@@ -27,10 +27,6 @@ function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame)
   return -1
 }
 
-function getCloseLabel(name: LayoutName): string {
-  return layoutDirectiveRegistry.isGridName(name) ? 'endcol' : `end${name}`
-}
-
 function makeExplicitLabel(
   label: string,
   line: number,
@@ -88,7 +84,7 @@ export function getDirectiveCloseLabels(markdown: string): DirectiveCloseLabel[]
 
       if (token?.action === 'close') {
         const frame = stack.pop()
-        if (frame) labels.push(makeWidgetLabel(getCloseLabel(frame.name), index + 1, markerFrom))
+        if (frame) labels.push(makeWidgetLabel(layoutDirectiveRegistry.getCloseLabel(frame.name), index + 1, markerFrom))
       }
 
       if (token?.action === 'closeGrid') {

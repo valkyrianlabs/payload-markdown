@@ -18,6 +18,14 @@ export {
   type HeadingSlugger,
   slugifyHeading,
 } from '../directives/headingAnchors.js'
+export {
+  DIRECTIVE_SPEC_VERSION,
+  type DirectiveAttributeType,
+  type DirectiveSpec,
+  type DirectiveSpecAttribute,
+  type DirectiveSpecDirective,
+  getDirectiveSpec,
+} from '../directives/spec.js'
 export { renderMarkdown, type RenderMarkdownConfig } from '../render/renderMarkdown.js'
 export {
   PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,

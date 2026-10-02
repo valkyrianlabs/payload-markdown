@@ -19,8 +19,6 @@ import { placeAt, reportDiagnostic } from '../diagnostics.js'
 import { makeBadgeDirective } from './directiveBadge.js'
 import { makeButtonDirective } from './directiveButton.js'
 
-const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
-
 type PlacedWarning = {
   place?: DiagnosticPlace
   reason: string
@@ -100,7 +98,7 @@ function splitParagraph(
       continue
     }
 
-    if (!SUPPORTED_LEAF_DIRECTIVE_NAMES.has(leafName)) {
+    if (!layoutDirectiveRegistry.isLeafDirectiveName(leafName)) {
       push(warnings.button, `Unknown directive "${leafName}".`)
       pending.push(lines[lineIndex])
       continue

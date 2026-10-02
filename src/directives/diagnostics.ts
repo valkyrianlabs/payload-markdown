@@ -71,8 +71,6 @@ function getIconPackDiagnostics(icon: unknown, options: LintMarkdownDirectivesOp
   return [`Unknown icon pack "${normalized.icon.packAlias}".`]
 }
 
-const SUPPORTED_LEAF_DIRECTIVE_NAMES = new Set(['badge', 'button'])
-
 function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame) => boolean) {
   for (let index = stack.length - 1; index >= 0; --index) {
     const frame = stack[index]
@@ -370,7 +368,7 @@ function lintLeafLine(state: LintState, scanned: ScannedDirectiveLine, push: Dia
 
   if (!leafName) return
 
-  if (!SUPPORTED_LEAF_DIRECTIVE_NAMES.has(leafName)) {
+  if (!layoutDirectiveRegistry.isLeafDirectiveName(leafName)) {
     report(`Unknown directive "${leafName}".`)
     return
   }

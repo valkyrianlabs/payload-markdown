@@ -10,7 +10,15 @@ const built = fs.existsSync(path.resolve('dist/exports/render.js'))
 describe('package exports', () => {
   it('declares every subpath in exports and publishConfig.exports alike', () => {
     expect(Object.keys(packageJson.exports)).toEqual(
-      expect.arrayContaining(['.', './advanced', './client', './render', './server', './styles.css']),
+      expect.arrayContaining([
+        '.',
+        './advanced',
+        './client',
+        './directive-spec.json',
+        './render',
+        './server',
+        './styles.css',
+      ]),
     )
     expect(packageJson.publishConfig.exports).toEqual(packageJson.exports)
   })

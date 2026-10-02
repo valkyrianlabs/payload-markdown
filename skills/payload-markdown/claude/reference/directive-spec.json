@@ -1,0 +1,956 @@
+{
+  "badges": {
+    "intervals": [
+      "dw",
+      "dm",
+      "dy",
+      "dt"
+    ],
+    "origin": "https://img.shields.io",
+    "queryAttributes": [
+      "style",
+      "logo",
+      "logoColor",
+      "logoSize",
+      "label",
+      "labelColor",
+      "color",
+      "cacheSeconds"
+    ],
+    "requiredAttributes": {
+      "apt": [
+        "package",
+        "target"
+      ],
+      "debian": [
+        "package",
+        "target"
+      ],
+      "github": [
+        "repo",
+        "target"
+      ],
+      "npm": [
+        "package",
+        "target"
+      ],
+      "static": [
+        "label",
+        "message",
+        "color"
+      ]
+    },
+    "styles": [
+      "flat",
+      "flat-square",
+      "plastic",
+      "for-the-badge",
+      "social"
+    ],
+    "targets": {
+      "apt": [
+        "version"
+      ],
+      "debian": [
+        "version"
+      ],
+      "github": [
+        "workflow",
+        "release",
+        "license",
+        "stars"
+      ],
+      "npm": [
+        "version",
+        "downloads",
+        "license"
+      ],
+      "static": []
+    },
+    "types": [
+      "static",
+      "npm",
+      "github",
+      "debian",
+      "apt"
+    ]
+  },
+  "closeMarkers": [
+    {
+      "closes": "innermost",
+      "marker": ":::"
+    },
+    {
+      "closes": "section",
+      "marker": ":::end"
+    },
+    {
+      "closes": "grid",
+      "marker": ":::endcol"
+    },
+    {
+      "closes": "section",
+      "marker": ":::endsection"
+    }
+  ],
+  "constraints": [
+    "Directive markers are recognised only at the start of a line of a top-level paragraph. Markers inside lists, blockquotes, tables or footnotes render as text and are reported.",
+    "The marker must start the source line as plain text: inline code, emphasis, links, a backslash escape (\\:::) or a character reference never open a directive.",
+    "Container syntax is :::name[label]{attributes}; leaf syntax is ::name[label]{attributes} on its own line.",
+    "Attributes are written inside {…} as key=\"value\", key=value, bare boolean keys, #id or .class; the block may span lines until the closing }.",
+    "Unbraced key=value attributes after the marker are accepted for compatibility; any other text after a container marker is reported and the line renders as text.",
+    "Quoted attribute values are literal except for CommonMark backslash escapes and character references, which are decoded.",
+    "A generic ::: closes the innermost open container; :::endcol closes the nearest grid (2col, 3col); :::end and :::endsection close the nearest section.",
+    "Opening a grid inside a section closes a grid that is already open in that section.",
+    "Inside a grid, a heading shallower than the heading before the grid closes the grid; headings one level deeper than that start a new cell.",
+    "Containers still open at the end of the document are closed automatically and reported.",
+    "Unknown attributes, unknown theme names and invalid enum values are reported; the renderer falls back to defaults.",
+    "Directive href attributes accept relative URLs and http, https, irc, ircs, mailto and xmpp URLs; other links are removed and reported."
+  ],
+  "directives": [
+    {
+      "name": "section",
+      "attributes": [
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "section"
+        }
+      ],
+      "closeLabel": "endsection",
+      "closeMarkers": [
+        ":::",
+        ":::end",
+        ":::endsection"
+      ],
+      "kind": "container",
+      "open": ":::section",
+      "supportsAttributes": true
+    },
+    {
+      "name": "2col",
+      "attributes": [
+        {
+          "name": "cellTheme",
+          "type": "string",
+          "themeGroup": "cell"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "columns"
+        }
+      ],
+      "closeLabel": "endcol",
+      "closeMarkers": [
+        ":::",
+        ":::endcol"
+      ],
+      "kind": "container",
+      "open": ":::2col",
+      "supportsAttributes": true
+    },
+    {
+      "name": "3col",
+      "attributes": [
+        {
+          "name": "cellTheme",
+          "type": "string",
+          "themeGroup": "cell"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "columns"
+        }
+      ],
+      "closeLabel": "endcol",
+      "closeMarkers": [
+        ":::",
+        ":::endcol"
+      ],
+      "kind": "container",
+      "open": ":::3col",
+      "supportsAttributes": true
+    },
+    {
+      "name": "cell",
+      "attributes": [
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "cell"
+        }
+      ],
+      "closeLabel": "endcell",
+      "closeMarkers": [
+        ":::"
+      ],
+      "kind": "container",
+      "open": ":::cell",
+      "supportsAttributes": true
+    },
+    {
+      "name": "button",
+      "attributes": [
+        {
+          "name": "ariaLabel",
+          "type": "string"
+        },
+        {
+          "name": "href",
+          "type": "url"
+        },
+        {
+          "name": "icon",
+          "type": "string",
+          "format": "icon"
+        },
+        {
+          "name": "iconPosition",
+          "default": "left",
+          "type": "enum",
+          "values": [
+            "left",
+            "right"
+          ]
+        },
+        {
+          "name": "newTab",
+          "default": "false",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "size",
+          "default": "md",
+          "type": "enum",
+          "values": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "variant",
+          "default": "primary",
+          "type": "enum",
+          "values": [
+            "primary",
+            "secondary",
+            "outline",
+            "ghost",
+            "link"
+          ]
+        }
+      ],
+      "closeMarkers": [],
+      "description": "Link button with optional icon, variant, size, and new-tab behavior.",
+      "kind": "leaf",
+      "open": "::button",
+      "supportsAttributes": true
+    },
+    {
+      "name": "buttons",
+      "attributes": [
+        {
+          "name": "align",
+          "default": "left",
+          "type": "enum",
+          "values": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        {
+          "name": "gap",
+          "default": "md",
+          "type": "enum",
+          "values": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "stack",
+          "default": "mobile",
+          "type": "enum",
+          "values": [
+            "mobile",
+            "always",
+            "never"
+          ]
+        }
+      ],
+      "closeLabel": "endbuttons",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Button group wrapper for one or more button directives.",
+      "kind": "container",
+      "open": ":::buttons",
+      "supportsAttributes": true
+    },
+    {
+      "name": "badge",
+      "attributes": [
+        {
+          "name": "alt",
+          "type": "string"
+        },
+        {
+          "name": "cacheSeconds",
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "name": "color",
+          "type": "string"
+        },
+        {
+          "name": "href",
+          "type": "url"
+        },
+        {
+          "name": "interval",
+          "type": "enum",
+          "values": [
+            "dw",
+            "dm",
+            "dy",
+            "dt"
+          ]
+        },
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "labelColor",
+          "type": "string"
+        },
+        {
+          "name": "logo",
+          "type": "string"
+        },
+        {
+          "name": "logoColor",
+          "type": "string"
+        },
+        {
+          "name": "logoSize",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "name": "newTab",
+          "default": "false",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "package",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "repo",
+          "type": "string"
+        },
+        {
+          "name": "src",
+          "type": "url"
+        },
+        {
+          "name": "style",
+          "type": "enum",
+          "values": [
+            "flat",
+            "flat-square",
+            "plastic",
+            "for-the-badge",
+            "social"
+          ]
+        },
+        {
+          "name": "target",
+          "type": "enum",
+          "values": [
+            "version",
+            "downloads",
+            "license",
+            "workflow",
+            "release",
+            "stars"
+          ]
+        },
+        {
+          "name": "type",
+          "type": "enum",
+          "values": [
+            "static",
+            "npm",
+            "github",
+            "debian",
+            "apt"
+          ]
+        },
+        {
+          "name": "workflow",
+          "type": "string"
+        }
+      ],
+      "closeMarkers": [],
+      "description": "img.shields.io badge with curated resolvers and strict Shields escape hatches.",
+      "kind": "leaf",
+      "open": "::badge",
+      "supportsAttributes": true
+    },
+    {
+      "name": "badges",
+      "attributes": [
+        {
+          "name": "align",
+          "default": "left",
+          "type": "enum",
+          "values": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        {
+          "name": "gap",
+          "default": "md",
+          "type": "enum",
+          "values": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "wrap",
+          "default": "true",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        }
+      ],
+      "closeLabel": "endbadges",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Badge group wrapper for one or more Shields badge directives.",
+      "kind": "container",
+      "open": ":::badges",
+      "supportsAttributes": true
+    },
+    {
+      "name": "callout",
+      "attributes": [
+        {
+          "name": "icon",
+          "type": "string",
+          "format": "icon"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "callout"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "variant",
+          "default": "note",
+          "type": "enum",
+          "values": [
+            "note",
+            "info",
+            "tip",
+            "warning",
+            "danger",
+            "success"
+          ]
+        }
+      ],
+      "closeLabel": "endcallout",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Emphasized content block with note, info, tip, warning, danger, or success variants.",
+      "kind": "container",
+      "labelAttribute": "title",
+      "open": ":::callout",
+      "supportsAttributes": true
+    },
+    {
+      "name": "details",
+      "attributes": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "details"
+        },
+        {
+          "name": "title",
+          "default": "Details",
+          "type": "string"
+        }
+      ],
+      "closeLabel": "enddetails",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Native disclosure block for optional details.",
+      "kind": "container",
+      "labelAttribute": "title",
+      "open": ":::details",
+      "supportsAttributes": true
+    },
+    {
+      "name": "toc",
+      "attributes": [
+        {
+          "name": "depth",
+          "default": "3",
+          "max": 6,
+          "min": 1,
+          "type": "number"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "toc"
+        },
+        {
+          "name": "title",
+          "default": "On this page",
+          "type": "string"
+        }
+      ],
+      "closeLabel": "endtoc",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Table of contents generated from document headings.",
+      "kind": "container",
+      "labelAttribute": "title",
+      "open": ":::toc",
+      "supportsAttributes": true
+    },
+    {
+      "name": "steps",
+      "attributes": [
+        {
+          "name": "columns",
+          "type": "enum",
+          "values": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "auto"
+          ]
+        },
+        {
+          "name": "layout",
+          "type": "enum",
+          "values": [
+            "stack",
+            "grid"
+          ]
+        },
+        {
+          "name": "numbered",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "stepTheme",
+          "type": "string",
+          "themeGroup": "card"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "steps"
+        },
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "default",
+            "cards"
+          ]
+        }
+      ],
+      "closeLabel": "endsteps",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Structured ordered flow for tutorials and install steps.",
+      "kind": "container",
+      "open": ":::steps",
+      "supportsAttributes": true
+    },
+    {
+      "name": "cards",
+      "attributes": [
+        {
+          "name": "cardTheme",
+          "type": "string",
+          "themeGroup": "card"
+        },
+        {
+          "name": "columns",
+          "default": "3",
+          "type": "enum",
+          "values": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "auto"
+          ]
+        },
+        {
+          "name": "href",
+          "type": "url"
+        },
+        {
+          "name": "linkScope",
+          "default": "section",
+          "type": "enum",
+          "values": [
+            "section",
+            "card",
+            "title"
+          ]
+        },
+        {
+          "name": "newTab",
+          "default": "false",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "cards"
+        }
+      ],
+      "closeLabel": "endcards",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Responsive card grid for docs and landing-page content.",
+      "kind": "container",
+      "open": ":::cards",
+      "supportsAttributes": true
+    },
+    {
+      "name": "card",
+      "attributes": [
+        {
+          "name": "eyebrow",
+          "type": "string"
+        },
+        {
+          "name": "href",
+          "type": "url"
+        },
+        {
+          "name": "icon",
+          "type": "string",
+          "format": "icon"
+        },
+        {
+          "name": "linkScope",
+          "default": "full",
+          "type": "enum",
+          "values": [
+            "full",
+            "title"
+          ]
+        },
+        {
+          "name": "newTab",
+          "default": "false",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "card"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        }
+      ],
+      "closeLabel": "endcard",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Card content block with optional title, eyebrow, and card link.",
+      "kind": "container",
+      "labelAttribute": "title",
+      "open": ":::card",
+      "supportsAttributes": true
+    },
+    {
+      "name": "tabs",
+      "attributes": [
+        {
+          "name": "default",
+          "type": "string"
+        },
+        {
+          "name": "tabTheme",
+          "type": "string",
+          "themeGroup": "tab"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "tabs"
+        }
+      ],
+      "closeLabel": "endtabs",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Accessible tabbed content block with server-rendered panels.",
+      "kind": "container",
+      "open": ":::tabs",
+      "supportsAttributes": true
+    },
+    {
+      "name": "tab",
+      "attributes": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "theme",
+          "type": "string",
+          "themeGroup": "tab"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "closeLabel": "endtab",
+      "closeMarkers": [
+        ":::"
+      ],
+      "description": "Single tab panel. Usually nested inside :::tabs.",
+      "kind": "container",
+      "labelAttribute": "label",
+      "open": ":::tab",
+      "supportsAttributes": true
+    }
+  ],
+  "headings": {
+    "slug": [
+      "Lowercase; remove quotes; replace every run of characters other than a-z and 0-9 with \"-\"; trim \"-\"; an empty result becomes \"section\".",
+      "Repeated slugs get -1, -2, … suffixes, skipping ids already emitted in the document.",
+      "Only top-level headings and headings directly inside container directives get ids."
+    ],
+    "examples": [
+      [
+        "Getting Started",
+        "getting-started"
+      ],
+      [
+        "What's New?",
+        "whats-new"
+      ],
+      [
+        "日本語",
+        "section"
+      ],
+      [
+        "API v2.0",
+        "api-v2-0"
+      ]
+    ]
+  },
+  "package": "@valkyrianlabs/payload-markdown",
+  "specVersion": 1,
+  "tabs": {
+    "examples": [
+      {
+        "index": 0,
+        "raw": "Install",
+        "value": "install"
+      },
+      {
+        "index": 1,
+        "raw": "npmInstall",
+        "value": "npm-install"
+      },
+      {
+        "index": 2,
+        "raw": "Hello, World!",
+        "value": "hello-world"
+      },
+      {
+        "index": 3,
+        "raw": "日本",
+        "value": "tab-4"
+      }
+    ],
+    "value": [
+      "A tab value comes from the value attribute, else the [label], else the label attribute, else tab-N (N is the 1-based tab position).",
+      "It is slugged: split camelCase with \"-\", lowercase, replace runs of characters other than a-z and 0-9 with \"-\", trim \"-\". An empty slug becomes tab-N.",
+      "Repeated values in one tabs block get -1, -2, … suffixes.",
+      "tabs default=\"…\" matches a tab value (after slugging) first, then a raw value or label; otherwise the first enabled tab is active."
+    ]
+  },
+  "themes": {
+    "callout": {
+      "builtIn": [
+        "soft",
+        "solid",
+        "glass"
+      ],
+      "fallback": "soft"
+    },
+    "card": {
+      "builtIn": [
+        "default",
+        "muted",
+        "glass",
+        "cyan",
+        "violet",
+        "emerald",
+        "amber",
+        "danger"
+      ],
+      "fallback": "default"
+    },
+    "cards": {
+      "builtIn": [
+        "default",
+        "compact",
+        "spacious",
+        "feature-grid"
+      ],
+      "fallback": "default"
+    },
+    "cell": {
+      "builtIn": [
+        "default",
+        "panel"
+      ],
+      "fallback": "default"
+    },
+    "columns": {
+      "builtIn": [
+        "default",
+        "panel"
+      ],
+      "fallback": "default"
+    },
+    "details": {
+      "builtIn": [
+        "default",
+        "muted",
+        "glass"
+      ],
+      "fallback": "default"
+    },
+    "section": {
+      "builtIn": [
+        "default",
+        "muted",
+        "panel"
+      ],
+      "fallback": "default"
+    },
+    "steps": {
+      "builtIn": [
+        "default",
+        "muted",
+        "glass",
+        "cyan"
+      ],
+      "fallback": "default"
+    },
+    "tab": {
+      "builtIn": [
+        "default",
+        "muted",
+        "glass"
+      ],
+      "fallback": "default"
+    },
+    "tabs": {
+      "builtIn": [
+        "default",
+        "muted",
+        "glass",
+        "underline",
+        "pills"
+      ],
+      "fallback": "default"
+    },
+    "toc": {
+      "builtIn": [
+        "default",
+        "compact",
+        "sidebar"
+      ],
+      "fallback": "default"
+    }
+  }
+}

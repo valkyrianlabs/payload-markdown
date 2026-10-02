@@ -7,7 +7,8 @@
  *   UI imports.
  * - `./server` and `./client` are bundler-only (CSS side-effect import, React
  *   client components); they must resolve, but are not imported here.
- * - `./styles.css` must resolve to a CSS file.
+ * - `./styles.css` must resolve to a CSS file; `./directive-spec.json` must
+ *   match `getDirectiveSpec()`.
  *
  * Exits non-zero on failure. Uses the package's self-reference, so it checks
  * the `exports` map exactly as a consumer sees it.
@@ -96,6 +97,18 @@ const serverGraph = collectModuleGraph(fileURLToPath(import.meta.resolve(`${PACK
 if (!serverGraph.files.some((file) => file.endsWith('.css')) || !serverGraph.bare.includes('react'))
   fail('module graph detector did not see the CSS/React imports of ./server')
 else ok('module graph detector sees CSS and React in ./server')
+
+try {
+  const { getDirectiveSpec } = await import(`${PACKAGE}/render`)
+  const file = fileURLToPath(import.meta.resolve(`${PACKAGE}/directive-spec.json`))
+  const spec = JSON.parse(fs.readFileSync(file, 'utf8'))
+
+  if (JSON.stringify(spec) !== JSON.stringify(getDirectiveSpec()))
+    fail('directive-spec.json differs from getDirectiveSpec()')
+  else ok(`directive-spec.json (specVersion ${spec.specVersion}, ${spec.directives.length} directives)`)
+} catch (error) {
+  fail(`directive-spec.json: ${error?.message ?? error}`)
+}
 
 for (const subpath of ['/server', '/client', '/styles.css']) {
   try {
