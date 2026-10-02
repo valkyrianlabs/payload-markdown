@@ -68,6 +68,7 @@ import {
   compileMarkdown,
   createHeadingSlugger,
   extractHeadingAnchors,
+  readPayloadMarkdownSettings,
   renderMarkdown,
   slugifyHeading,
 } from '@valkyrianlabs/payload-markdown/render'
@@ -97,7 +98,14 @@ import {
 ## `renderMarkdown`
 
 ```ts
-function renderMarkdown(markdown: string, config?: MarkdownRenderConfig): Promise<RenderedMarkdown>
+function renderMarkdown(markdown: string, config?: RenderMarkdownConfig): Promise<RenderedMarkdown>
+
+type RenderMarkdownConfig = MarkdownRenderConfig & {
+  collectionSlug?: string
+  scope?: 'blocks' | 'field'
+  // settings object, Payload config or Payload instance; false: no plugin defaults
+  settings?: PayloadMarkdownSettingsSource | false | null
+}
 
 type RenderedMarkdown = {
   diagnostics: RenderDiagnostic[]
@@ -118,6 +126,8 @@ type RenderDiagnostic = {
   source: 'code' | 'directive' | 'icon' | 'render' | 'theme'
 }
 ```
+
+Like `MarkdownRenderer`, `renderMarkdown` applies the plugin defaults for `scope` (default `field`) and `collectionSlug` from `settings`, or from the process-wide settings registry when `settings` is omitted. `readPayloadMarkdownSettings(source)` returns the settings stored on a Payload config or instance.
 
 `links` lists authored URLs before sanitization; unsafe directive links are removed from `html` and reported in `diagnostics`.
 
@@ -238,6 +248,7 @@ type MarkdownRendererProps = {
   errorFallback?: ReactNode
   markdown?: null | string
   scope?: 'blocks' | 'field'
+  settings?: PayloadMarkdownSettingsSource | false | null
 } & MarkdownRenderConfig
 ```
 

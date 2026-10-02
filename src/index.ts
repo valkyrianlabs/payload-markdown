@@ -25,6 +25,7 @@ import {
 import { DEFAULT_MARKDOWN_MAX_LENGTH, markdownField } from './field/MarkdownField/config.js'
 import {
   clearPayloadMarkdownSettings,
+  PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,
   resolveMarkdownBlockDefaults,
   resolveMarkdownFieldDefaults,
   setPayloadMarkdownSettings,
@@ -186,13 +187,20 @@ export const payloadMarkdown =
       return config
     }
 
-    setPayloadMarkdownSettings(pluginOptions)
+    // The settings are owned by the config being built: a frozen snapshot on
+    // its server-only `custom`, also registered process-wide (shared by every
+    // installed copy of this package) for renderers without an explicit
+    // settings source. The last built config wins the registry.
+    const settings = setPayloadMarkdownSettings(pluginOptions)
+
+    config.custom = { ...(config.custom ?? {}), [PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY]: settings }
 
     // The admin editor gets the resolved theme names and icon pack aliases
-    // for its scope through field.admin.custom (CORE-8).
+    // for its scope through field.admin.custom (CORE-8), computed from the
+    // settings this config owns.
     ensureMarkdownBlock(
       config,
-      createMarkdownBlock(createEditorDirectiveConfig(resolveMarkdownBlockDefaults())),
+      createMarkdownBlock(createEditorDirectiveConfig(resolveMarkdownBlockDefaults(undefined, settings))),
     )
 
     if (!pluginOptions.collections || !config.collections) return config
@@ -212,7 +220,7 @@ export const payloadMarkdown =
         next = withMarkdownBlockInCollectionBlocks(
           next,
           createMarkdownBlock(
-            createEditorDirectiveConfig(resolveMarkdownBlockDefaults(collection.slug)),
+            createEditorDirectiveConfig(resolveMarkdownBlockDefaults(collection.slug, settings)),
           ),
         )
 
@@ -222,7 +230,7 @@ export const payloadMarkdown =
           resolved.fieldName,
           withEditorConfig(
             resolved.fieldOptions,
-            createEditorDirectiveConfig(resolveMarkdownFieldDefaults(collection.slug)),
+            createEditorDirectiveConfig(resolveMarkdownFieldDefaults(collection.slug, settings)),
           ),
         )
 

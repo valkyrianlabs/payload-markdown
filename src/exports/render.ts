@@ -10,11 +10,7 @@ export type {
   RenderDiagnosticSource,
 } from '../core/diagnostics.js'
 export type { MarkdownLink, MarkdownLinkKind } from '../core/renderData.js'
-export {
-  compileMarkdown,
-  type RenderedMarkdown,
-  renderMarkdownDocument as renderMarkdown,
-} from '../core/renderMarkdown.js'
+export { compileMarkdown, type RenderedMarkdown } from '../core/renderMarkdown.js'
 export { extractHeadingAnchors } from '../directives/extractHeadings.js'
 export {
   createHeadingSlugger,
@@ -22,4 +18,11 @@ export {
   type HeadingSlugger,
   slugifyHeading,
 } from '../directives/headingAnchors.js'
+export { renderMarkdown, type RenderMarkdownConfig } from '../render/renderMarkdown.js'
+export {
+  PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,
+  type PayloadMarkdownResolvedSettings,
+  type PayloadMarkdownSettingsSource,
+  readPayloadMarkdownSettings,
+} from '../runtime/index.js'
 export type { MarkdownRenderConfig, RenderMarkdownResult } from '../types/core.js'

@@ -134,6 +134,8 @@ result.warnings // diagnostic messages, as before
 result.errors // fatal errors; html is a placeholder when non-empty
 ```
 
+`renderMarkdown(markdown, config)` applies the same plugin defaults as `MarkdownRenderer`: pass `scope`, `collectionSlug` and, when a process builds several Payload configs, `settings` (a Payload config or instance). See [Where Settings Live](/configuration/plugin-config#where-settings-live).
+
 `diagnostics` carry a `source` (`directive`, `theme`, `icon`, `code` or `render`), a `severity` (`error`, `warning` or `info`) and, when the pipeline knows it, the 1-based `line` and `column` in the Markdown source. The same entry also exports `compileMarkdown` (`{ html, warnings, errors }`) and the heading anchor helpers `extractHeadingAnchors`, `slugifyHeading` and `createHeadingSlugger`.
 
 ## Stylesheet

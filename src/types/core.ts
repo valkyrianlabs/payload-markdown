@@ -1,5 +1,7 @@
 import type { JSX, ReactNode } from 'react'
 
+import type { PayloadMarkdownSettingsSource } from '../runtime/index.js'
+
 export type MarkdownRendererScope = 'blocks' | 'field'
 
 /**
@@ -298,6 +300,13 @@ export type BaseMarkdownRendererProps = {
 export type MarkdownRendererProps = {
   collectionSlug?: string
   scope?: MarkdownRendererScope
+  /**
+   * Plugin settings to render with: the settings object, a Payload config or
+   * a Payload instance (`settings={payload}`). Wins over the process-wide
+   * settings registry; needed when one process builds several Payload
+   * configs. `false` renders without plugin defaults.
+   */
+  settings?: false | null | PayloadMarkdownSettingsSource
 } & BaseMarkdownRendererProps & MarkdownRenderConfig
 
 /**
@@ -343,4 +352,7 @@ export interface MarkdownBlockProps extends MarkdownBlockData {
    * The slug of the collection this block is rendered within, if applicable.
    */
   collectionSlug?: string
+
+  /** Plugin settings source passed to `MarkdownRenderer` (see its `settings` prop). */
+  settings?: false | null | PayloadMarkdownSettingsSource
 }

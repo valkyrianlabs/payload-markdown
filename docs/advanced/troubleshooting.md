@@ -130,3 +130,7 @@ Runtime helpers that read plugin settings require `payloadMarkdown(...)` to run 
 :::details[Error shape]
 If settings are missing, `getPayloadMarkdownSettings()` throws an error that says settings have not been initialized and points back to adding `payloadMarkdown(...)` to the Payload plugins array.
 :::
+
+## Duplicate Copies Warning
+
+`Duplicate copies of @valkyrianlabs/payload-markdown are loaded in this process` means two different versions of the package were imported, typically because another plugin installed its own copy. Settings are still shared between the copies, but each copy renders with its own code. Install one version, for example by aligning the dependency ranges or with a package manager override.

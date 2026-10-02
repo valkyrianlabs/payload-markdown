@@ -55,6 +55,7 @@
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
+    "sync:version": "node scripts/sync-version.mjs",
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
     "test:exports": "node scripts/smoke-exports.mjs",
