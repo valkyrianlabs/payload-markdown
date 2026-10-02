@@ -10,6 +10,16 @@ import {
 
 import type { CodeBlockOptions } from '../types/core.js'
 
+/**
+ * Per-line tokenization budget passed to Shiki. Shiki's default (500 ms) is meant for
+ * interactive use: when a line takes longer (the first tokenization also compiles the
+ * grammar, and a busy server makes that slow), Shiki silently emits the rest of the line
+ * as one untokenized span, so the same code renders highlighted on one request and
+ * partly plain on another. Server rendering is cached and must be deterministic, so the
+ * budget only guards against pathological grammars.
+ */
+export const SHIKI_TOKENIZE_TIME_LIMIT_MS = 10_000
+
 export const DEFAULT_CODE_LANG = 'text'
 export const DEFAULT_CODE_THEME = 'github-dark'
 export const DEFAULT_CODE_LANGS: readonly string[] = [
@@ -327,6 +337,7 @@ export async function highlightCode(
     html: highlighter.codeToHtml(normalizedCode, {
       lang: fence.lang,
       theme,
+      tokenizeTimeLimit: SHIKI_TOKENIZE_TIME_LIMIT_MS,
       transformers,
     }),
     warnings,

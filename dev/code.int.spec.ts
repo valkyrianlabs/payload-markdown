@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { compileMarkdown } from '../src/core/renderMarkdown'
 
-const shikiControl = vi.hoisted(() => ({ failThemeOnce: new Set<string>() }))
+const shikiControl = vi.hoisted(() => ({
+  codeToHtmlOptions: [] as Array<Record<string, unknown>>,
+  failThemeOnce: new Set<string>(),
+}))
 
 vi.mock('shiki', async (importOriginal) => {
   const actual = await importOriginal<typeof Shiki>()
@@ -20,7 +23,16 @@ vi.mock('shiki', async (importOriginal) => {
         return Promise.reject(new Error(`simulated load failure for ${theme}`))
       }
 
-      return actual.createHighlighter(options)
+      return actual.createHighlighter(options).then((highlighter) => {
+        const codeToHtml = highlighter.codeToHtml.bind(highlighter)
+
+        highlighter.codeToHtml = ((code: string, codeOptions: Record<string, unknown>) => {
+          shikiControl.codeToHtmlOptions.push(codeOptions)
+          return codeToHtml(code, codeOptions as Parameters<typeof codeToHtml>[1])
+        }) as typeof highlighter.codeToHtml
+
+        return highlighter
+      })
     },
   }
 })
@@ -108,5 +120,18 @@ describe('CORE-14: fence language resolution', () => {
     const result = await compileMarkdown('```\nplain\n```\n\n```text\nplain\n```\n\n```TXT\nplain\n```')
 
     expect(result.warnings).toEqual([])
+  })
+})
+
+describe('deterministic highlighting under load', () => {
+  it('passes a generous per-line tokenize budget so slow first tokenization never degrades output', async () => {
+    shikiControl.codeToHtmlOptions.length = 0
+    const result = await compileMarkdown(jsFence)
+
+    expect(result.html).toContain('<span style="color:#F97583">const</span>')
+    expect(shikiControl.codeToHtmlOptions.length).toBeGreaterThan(0)
+    for (const options of shikiControl.codeToHtmlOptions) {
+      expect(options.tokenizeTimeLimit).toBeGreaterThanOrEqual(5000)
+    }
   })
 })
