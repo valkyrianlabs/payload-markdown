@@ -234,6 +234,42 @@ describe('CORE-4: icon SVGs are parsed and sanitized structurally', () => {
     expect(result.html).toContain('<use xlink:href="#p" stroke="currentColor" stroke-width="2" stroke-linecap="round"></use>')
   })
 
+  it('keeps duotone appearance by translating safe class rules into attributes, never emitting <style>', async () => {
+    const result = await compileMarkdown('::button[Go]{href="/x" icon="@fa-duotone/duotone-styled"}', {
+      icons: { baseDir: 'tests/fixtures/icons', packs: [{ alias: 'fa-duotone', path: 'fa-duotone' }] },
+    })
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).not.toContain('<style')
+    expect(result.html).toContain('<path class="fa-secondary" d="M1 1h14v6H1z" opacity=".4"></path>')
+    expect(result.html).toContain('<path class="fa-primary" d="M1 9h14v6H1z"></path>')
+  })
+
+  it('ignores style rules that are not plain class selectors with safe paint values', async () => {
+    const { parseAndSanitizeSvg } = await import('../src/icons/sanitizeSvg')
+    const svg = parseAndSanitizeSvg(
+      [
+        '<svg viewBox="0 0 1 1"><style>',
+        '.a{fill:url(https://evil.example/x)}',
+        '.b{opacity:.4;background:red}',
+        'path{opacity:.1}',
+        '.c[d]{opacity:.2}',
+        '@import "https://evil.example/x.css";',
+        '.d{fill:expression(alert(1))}',
+        '.e{fill:#ff0000;stroke:currentColor}',
+        '</style><path class="a b c d e" d="M0 0"/></svg>',
+      ].join(''),
+    )
+    const pathNode = svg?.children.find((child) => child.type === 'element' && child.tagName === 'path')
+
+    expect(pathNode && 'properties' in pathNode ? pathNode.properties : undefined).toEqual({
+      className: ['a', 'b', 'c', 'd', 'e'],
+      d: 'M0 0',
+      fill: '#ff0000',
+      stroke: 'currentColor',
+    })
+  })
+
   it('re-reads an icon when the file changes', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pmd-icons-'))
     const iconFile = path.join(dir, 'pack', 'dot.svg')

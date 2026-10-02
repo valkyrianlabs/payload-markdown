@@ -18,6 +18,12 @@ import { fromHtml } from 'hast-util-from-html'
  * - `href` / `xlink:href` are kept only as same-document `#fragment` refs
  * - `style` attributes are kept only when they cannot load or reference
  *   anything (`url(`, `@import`, `expression(`, `javascript:`, escapes)
+ * - `<style>` elements are never emitted (inlined into the page they would apply
+ *   to the whole document). Simple class rules that only set paint/opacity —
+ *   e.g. Font Awesome duotone's `.fa-secondary{opacity:.4}` — are translated into
+ *   presentation attributes on the matching elements of the same icon, so icons
+ *   keep their appearance without carrying CSS. Any rule that is not a plain
+ *   class selector with allowlisted properties and plain values is ignored.
  */
 
 const ALLOWED_SVG_TAG_NAMES = new Set([
@@ -259,6 +265,79 @@ function sanitizeProperties(properties: Properties | undefined): Properties {
   return output
 }
 
+/** Properties a `<style>` class rule may set; values must match SAFE_STYLE_VALUE. */
+const STYLE_RULE_PROPERTIES = ['color', 'fill', 'fill-opacity', 'opacity', 'stroke', 'stroke-opacity', 'stroke-width']
+const STYLE_RULE_PROPERTY_NAMES = new Map(
+  STYLE_RULE_PROPERTIES.map((attribute) => [attribute, [...getSvgPropertyNames([attribute])][0]]),
+)
+const SAFE_STYLE_VALUE = /^(?:-?(?:\d+(?:\.\d*)?|\.\d+)(?:%|px)?|#[0-9a-f]{3,8}|[a-z]{3,20})$/i
+const CLASS_SELECTOR = /^\.(-?[_a-z][\w-]*)$/i
+
+type StyleRule = { className: string; declarations: Array<[string, string]> }
+
+function collectText(node: Element): string {
+  return node.children.map((child) => (child.type === 'text' ? child.value : child.type === 'element' ? collectText(child) : '')).join('')
+}
+
+function collectStyleText(children: readonly (ElementContent | RootContent)[]): string {
+  let text = ''
+
+  for (const child of children) {
+    if (child.type !== 'element') continue
+    if (child.tagName === 'style') text += `${collectText(child)}\n`
+    else text += collectStyleText(child.children)
+  }
+
+  return text
+}
+
+/** Parses only `.class[, .class] { prop: value; … }` rules with allowlisted properties and plain values. */
+function parseClassStyleRules(css: string): StyleRule[] {
+  const rules: StyleRule[] = []
+  const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  for (const match of withoutComments.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = match[1].split(',').map((selector) => selector.trim())
+    const classNames = selectors.map((selector) => CLASS_SELECTOR.exec(selector)?.[1])
+    if (classNames.some((name) => !name)) continue
+
+    const declarations: Array<[string, string]> = []
+    let valid = true
+
+    for (const declaration of match[2].split(';')) {
+      if (!declaration.trim()) continue
+      const separator = declaration.indexOf(':')
+      const property = declaration.slice(0, separator).trim().toLowerCase()
+      const value = declaration.slice(separator + 1).trim()
+      const propertyName = STYLE_RULE_PROPERTY_NAMES.get(property)
+
+      if (separator < 0 || !propertyName || !SAFE_STYLE_VALUE.test(value)) {
+        valid = false
+        break
+      }
+
+      declarations.push([propertyName, value])
+    }
+
+    if (!valid || declarations.length === 0) continue
+    for (const className of classNames) rules.push({ className: className!, declarations })
+  }
+
+  return rules
+}
+
+function applyClassStyleRules(node: Element, rules: readonly StyleRule[]): void {
+  const classes = toClassList(node.properties.className)
+
+  // Later rules win, like the stylesheet they replace; class rules outrank presentation attributes.
+  for (const rule of rules) {
+    if (!classes.includes(rule.className)) continue
+    for (const [name, value] of rule.declarations) node.properties[name] = value
+  }
+
+  for (const child of node.children) if (child.type === 'element') applyClassStyleRules(child, rules)
+}
+
 function sanitizeChildren(children: readonly (ElementContent | RootContent)[]): ElementContent[] {
   const output: ElementContent[] = []
 
@@ -300,12 +379,17 @@ export function parseAndSanitizeSvg(content: string): Element | undefined {
 
   if (!svg) return undefined
 
-  return {
+  const sanitized: Element = {
     type: 'element',
     children: sanitizeChildren(svg.children),
     properties: sanitizeProperties(svg.properties),
     tagName: 'svg',
   }
+  const styleRules = parseClassStyleRules(collectStyleText(svg.children))
+
+  if (styleRules.length > 0) applyClassStyleRules(sanitized, styleRules)
+
+  return sanitized
 }
 
 function toClassList(value: Properties[string]): string[] {
