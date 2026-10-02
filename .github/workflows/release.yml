@@ -184,11 +184,6 @@ jobs:
           console.log(`Version check passed: ${local} > ${published}`);
           NODE
 
-      - name: Run tests
-        run: |
-          set -euo pipefail
-          pnpm test:int
-
       # Docs are published with the native pmdocs CLI from the Valkyrian Labs APT repository.
       # Install it and prove validate + an authenticated dry-run sync work BEFORE npm publish,
       # so a missing tool or a rejected sync can never leave a published package without docs.
@@ -224,6 +219,13 @@ jobs:
           set -euo pipefail
           export NEXT_CPU_COUNT="$(nproc)"
           pnpm build
+
+      # After the build: several contract tests exercise the built dist (directive spec, plain-Node
+      # exports, settings shared across copies) and skip when it is missing.
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          pnpm test:int
 
       # The same contract gates as Build and Test, before anything is published.
       - name: Lint
