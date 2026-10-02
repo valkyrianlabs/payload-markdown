@@ -245,6 +245,44 @@ describe('CORE-4: icon SVGs are parsed and sanitized structurally', () => {
     expect(result.html).toContain('<path class="fa-primary" d="M1 9h14v6H1z"></path>')
   })
 
+  it('keeps design-tool exports (Illustrator/Figma class styles) looking the same', async () => {
+    const result = await compileMarkdown('::button[Go]{href="/x" icon="@export/logo"}', {
+      icons: { baseDir: 'tests/fixtures/icons', packs: [{ alias: 'export', path: 'design-export' }] },
+    })
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).not.toContain('<style')
+    expect(result.html).toContain(
+      '<circle class="cls-1" cx="12" cy="12" r="10" fill="#0a84ff" stroke="#003366" stroke-miterlimit="10" stroke-width=".5px"></circle>',
+    )
+    expect(result.html).toContain(
+      '<path class="cls-2" d="M4 12h16" fill="none" stroke="#ff9f0a" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 1"></path>',
+    )
+    expect(result.html).toContain('fill="rgb(52, 199, 89)" opacity="0.8"')
+  })
+
+  it('never turns unsafe style values into attributes', async () => {
+    const { parseAndSanitizeSvg } = await import('../src/icons/sanitizeSvg')
+    const svg = parseAndSanitizeSvg(
+      [
+        '<svg viewBox="0 0 1 1"><style>',
+        '.x{fill:url(#g);stroke:url(https://evil.example/s.svg#a);opacity:.5}',
+        '.x{fill:var(--evil);stroke:attr(data-x);color:expression(alert(1))}',
+        '.x{font-family:"Inter\\" onload=alert(1)";stroke-width:calc(1px + 1px)}',
+        '.x{fill:javascript:alert(1);stroke:red;}',
+        '</style><path class="x" d="M0 0"/></svg>',
+      ].join(''),
+    )
+    const pathNode = svg?.children.find((child) => child.type === 'element' && child.tagName === 'path')
+
+    expect(pathNode && 'properties' in pathNode ? pathNode.properties : undefined).toEqual({
+      className: ['x'],
+      d: 'M0 0',
+      opacity: '.5',
+      stroke: 'red',
+    })
+  })
+
   it('ignores style rules that are not plain class selectors with safe paint values', async () => {
     const { parseAndSanitizeSvg } = await import('../src/icons/sanitizeSvg')
     const svg = parseAndSanitizeSvg(
@@ -266,6 +304,8 @@ describe('CORE-4: icon SVGs are parsed and sanitized structurally', () => {
       className: ['a', 'b', 'c', 'd', 'e'],
       d: 'M0 0',
       fill: '#ff0000',
+      // `.b{opacity:.4;background:red}`: the safe declaration applies, the unsupported one is skipped
+      opacity: '.4',
       stroke: 'currentColor',
     })
   })

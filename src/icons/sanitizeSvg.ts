@@ -265,12 +265,53 @@ function sanitizeProperties(properties: Properties | undefined): Properties {
   return output
 }
 
-/** Properties a `<style>` class rule may set; values must match SAFE_STYLE_VALUE. */
-const STYLE_RULE_PROPERTIES = ['color', 'fill', 'fill-opacity', 'opacity', 'stroke', 'stroke-opacity', 'stroke-width']
+/**
+ * Presentation properties a `<style>` class rule may set (they are also allowed as SVG attributes).
+ * Design-tool exports (Illustrator, Figma, Sketch) put their paint in such rules, for example
+ * `.cls-1{fill:#0a84ff;stroke-miterlimit:10}`.
+ */
+const STYLE_RULE_PROPERTIES = [
+  'clip-rule',
+  'color',
+  'display',
+  'fill',
+  'fill-opacity',
+  'fill-rule',
+  'flood-color',
+  'flood-opacity',
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-weight',
+  'letter-spacing',
+  'lighting-color',
+  'opacity',
+  'paint-order',
+  'shape-rendering',
+  'stop-color',
+  'stop-opacity',
+  'stroke',
+  'stroke-dasharray',
+  'stroke-dashoffset',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'stroke-miterlimit',
+  'stroke-opacity',
+  'stroke-width',
+  'text-anchor',
+  'vector-effect',
+  'visibility',
+]
 const STYLE_RULE_PROPERTY_NAMES = new Map(
   STYLE_RULE_PROPERTIES.map((attribute) => [attribute, [...getSvgPropertyNames([attribute])][0]]),
 )
-const SAFE_STYLE_VALUE = /^(?:-?(?:\d+(?:\.\d*)?|\.\d+)(?:%|px)?|#[0-9a-f]{3,8}|[a-z]{3,20})$/i
+/**
+ * A plain value: numbers and lengths (also space/comma-separated lists such as dash arrays), hex
+ * colours, keywords, quoted font names, and rgb()/rgba()/hsl()/hsla() with numeric arguments.
+ * Anything that can load or reference something (`url(`, other functions, escapes) is rejected.
+ */
+const SAFE_STYLE_VALUE =
+  /^(?:#[0-9a-f]{3,8}|(?:rgba?|hsla?)\([\d\s.,%/-]+\)|[\w\s.,%"'-]+)$/i
 const CLASS_SELECTOR = /^\.(-?[_a-z][\w-]*)$/i
 
 type StyleRule = { className: string; declarations: Array<[string, string]> }
@@ -302,24 +343,22 @@ function parseClassStyleRules(css: string): StyleRule[] {
     if (classNames.some((name) => !name)) continue
 
     const declarations: Array<[string, string]> = []
-    let valid = true
 
+    // Each declaration stands alone, like CSS: unsupported properties (e.g. `isolation`) and
+    // unsafe values are skipped without discarding the rule's other, safe declarations.
     for (const declaration of match[2].split(';')) {
-      if (!declaration.trim()) continue
       const separator = declaration.indexOf(':')
+      if (separator < 0) continue
       const property = declaration.slice(0, separator).trim().toLowerCase()
-      const value = declaration.slice(separator + 1).trim()
+      const value = declaration.slice(separator + 1).replace(/\s*!important\s*$/i, '').trim()
       const propertyName = STYLE_RULE_PROPERTY_NAMES.get(property)
 
-      if (separator < 0 || !propertyName || !SAFE_STYLE_VALUE.test(value)) {
-        valid = false
-        break
-      }
+      if (!propertyName || !value || !SAFE_STYLE_VALUE.test(value)) continue
 
       declarations.push([propertyName, value])
     }
 
-    if (!valid || declarations.length === 0) continue
+    if (declarations.length === 0) continue
     for (const className of classNames) rules.push({ className: className!, declarations })
   }
 
