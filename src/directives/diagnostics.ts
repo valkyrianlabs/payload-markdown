@@ -1,9 +1,5 @@
 import type { Root } from 'mdast'
 
-import remarkGfm from 'remark-gfm'
-import remarkParse from 'remark-parse'
-import { unified } from 'unified'
-
 import type { MarkdownDirectiveThemes } from '../types/core.js'
 import type { TabsDefaultCandidate } from './definitions/tab.js'
 import type { ScannedDirectiveLine, SourceIndex } from './lineScanner.js'
@@ -21,6 +17,7 @@ import {
 } from './lineScanner.js'
 import { layoutDirectiveRegistry } from './registry.js'
 import { resolveShieldsBadge } from './shields.js'
+import { parseDirectiveSourceTree } from './sourceTree.js'
 import { getDirectiveFallbackThemeName, hasDirectiveTheme } from './themes.js'
 import { isSafeHref } from './urls.js'
 
@@ -343,8 +340,6 @@ function getBadgeDiagnostics(text: string): string[] {
   ]
 }
 
-const markdownParser = unified().use(remarkParse).use(remarkGfm).freeze()
-
 type DiagnosticSink = (message: string, from: number, to: number, line: number) => void
 
 function lintContainerLine(state: LintState, scanned: ScannedDirectiveLine, push: DiagnosticSink) {
@@ -428,7 +423,7 @@ export function lintMarkdownDirectives(
   const diagnostics: DirectiveDiagnostic[] = []
   const state: LintState = { options, stack: [] }
   const index = createSourceIndex(markdown)
-  const tree = markdownParser.parse(markdown)
+  const tree = parseDirectiveSourceTree(markdown)
 
   const push: DiagnosticSink = (message, from, to, line) =>
     diagnostics.push({ from, line, message, severity: 'warning', to })

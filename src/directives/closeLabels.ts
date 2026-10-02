@@ -1,6 +1,10 @@
-import type { LayoutName } from './types.js'
+import type { Paragraph } from 'mdast'
 
+import type { ScannedDirectiveLine } from './lineScanner.js'
+
+import { createSourceIndex, scanDirectiveLineAt, splitParagraphIntoLines } from './lineScanner.js'
 import { layoutDirectiveRegistry } from './registry.js'
+import { parseDirectiveSourceTree } from './sourceTree.js'
 
 export type DirectiveCloseLabel = {
   from: number
@@ -11,11 +15,15 @@ export type DirectiveCloseLabel = {
 }
 
 type OpenFrame = {
-  name: LayoutName
+  name: string
+  /** Heading depth the grid was opened under (grids only). */
+  parentHeadingDepth?: number
 }
 
-function isFenceLine(trimmed: string): boolean {
-  return trimmed.startsWith('```') || trimmed.startsWith('~~~')
+type CloseLabelState = {
+  currentHeadingDepth?: number
+  labels: DirectiveCloseLabel[]
+  stack: OpenFrame[]
 }
 
 function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame) => boolean) {
@@ -27,87 +35,114 @@ function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame)
   return -1
 }
 
-function makeExplicitLabel(
-  label: string,
-  line: number,
-  markerFrom: number,
-  markerTo: number,
-): DirectiveCloseLabel {
-  return {
-    from: markerFrom + 3,
+const isGridFrame = (frame: OpenFrame) => layoutDirectiveRegistry.isGridName(frame.name)
+
+function applyContainerLine(state: CloseLabelState, scanned: ScannedDirectiveLine) {
+  const { labels, stack } = state
+  const token = layoutDirectiveRegistry.parseMarkdownLineDetailed(scanned.text).token
+  const markerEnd = scanned.from + 3
+
+  if (!token) return
+
+  if (token.action === 'open') {
+    const isGrid = layoutDirectiveRegistry.isGridName(token.name)
+
+    if (isGrid) {
+      // remarkCompileLayouts closes an open grid inside the nearest section.
+      const gridIndex = findNearestFrameIndex(stack, isGridFrame)
+      const sectionIndex = findNearestFrameIndex(stack, (frame) => frame.name === 'section')
+
+      if (gridIndex >= 0 && sectionIndex >= 0 && gridIndex > sectionIndex) stack.splice(gridIndex)
+    }
+
+    stack.push({
+      name: token.name,
+      ...(isGrid ? { parentHeadingDepth: state.currentHeadingDepth ?? 1 } : {}),
+    })
+    return
+  }
+
+  if (token.action === 'close') {
+    const frame = stack.pop()
+
+    if (frame)
+      labels.push({
+        from: markerEnd,
+        kind: 'widget',
+        label: layoutDirectiveRegistry.getCloseLabel(frame.name),
+        line: scanned.startLine,
+        to: markerEnd,
+      })
+    return
+  }
+
+  const isGridClose = token.action === 'closeGrid'
+  const frameIndex = findNearestFrameIndex(stack, (frame) =>
+    isGridClose ? isGridFrame(frame) : frame.name === 'section',
+  )
+
+  if (frameIndex >= 0) stack.splice(frameIndex)
+
+  labels.push({
+    from: markerEnd,
     kind: 'suffix',
-    label,
-    line,
-    to: markerTo,
+    label: isGridClose ? 'endcol' : scanned.text.slice(3) || 'endsection',
+    line: scanned.startLine,
+    to: scanned.from + scanned.text.length,
+  })
+}
+
+/** Mirrors remarkCompileLayouts: a heading shallower than a grid's parent heading closes the grid. */
+function applyHeading(state: CloseLabelState, depth: number) {
+  const top = state.stack[state.stack.length - 1]
+
+  if (
+    top &&
+    isGridFrame(top) &&
+    typeof top.parentHeadingDepth === 'number' &&
+    depth < top.parentHeadingDepth
+  )
+    state.stack.pop()
+
+  state.currentHeadingDepth = depth
+}
+
+function applyParagraph(
+  state: CloseLabelState,
+  paragraph: Paragraph,
+  index: ReturnType<typeof createSourceIndex>,
+) {
+  const lines = splitParagraphIntoLines(paragraph)
+
+  for (let lineIndex = 0; lineIndex < lines.length; ++lineIndex) {
+    const scanned = scanDirectiveLineAt(lines, lineIndex, index)
+    if (!scanned) continue
+
+    if (scanned.kind === 'container') applyContainerLine(state, scanned)
+
+    lineIndex = scanned.phrasingEnd
   }
 }
 
-function makeWidgetLabel(
-  label: string,
-  line: number,
-  markerFrom: number,
-): DirectiveCloseLabel {
-  return {
-    from: markerFrom + 3,
-    kind: 'widget',
-    label,
-    line,
-    to: markerFrom + 3,
-  }
-}
-
+/**
+ * Editor-only labels for directive closers: a widget naming the block a bare
+ * `:::` closes, and a suffix mark on `:::endcol`, `:::end` and `:::endsection`.
+ *
+ * Directive lines are found with the renderer's front end and shared line
+ * scanner, so markers inside code blocks, lists, blockquotes, HTML or inline
+ * code are not treated as closers, and the block a `:::` closes follows the
+ * renderer's layout stack (including grids closed by a shallower heading or
+ * by a new grid inside the same section).
+ */
 export function getDirectiveCloseLabels(markdown: string): DirectiveCloseLabel[] {
-  const labels: DirectiveCloseLabel[] = []
-  const stack: OpenFrame[] = []
-  const lines = markdown.split(/\r?\n/)
-  let offset = 0
-  let inFence = false
+  const state: CloseLabelState = { labels: [], stack: [] }
+  const index = createSourceIndex(markdown)
+  const tree = parseDirectiveSourceTree(markdown)
 
-  for (let index = 0; index < lines.length; ++index) {
-    const line = lines[index]
-    const trimmed = line.trim()
-    const lineStart = offset
-    const markerStart = line.indexOf(':::')
-    const markerFrom = markerStart >= 0 ? lineStart + markerStart : lineStart
-    const markerTo = markerFrom + trimmed.length
-
-    if (isFenceLine(trimmed)) {
-      inFence = !inFence
-      offset += line.length + 1
-      continue
-    }
-
-    if (!inFence && trimmed.startsWith(':::')) {
-      const token = layoutDirectiveRegistry.parseMarkdownLineDetailed(trimmed).token
-
-      if (token?.action === 'open') stack.push({ name: token.name })
-
-      if (token?.action === 'close') {
-        const frame = stack.pop()
-        if (frame) labels.push(makeWidgetLabel(layoutDirectiveRegistry.getCloseLabel(frame.name), index + 1, markerFrom))
-      }
-
-      if (token?.action === 'closeGrid') {
-        const frameIndex = findNearestFrameIndex(stack, (frame) =>
-          layoutDirectiveRegistry.isGridName(frame.name),
-        )
-
-        if (frameIndex >= 0) stack.splice(frameIndex)
-        labels.push(makeExplicitLabel('endcol', index + 1, markerFrom, markerTo))
-      }
-
-      if (token?.action === 'closeSection') {
-        const frameIndex = findNearestFrameIndex(stack, (frame) => frame.name === 'section')
-
-        if (frameIndex >= 0) stack.splice(frameIndex)
-        labels.push(
-          makeExplicitLabel(trimmed.slice(3) || 'endsection', index + 1, markerFrom, markerTo),
-        )
-      }
-    }
-
-    offset += line.length + 1
+  for (const node of tree.children) {
+    if (node.type === 'paragraph') applyParagraph(state, node, index)
+    else if (node.type === 'heading') applyHeading(state, node.depth)
   }
 
-  return labels
+  return state.labels
 }
