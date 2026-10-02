@@ -48,6 +48,19 @@ import {
 } from '@valkyrianlabs/payload-markdown/server'
 ```
 
+Client export (`'use client'` components for bundled apps):
+
+```ts
+import {
+  MarkdownRendererClient,
+  PayloadMarkdownField,
+} from '@valkyrianlabs/payload-markdown/client'
+```
+
+`PayloadMarkdownField` is the same component as the server export's `PayloadMarkdownField`. Fields created by `markdownField()` keep using the admin component path `@valkyrianlabs/payload-markdown/server#PayloadMarkdownField`, so existing import maps do not change; `@valkyrianlabs/payload-markdown/client#PayloadMarkdownField` resolves to the same component. `MarkdownRendererClient` adds tab and code-copy behavior to HTML rendered with `renderMarkdown()`: render it with `containerId` set to the id of the element that contains the HTML.
+
+The server and client exports require a bundler (they import CSS and React client code). The main, render and advanced exports load in plain Node.
+
 Headless render export (no React, Next.js or CSS; works in plain Node):
 
 ```ts

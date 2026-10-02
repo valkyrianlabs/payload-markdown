@@ -15,6 +15,27 @@ describe('package exports', () => {
     expect(packageJson.publishConfig.exports).toEqual(packageJson.exports)
   })
 
+  it('exports the client field component from ./client and keeps the ./server alias', async () => {
+    // @payloadcms/ui imports CSS, so the client entries are checked statically
+    // here (they are bundler-only); both must re-export the same module.
+    const fieldModule = "from '../field/MarkdownField/Component.js'"
+    const client = fs.readFileSync(path.resolve('src/exports/client.ts'), 'utf8')
+    const server = fs.readFileSync(path.resolve('src/exports/server.ts'), 'utf8')
+    const { markdownField } = await import('../src/field/MarkdownField/config')
+    const field = markdownField({ name: 'content' }) as { admin?: { components?: { Field?: string } } }
+
+    expect(client).toContain(`export { PayloadMarkdownField } ${fieldModule}`)
+    expect(server).toContain(`export { PayloadMarkdownField } ${fieldModule}`)
+    expect(client).toContain('MarkdownRendererClient,')
+    expect(fs.readFileSync(path.resolve('src/field/MarkdownField/Component.tsx'), 'utf8')).toMatch(
+      /^'use client'/,
+    )
+    // Existing import maps hard-code this specifier; it must not change.
+    expect(field.admin?.components?.Field).toBe(
+      '@valkyrianlabs/payload-markdown/server#PayloadMarkdownField',
+    )
+  })
+
   // Runs against the built package (`pnpm build` first); CI builds before testing.
   it.skipIf(!built)('imports ., ./render and ./advanced in plain Node without CSS or React', () => {
     const result = spawnSync(process.execPath, ['scripts/smoke-exports.mjs'], {
