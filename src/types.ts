@@ -19,6 +19,12 @@ export type MarkdownFieldOptions = {
   defaultValue?: string
   label?: string
   localized?: boolean
+  /**
+   * Maximum markdown length in characters. Defaults to
+   * `DEFAULT_MARKDOWN_MAX_LENGTH` (1,000,000) instead of Payload's
+   * `defaultMaxTextLength` (40,000). Validation only; no schema change.
+   */
+  maxLength?: number
   name?: string
   required?: boolean
 }

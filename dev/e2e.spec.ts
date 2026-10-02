@@ -154,3 +154,37 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(edgeCases.locator('[data-vl-layout="2col"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-vl-layout="cell"]')).toHaveCount(2)
 })
+
+test('markdown field saves long documents and renders Payload field chrome', async ({ page, request }) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  expect(login.ok()).toBe(true)
+  const { token } = (await login.json()) as { token: string }
+
+  // Longer than Payload's default 40,000-character text limit (CORE-7).
+  const content = `# Long markdown\n\n${'Lorem ipsum dolor sit amet. '.repeat(2000)}`
+  const created = await request.post('/api/posts', {
+    data: { slug: `long-markdown-${Date.now()}`, content, title: 'Long markdown' },
+    headers: { Authorization: `JWT ${token}` },
+  })
+
+  expect(content.length).toBeGreaterThan(40_000)
+  expect(created.status()).toBe(201)
+
+  const { doc } = (await created.json()) as { doc: { content: string; id: number | string } }
+  expect(doc.content).toHaveLength(content.length)
+
+  await page.goto('/admin')
+  await page.fill('#field-email', devUser.email)
+  await page.fill('#field-password', devUser.password)
+  await page.click('.form-submit button')
+  await expect(page).toHaveTitle(/Dashboard/)
+
+  await page.goto(`/admin/collections/posts/${doc.id}`)
+
+  const field = page.locator('.payload-markdown-field')
+  await expect(field).toHaveCount(1)
+  await expect(field.locator('.field-label')).toContainText('Markdown')
+  await expect(field.locator('.cm-editor')).toBeVisible()
+  await expect(field.locator('.cm-content')).toContainText('# Long markdown')
+  await expect(field.locator('.cm-content')).toHaveAttribute('contenteditable', 'true')
+})

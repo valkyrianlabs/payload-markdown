@@ -9,6 +9,7 @@ type MarkdownCodeMirrorProps = {
   directiveConfig?: MarkdownEditorDirectiveConfig
   onChangeAction: (value: string) => void
   placeholder?: string
+  readOnly?: boolean
   value?: string
 }
 

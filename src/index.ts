@@ -22,7 +22,7 @@ import {
   createEditorDirectiveConfig,
   PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY,
 } from './editor/directiveConfig.js'
-import { markdownField } from './field/MarkdownField/config.js'
+import { DEFAULT_MARKDOWN_MAX_LENGTH, markdownField } from './field/MarkdownField/config.js'
 import {
   clearPayloadMarkdownSettings,
   resolveMarkdownBlockDefaults,
@@ -238,6 +238,7 @@ export {
   DEFAULT_CODE_LANGS,
   DEFAULT_COLUMNS_THEMES,
   DEFAULT_DETAILS_THEMES,
+  DEFAULT_MARKDOWN_MAX_LENGTH,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
   DEFAULT_TAB_THEMES,

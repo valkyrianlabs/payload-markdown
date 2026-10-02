@@ -1,24 +1,60 @@
 'use client'
 
-import type { TextFieldClientComponent } from 'payload'
+import type { TextFieldClientComponent, Validate } from 'payload'
 
-import { useField } from '@payloadcms/ui'
-import React, { useEffect, useMemo, useState } from 'react'
+import {
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  RenderCustomComponent,
+  useField,
+} from '@payloadcms/ui'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { readEditorDirectiveConfig } from '../../editor/directiveConfig.js'
-import { MarkdownEditor } from '../../editor/MarkdownEditor.js'
+import { MarkdownCodeMirror } from '../../editor/MarkdownCodeMirror/Component.js'
 
 const SAVE_DEBOUNCE_MS = 800
+const fieldBaseClass = 'field-type'
 
 export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
-  const { field, path } = props
+  const { field, path: pathFromProps, readOnly: readOnlyFromProps, validate } = props
+  const { admin, label, localized, maxLength, minLength, required } = field
 
-  const { setValue, value } = useField<string>({ path })
+  // Same client-side validation contract as Payload's own text field, so
+  // length and required errors show before the server rejects a save.
+  const memoizedValidate = useCallback<Validate>(
+    (value, options) => {
+      if (typeof validate !== 'function') return true
 
+      return validate(value as string, {
+        ...options,
+        maxLength,
+        minLength,
+        required,
+      } as Parameters<typeof validate>[1])
+    },
+    [validate, maxLength, minLength, required],
+  )
+
+  const {
+    customComponents: { AfterInput, BeforeInput, Description, Error, Label } = {},
+    disabled,
+    path,
+    setValue,
+    showError,
+    value,
+  } = useField<string>({
+    potentiallyStalePath: pathFromProps,
+    validate: memoizedValidate,
+  })
+
+  const readOnly = Boolean(readOnlyFromProps || disabled || admin?.readOnly)
   const [draftValue, setDraftValue] = useState<string>(value ?? '')
+
   // Configured themes and icon packs, injected by the plugin (CORE-8). Keyed
   // by content so a new-but-equal config object does not rebuild the editor.
-  const directiveConfigKey = JSON.stringify(field.admin?.custom ?? null)
+  const directiveConfigKey = JSON.stringify(admin?.custom ?? null)
   const directiveConfig = useMemo(
     () => readEditorDirectiveConfig(JSON.parse(directiveConfigKey)),
     [directiveConfigKey],
@@ -34,6 +70,7 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
 
   // Debounce writes back into Payload form state / autosave machinery.
   useEffect(() => {
+    if (readOnly) return
     if (draftValue === (value ?? '')) return
 
     const timer = window.setTimeout(() => {
@@ -41,17 +78,51 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
     }, SAVE_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timer)
-  }, [draftValue, value, setValue])
+  }, [draftValue, readOnly, value, setValue])
 
-  return <MarkdownEditor
-      directiveConfig={directiveConfig}
-      label={field.label}
-      onChangeAction={setDraftValue}
-      placeholder={
-        'placeholder' in field && typeof field.placeholder === 'string'
-          ? field.placeholder
-          : 'Write markdown...'
-      }
-      value={draftValue}
-    />
+  const placeholder =
+    'placeholder' in field && typeof field.placeholder === 'string'
+      ? field.placeholder
+      : typeof admin?.placeholder === 'string'
+        ? admin.placeholder
+        : 'Write markdown...'
+
+  return (
+    <div
+      className={[
+        fieldBaseClass,
+        'text',
+        'payload-markdown-field',
+        admin?.className,
+        showError && 'error',
+        readOnly && 'read-only',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <RenderCustomComponent
+        CustomComponent={Label}
+        Fallback={<FieldLabel label={label} localized={localized} path={path} required={required} />}
+      />
+      <div className={`${fieldBaseClass}__wrap`}>
+        <RenderCustomComponent
+          CustomComponent={Error}
+          Fallback={<FieldError path={path} showError={showError} />}
+        />
+        {BeforeInput}
+        <MarkdownCodeMirror
+          directiveConfig={directiveConfig}
+          onChangeAction={setDraftValue}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          value={draftValue}
+        />
+        {AfterInput}
+        <RenderCustomComponent
+          CustomComponent={Description}
+          Fallback={<FieldDescription description={admin?.description} path={path} />}
+        />
+      </div>
+    </div>
+  )
 }
