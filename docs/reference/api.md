@@ -48,17 +48,65 @@ import {
 } from '@valkyrianlabs/payload-markdown/server'
 ```
 
+Headless render export (no React, Next.js or CSS; works in plain Node):
+
+```ts
+import {
+  compileMarkdown,
+  createHeadingSlugger,
+  extractHeadingAnchors,
+  renderMarkdown,
+  slugifyHeading,
+} from '@valkyrianlabs/payload-markdown/render'
+```
+
+Stylesheet export:
+
+```ts
+import '@valkyrianlabs/payload-markdown/styles.css'
+```
+
 Advanced export:
 
 ```ts
 import {
+  createHeadingSlugger,
   createPayloadMarkdownIconRegistryEntry,
   createPayloadMarkdownIconRegistrySource,
+  extractHeadingAnchors,
+  slugifyHeading,
   vlMdCodeBlockConfig,
   vlMdConfig,
   vlMdTailwindField,
 } from '@valkyrianlabs/payload-markdown/advanced'
 ```
+
+## `renderMarkdown`
+
+```ts
+function renderMarkdown(markdown: string, config?: MarkdownRenderConfig): Promise<RenderedMarkdown>
+
+type RenderedMarkdown = {
+  diagnostics: RenderDiagnostic[]
+  errors: string[]
+  headings: Array<{ depth: number; id: string; text: string }>
+  html: string
+  links: Array<{ kind: 'definition' | 'directive' | 'image' | 'link'; url: string }>
+  text: string
+  warnings: string[]
+}
+
+type RenderDiagnostic = {
+  code?: string
+  column?: number
+  line?: number
+  message: string
+  severity: 'error' | 'info' | 'warning'
+  source: 'code' | 'directive' | 'icon' | 'render' | 'theme'
+}
+```
+
+`links` lists authored URLs before sanitization; unsafe directive links are removed from `html` and reported in `diagnostics`.
 
 ## `PayloadMarkdownConfig`
 

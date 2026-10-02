@@ -29,7 +29,13 @@
       "import": "./dist/exports/advanced.js",
       "types": "./dist/exports/advanced.d.ts",
       "default": "./dist/exports/advanced.js"
-    }
+    },
+    "./render": {
+      "import": "./dist/exports/render.js",
+      "types": "./dist/exports/render.d.ts",
+      "default": "./dist/exports/render.js"
+    },
+    "./styles.css": "./dist/components/MarkdownRenderer/index.css"
   },
   "files": [
     "dist",
@@ -51,6 +57,7 @@
     "lint:fix": "eslint ./src --fix",
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
+    "test:exports": "node scripts/smoke-exports.mjs",
     "test:int": "vitest"
   },
   "devDependencies": {
@@ -124,7 +131,13 @@
         "import": "./dist/exports/advanced.js",
         "types": "./dist/exports/advanced.d.ts",
         "default": "./dist/exports/advanced.js"
-      }
+      },
+      "./render": {
+        "import": "./dist/exports/render.js",
+        "types": "./dist/exports/render.d.ts",
+        "default": "./dist/exports/render.js"
+      },
+      "./styles.css": "./dist/components/MarkdownRenderer/index.css"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
