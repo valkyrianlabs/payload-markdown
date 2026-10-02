@@ -110,6 +110,7 @@ payloadMarkdown({
 ## Available Migration Guides
 
 - [v1.0.0 To v1.1.0](/advanced/v1-v1-1)
+- [v1.5 To v1.6](/advanced/v1-5-v1-6) (no schema migration; behavior fixes)
 
 ## General Guidance
 

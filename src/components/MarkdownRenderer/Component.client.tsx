@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-type MarkdownRendererClientProps = {
+export type MarkdownRendererClientProps = {
   containerId: string
 }
 

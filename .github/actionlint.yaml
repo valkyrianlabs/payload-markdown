@@ -1,0 +1,4 @@
+# actionlint configuration (https://github.com/rhysd/actionlint)
+self-hosted-runner:
+  labels:
+    - ubuntu-latest-lts

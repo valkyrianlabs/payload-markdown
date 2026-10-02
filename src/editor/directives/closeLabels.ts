@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 
-import { RangeSetBuilder } from '@codemirror/state'
+import { RangeSetBuilder, StateEffect } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 
 import { getDirectiveCloseLabels } from '../../directives/closeLabels.js'
@@ -56,18 +56,50 @@ function buildCloseLabelDecorations(view: EditorView): DecorationSet {
   return builder.finish()
 }
 
+/**
+ * Close labels come from a full remark parse of the document (the renderer's
+ * front end). Small documents are relabelled on every change; larger ones map
+ * the existing labels through the edit and relabel once typing pauses.
+ */
+const SYNC_RELABEL_MAX_LENGTH = 4_000
+const RELABEL_DELAY_MS = 120
+
+const relabelEffect = StateEffect.define<null>()
+
 const closeLabelPlugin = ViewPlugin.fromClass(
   class {
+    private timer: ReturnType<typeof setTimeout> | undefined
     decorations: DecorationSet
 
-    constructor(view: EditorView) {
+    constructor(private readonly view: EditorView) {
       this.decorations = buildCloseLabelDecorations(view)
     }
 
+    destroy(): void {
+      if (this.timer !== undefined) clearTimeout(this.timer)
+    }
+
     update(update: ViewUpdate): void {
+      const relabel = update.transactions.some((transaction) =>
+        transaction.effects.some((effect) => effect.is(relabelEffect)),
+      )
+
+      if (relabel || (update.docChanged && update.state.doc.length <= SYNC_RELABEL_MAX_LENGTH)) {
+        if (this.timer !== undefined) clearTimeout(this.timer)
+        this.timer = undefined
+        this.decorations = buildCloseLabelDecorations(update.view)
+        return
+      }
+
       if (!update.docChanged) return
 
-      this.decorations = buildCloseLabelDecorations(update.view)
+      this.decorations = this.decorations.map(update.changes)
+
+      if (this.timer !== undefined) clearTimeout(this.timer)
+      this.timer = setTimeout(() => {
+        this.timer = undefined
+        this.view.dispatch({ effects: relabelEffect.of(null) })
+      }, RELABEL_DELAY_MS)
     }
   },
   {

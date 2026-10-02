@@ -1,6 +1,6 @@
 import type { DirectiveAttributes } from './attributes.js'
 
-import { parseDirectiveAttributesDetailed } from './attributes.js'
+import { parseDirectiveAttributesDetailed, readDirectiveLabel } from './attributes.js'
 
 export type ParsedLeafDirectiveLine = {
   attributes: DirectiveAttributes
@@ -21,15 +21,12 @@ export function parseLeafDirectiveLine(
   if (rest && !/^[\s[{]/.test(rest)) return null
 
   rest = rest.trimStart()
-  let label = ''
 
-  if (rest.startsWith('[')) {
-    const labelEnd = rest.indexOf(']')
-    if (labelEnd < 0) return null
+  const labelResult = readDirectiveLabel(rest)
+  if (!labelResult) return null
 
-    label = rest.slice(1, labelEnd)
-    rest = rest.slice(labelEnd + 1).trimStart()
-  }
+  const label = labelResult.label ?? ''
+  rest = labelResult.rest.trimStart()
 
   const rawAttributes = rest
   if (rawAttributes && (!rawAttributes.startsWith('{') || !rawAttributes.endsWith('}')))
@@ -42,4 +39,23 @@ export function parseLeafDirectiveLine(
     label,
     warnings: parsedAttributes.warnings,
   }
+}
+
+/** Name of the leaf directive a `::name…` line starts with, if any. */
+export function getLeafDirectiveName(text: string): string | undefined {
+  const trimmed = text.trim()
+  if (trimmed.startsWith(':::')) return undefined
+
+  return trimmed.match(/^::([\w-]+)(?:$|[\s[{])/)?.[1]
+}
+
+/**
+ * Diagnostic for a `::name` line that names a known leaf directive but cannot
+ * be parsed (unclosed label, or text after the label that is not a `{…}`
+ * attribute block). Returns `undefined` when the line parses.
+ */
+export function getLeafDirectiveProblem(text: string, name: string): string | undefined {
+  if (parseLeafDirectiveLine(text, name)) return undefined
+
+  return `Malformed "::${name}" directive. Expected ::${name}[Label]{…}; the line is rendered as text.`
 }

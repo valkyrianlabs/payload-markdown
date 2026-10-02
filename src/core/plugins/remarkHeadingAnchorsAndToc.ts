@@ -8,6 +8,7 @@ import type { HeadingAnchor } from '../../directives/headingAnchors.js'
 
 import { resolveTocDepth, resolveTocTitle } from '../../directives/definitions/toc.js'
 import { applyHeadingAnchors } from '../../directives/headingAnchors.js'
+import { setRenderData } from '../renderData.js'
 
 function isContainerDirective(node: unknown): node is ContainerDirective {
   return Boolean(
@@ -61,13 +62,18 @@ function applyTocContent(tree: Root, headings: HeadingAnchor[]) {
     const title = resolveTocTitle(node)
     const visibleHeadings = headings.filter((heading) => heading.depth <= depth)
 
-    node.children = [makeParagraph(title), makeTocList(visibleHeadings)]
+    // Authored children are never discarded: they render after the generated
+    // list (remarkLayoutDirectives already reported them via validateMdast).
+    node.children = [makeParagraph(title), makeTocList(visibleHeadings), ...node.children]
   })
 }
 
 export const remarkHeadingAnchorsAndToc: Plugin<[], Root> = () => {
-  return (tree) => {
+  return (tree, file) => {
     const headings = applyHeadingAnchors(tree)
+
+    // The ids assigned here are the ids emitted in the HTML.
+    setRenderData(file, { headings })
 
     applyTocContent(tree, headings)
   }

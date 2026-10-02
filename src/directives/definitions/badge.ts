@@ -2,6 +2,7 @@ import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { getUnknownAttributeWarnings } from '../attributeDiagnostics.js'
 import { SHIELDS_BADGE_QUERY_ATTRIBUTES } from '../shields.js'
+import { getUnsafeHrefWarnings } from '../urls.js'
 
 export const BADGE_TYPES = ['static', 'npm', 'github', 'debian', 'apt'] as const
 export const BADGE_TARGETS = [
@@ -55,6 +56,9 @@ export const badgeDirective: LayoutDirectiveDefinition = {
   supportsAttributes: true,
   tagName: 'img',
   validateAttributes({ attributes }) {
-    return getUnknownAttributeWarnings('badge', BADGE_ALLOWED_ATTRIBUTES, attributes)
+    return [
+      ...getUnknownAttributeWarnings('badge', BADGE_ALLOWED_ATTRIBUTES, attributes),
+      ...getUnsafeHrefWarnings('badge', attributes),
+    ]
   },
 }

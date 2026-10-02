@@ -3,8 +3,10 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { Plugin } from 'unified'
 
 import type { LayoutName, LayoutToken } from '../../directives/types.js'
+import type { DiagnosticPlace } from '../diagnostics.js'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
+import { reportDiagnostic } from '../diagnostics.js'
 
 type LayoutNode = ContainerDirective | Root
 
@@ -15,6 +17,13 @@ type LayoutFrame = {
   name: 'root' | LayoutName
   node: LayoutNode
   parentHeadingDepth?: number
+  place?: DiagnosticPlace
+}
+
+type CompileWarning = {
+  code: string
+  place?: DiagnosticPlace
+  reason: string
 }
 
 function isHeading(node: RootContent): node is Heading {
@@ -35,6 +44,7 @@ function makeDirective(
   label?: string,
   parentHeadingDepth?: number,
   cellHeadingDepth?: number,
+  place?: DiagnosticPlace,
 ): ContainerDirective {
   return {
     name,
@@ -47,6 +57,7 @@ function makeDirective(
       vlCellHeadingDepth: cellHeadingDepth,
       vlDirectiveLabel: label,
       vlParentHeadingDepth: parentHeadingDepth,
+      ...(place ? { vlPlace: place } : {}),
     },
   }
 }
@@ -114,7 +125,7 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
     const input = [...tree.children]
     const rebuiltRoot: Root = { ...tree, children: [] }
     const stack: LayoutFrame[] = [{ name: 'root', node: rebuiltRoot }]
-    const warnings: string[] = []
+    const warnings: CompileWarning[] = []
 
     let currentHeadingDepth: number | undefined
 
@@ -122,27 +133,29 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
     for (const node of input) {
       if (isLayoutToken(node)) {
+        const place = node.data?.vlPlace
+
         if (node.action === 'open') {
           const definition = layoutDirectiveRegistry.get(node.name)
 
           if (definition?.kind === 'section') {
-            const next = makeDirective('section', node.attributes, node.label)
+            const next = makeDirective('section', node.attributes, node.label, undefined, undefined, place)
             append(next)
-            stack.push({ name: 'section', node: next })
+            stack.push({ name: 'section', node: next, place })
             continue
           }
 
           if (definition?.kind === 'cell') {
-            const next = makeDirective('cell', node.attributes, node.label)
+            const next = makeDirective('cell', node.attributes, node.label, undefined, undefined, place)
             append(next)
-            stack.push({ name: 'cell', node: next })
+            stack.push({ name: 'cell', node: next, place })
             continue
           }
 
           if (definition?.kind !== 'grid') {
-            const next = makeDirective(node.name, node.attributes, node.label)
+            const next = makeDirective(node.name, node.attributes, node.label, undefined, undefined, place)
             append(next)
-            stack.push({ name: node.name, node: next })
+            stack.push({ name: node.name, node: next, place })
             continue
           }
 
@@ -150,7 +163,14 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
           const parentDepth = currentHeadingDepth ?? 1
           const cellDepth = parentDepth + 1
-          const next = makeDirective(node.name, node.attributes, node.label, parentDepth, cellDepth)
+          const next = makeDirective(
+            node.name,
+            node.attributes,
+            node.label,
+            parentDepth,
+            cellDepth,
+            place,
+          )
 
           append(next)
           stack.push({
@@ -158,13 +178,18 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
             cellHeadingDepth: cellDepth,
             node: next,
             parentHeadingDepth: parentDepth,
+            place,
           })
           continue
         }
 
         if (node.action === 'close') {
           if (stack.length === 1) {
-            warnings.push('Encountered ::: with no open layout block.')
+            warnings.push({
+              code: 'stray-directive-close',
+              place,
+              reason: 'Encountered ::: with no open layout block.',
+            })
             continue
           }
 
@@ -174,7 +199,11 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
         if (node.action === 'closeGrid') {
           if (!closeActiveGrid(stack)) {
-            warnings.push('Encountered :::endcol with no open grid.')
+            warnings.push({
+              code: 'stray-directive-close',
+              place,
+              reason: 'Encountered :::endcol with no open grid.',
+            })
             continue
           }
 
@@ -183,7 +212,11 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
 
         if (node.action === 'closeSection') {
           if (!closeThroughSection(stack))
-            warnings.push('Encountered :::end or :::endsection with no open section.')
+            warnings.push({
+              code: 'stray-directive-close',
+              place,
+              reason: 'Encountered :::end or :::endsection with no open section.',
+            })
 
           continue
         }
@@ -207,12 +240,17 @@ export const remarkCompileLayouts: Plugin<[], Root> = () => {
     }
 
     while (stack.length > 1) {
-      warnings.push(`Auto-closing unclosed layout block: ${top(stack).name}`)
+      warnings.push({
+        code: 'unclosed-directive',
+        place: top(stack).place,
+        reason: `Auto-closing unclosed layout block: ${top(stack).name}`,
+      })
       stack.pop()
     }
 
     tree.children = rebuiltRoot.children
 
-    for (const warning of warnings) file.message(warning)
+    for (const { code, place, reason } of warnings)
+      reportDiagnostic(file, reason, { code, place, source: 'directive' })
   }
 }

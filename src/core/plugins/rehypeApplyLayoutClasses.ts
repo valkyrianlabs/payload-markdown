@@ -83,10 +83,32 @@ function groupChildrenIntoCells(
   return groups.map((group) => wrapAsCell(group, columnClassName, cellTheme))
 }
 
+function createIdRegistry(tree: Root) {
+  const used = new Set<string>()
+
+  visit(tree, 'element', (node) => {
+    const id = node.properties?.id
+    if (typeof id === 'string' && id) used.add(id)
+  })
+
+  return (bases: string[]): string[] => {
+    for (let suffix = 0; ; ++suffix) {
+      const ids = bases.map((base) => (suffix === 0 ? base : `${base}-${suffix}`))
+
+      if (ids.every((id) => !used.has(id))) {
+        for (const id of ids) used.add(id)
+        return ids
+      }
+    }
+  }
+}
+
 export const rehypeApplyLayoutClasses: Plugin<[MarkdownRenderConfig?], Root> = (
   config: MarkdownRenderConfig = {},
 ) => {
   return (tree: Root) => {
+    const reserveIds = createIdRegistry(tree)
+
     visit(tree, 'element', (node) => {
       if (!isElement(node)) return
 
@@ -99,6 +121,7 @@ export const rehypeApplyLayoutClasses: Plugin<[MarkdownRenderConfig?], Root> = (
       definition.applyHast(node, config, {
         groupChildrenIntoCells,
         mergeClassNames,
+        reserveIds,
       })
     })
   }

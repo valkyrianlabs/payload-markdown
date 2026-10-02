@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 
 import { devUser } from './helpers/credentials'
 
+// The tests share one dev user and a cold Turbopack dev server; running them in
+// parallel made logins and first compiles race each other.
+test.describe.configure({ mode: 'serial' })
+
 test('admin shell still loads the markdown-enabled dev app', async ({ page }) => {
   await page.goto('/admin')
 
@@ -153,4 +157,123 @@ test('frontend renderer handles layout directives, code fences, and edge cases',
   await expect(edgeCases.locator('pre code')).toContainText("const marker = ':::section'")
   await expect(edgeCases.locator('[data-vl-layout="2col"]')).toHaveCount(1)
   await expect(edgeCases.locator('[data-vl-layout="cell"]')).toHaveCount(2)
+})
+
+test('markdown field saves long documents and renders Payload field chrome', async ({ page, request }) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  expect(login.ok()).toBe(true)
+  const { token } = (await login.json()) as { token: string }
+
+  // Longer than Payload's default 40,000-character text limit (CORE-7).
+  const content = `# Long markdown\n\n${'Lorem ipsum dolor sit amet. '.repeat(2000)}`
+  const created = await request.post('/api/posts', {
+    data: { slug: `long-markdown-${Date.now()}`, content, title: 'Long markdown' },
+    headers: { Authorization: `JWT ${token}` },
+  })
+
+  expect(content.length).toBeGreaterThan(40_000)
+  expect(created.status()).toBe(201)
+
+  const { doc } = (await created.json()) as { doc: { content: string; id: number | string } }
+  expect(doc.content).toHaveLength(content.length)
+
+  await page.goto('/admin')
+  await page.fill('#field-email', devUser.email)
+  await page.fill('#field-password', devUser.password)
+  await page.click('.form-submit button')
+  await expect(page).toHaveTitle(/Dashboard/)
+
+  await page.goto(`/admin/collections/posts/${doc.id}`)
+
+  const field = page.locator('.payload-markdown-field')
+  await expect(field).toHaveCount(1)
+  await expect(field.locator('.field-label')).toContainText('Markdown')
+  await expect(field.locator('.cm-editor')).toBeVisible()
+  await expect(field.locator('.cm-content')).toContainText('# Long markdown')
+  await expect(field.locator('.cm-content')).toHaveAttribute('contenteditable', 'true')
+})
+
+test('markdown blocks render on pages through RenderBlocks', async ({ page, request }) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  const { token } = (await login.json()) as { token: string }
+  const slug = `markdown-block-${Date.now()}`
+
+  const created = await request.post('/api/pages', {
+    data: {
+      slug,
+      _status: 'published',
+      layout: [{ blockType: 'vlMdBlock', content: '## Block heading\n\nRendered from a markdown block.' }],
+      title: 'Markdown block page',
+    },
+    headers: { Authorization: `JWT ${token}` },
+  })
+
+  expect(created.status()).toBe(201)
+
+  await page.goto(`/${slug}`)
+  await expect(page.locator('#block-heading')).toHaveText('Block heading')
+  await expect(page.getByText('Rendered from a markdown block.')).toBeVisible()
+})
+
+test('per-block markdown params start from inherited settings and override only what changes', async ({
+  page,
+  request,
+}) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  const { token } = (await login.json()) as { token: string }
+  const slug = `block-params-${Date.now()}`
+  const created = await request.post('/api/pages', {
+    data: {
+      slug,
+      _status: 'published',
+      layout: [{ blockType: 'vlMdBlock', content: '## Params heading\n\n```js\nconst a = 1\n```' }],
+      title: 'Block params page',
+    },
+    headers: { Authorization: `JWT ${token}` },
+  })
+  expect(created.status()).toBe(201)
+  const { doc } = (await created.json()) as { doc: { id: number | string } }
+
+  // Params disabled: the block renders with the `pages` collection's block defaults
+  // (dev/payload.config.ts: className dev-pages-block, size sm, muted headings).
+  await page.goto(`/${slug}`)
+  const article = page.locator('article[id^="payload-markdown-"]').filter({ has: page.locator('#params-heading') })
+  await expect(article).toHaveClass(/dev-pages-block/)
+  await expect(article).toHaveClass(/prose-sm/)
+  await expect(article).toHaveClass(/prose-h1:text-4xl/) // blog variant (renderer default)
+  await expect(article.locator('.md-line-number').first()).toBeVisible()
+
+  // Enabling params pre-fills them with exactly those effective values.
+  await page.goto('/admin')
+  await page.fill('#field-email', devUser.email)
+  await page.fill('#field-password', devUser.password)
+  await page.click('.form-submit button')
+  await expect(page).toHaveTitle(/Dashboard/)
+  await page.goto(`/admin/collections/pages/${doc.id}`)
+  await page.getByRole('button', { name: 'Show All' }).click()
+  await page.getByText('Enable Blocks Params', { exact: true }).click()
+
+  const params = '#field-layout__0__md-params__config'
+  await expect(page.locator(`${params}__className`)).toHaveValue('dev-pages-block')
+  await expect(page.locator(`${params}__size`)).toContainText('Small')
+  await expect(page.locator(`${params}__variant`)).toContainText('Blog')
+  await expect(page.locator(`${params}__mutedHeadings`)).toBeChecked()
+  await expect(page.locator(`${params}__options__showLineNumbers`)).toBeChecked()
+  await expect(page.locator(`${params}__options__theme`)).toContainText('GitHub Dark')
+
+  // Override two fields only, then publish.
+  await page.locator(`${params}__variant .rs__control`).click()
+  await page.locator('.rs__option', { hasText: 'Compact' }).click()
+  await page.locator(`${params}__options__showLineNumbers`).uncheck()
+  await page.getByRole('button', { name: 'Publish changes' }).click()
+  await expect(page.locator('.payload-toast-container')).toContainText(/success/i)
+
+  // The overrides win; everything else is still what the collection configured.
+  await page.goto(`/${slug}`)
+  await expect(article).toHaveClass(/prose-p:leading-6/) // compact variant
+  await expect(article).not.toHaveClass(/prose-h1:text-4xl/)
+  await expect(article).toHaveClass(/dev-pages-block/)
+  await expect(article).toHaveClass(/prose-sm/)
+  await expect(article.locator('.md-line-number')).toHaveCount(0)
+  await expect(article.locator('pre.shiki.github-dark')).toBeVisible()
 })

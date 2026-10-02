@@ -1,8 +1,11 @@
 import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
+import type { MarkdownEditorDirectiveConfig } from './editor/directiveConfig.js'
+import type { PayloadMarkdownResolvedSettings } from './runtime/index.js'
 import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.js'
 
-import { MarkdownBlock } from './blocks/MarkdownBlock/config.js'
+import { createMarkdownBlock, MarkdownBlock } from './blocks/MarkdownBlock/config.js'
+import { resolveEffectiveMarkdownBlockParams } from './blocks/MarkdownBlock/params.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
 import {
   DEFAULT_CALLOUT_THEMES,
@@ -17,66 +20,122 @@ import {
   DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
 } from './directives/themes.js'
-import { markdownField } from './field/MarkdownField/config.js'
-import { setPayloadMarkdownSettings } from './runtime/index.js'
+import {
+  createEditorDirectiveConfig,
+  PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY,
+} from './editor/directiveConfig.js'
+import { DEFAULT_MARKDOWN_MAX_LENGTH, markdownField } from './field/MarkdownField/config.js'
+import {
+  clearPayloadMarkdownSettings,
+  PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,
+  resolveMarkdownBlockDefaults,
+  resolveMarkdownFieldDefaults,
+  setPayloadMarkdownSettings,
+} from './runtime/index.js'
 
-function ensureMarkdownBlock(config: Config) {
-  if (!config.blocks) config.blocks = []
-
-  const alreadyExists = config.blocks.some((block) => block.slug === MarkdownBlock.slug)
+function ensureMarkdownBlock(config: Config, block: Block) {
+  const blocks = config.blocks ?? []
+  const alreadyExists = blocks.some((entry) => entry.slug === block.slug)
   if (alreadyExists) return
 
-  config.blocks.push(MarkdownBlock)
+  // Copy-on-write: never mutate the caller's config arrays (CORE-18).
+  config.blocks = [...blocks, block]
 }
 
-function ensureMarkdownField(
+function withEditorConfig(
+  fieldOptions: Omit<MarkdownFieldOptions, 'name'> | undefined,
+  editorConfig: MarkdownEditorDirectiveConfig,
+): Omit<MarkdownFieldOptions, 'name'> {
+  return {
+    ...(fieldOptions ?? {}),
+    admin: {
+      ...(fieldOptions?.admin ?? {}),
+      custom: {
+        ...(fieldOptions?.admin?.custom ?? {}),
+        [PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY]: editorConfig,
+      },
+    },
+  }
+}
+
+function withMarkdownField(
   collection: CollectionConfig,
   fieldName: string,
   fieldOptions?: Omit<MarkdownFieldOptions, 'name'>,
-) {
+): CollectionConfig {
   const alreadyExists = collection.fields.some(
     (field) => 'name' in field && field.name === fieldName,
   )
 
-  if (alreadyExists) return
+  if (alreadyExists) return collection
 
-  collection.fields.push(
-    markdownField({
-      name: fieldName,
-      label: 'Markdown',
-      ...(fieldOptions || {}),
-    }),
-  )
-}
-
-function ensureBlockInBlocksField(field: Field, block: Block) {
-  if (field.type !== 'blocks') return
-
-  if (!field.blocks) field.blocks = []
-
-  const alreadyExists = field.blocks.some((entry) => entry.slug === block.slug)
-  if (alreadyExists) return
-
-  field.blocks.push(block)
-}
-
-function walkFieldsAndInstallBlock(fields: Field[], block: Block) {
-  for (const field of fields) {
-    ensureBlockInBlocksField(field, block)
-
-    if ('fields' in field && Array.isArray(field.fields))
-      walkFieldsAndInstallBlock(field.fields, block)
-
-    if (field.type === 'tabs' && Array.isArray(field.tabs)) {
-      for (const tab of field.tabs)
-        if ('fields' in tab && Array.isArray(tab.fields))
-          walkFieldsAndInstallBlock(tab.fields, block)
-    }
+  return {
+    ...collection,
+    fields: [
+      ...collection.fields,
+      markdownField({
+        name: fieldName,
+        label: 'Markdown',
+        ...(fieldOptions || {}),
+      }),
+    ],
   }
 }
 
-function ensureMarkdownBlockInCollectionBlocks(collection: CollectionConfig) {
-  walkFieldsAndInstallBlock(collection.fields, MarkdownBlock)
+/**
+ * Returns `fields` with `block` added to every reachable blocks field. Field
+ * objects and arrays on the modified paths are copied; the caller's objects
+ * are never mutated (CORE-18).
+ */
+function withBlockInstalled(fields: Field[], block: Block): Field[] {
+  let changed = false
+
+  const next = fields.map((field): Field => {
+    let updated: Field = field
+
+    if (field.type === 'blocks') {
+      const blocks = field.blocks ?? []
+
+      if (!blocks.some((entry) => entry.slug === block.slug)) {
+        updated = { ...field, blocks: [...blocks, block] }
+      }
+    }
+
+    if ('fields' in updated && Array.isArray(updated.fields)) {
+      const nestedFields = withBlockInstalled(updated.fields, block)
+      if (nestedFields !== updated.fields) updated = { ...updated, fields: nestedFields } as Field
+    }
+
+    if (updated.type === 'tabs' && Array.isArray(updated.tabs)) {
+      let tabsChanged = false
+      const tabs = updated.tabs.map((tab) => {
+        if (!('fields' in tab) || !Array.isArray(tab.fields)) return tab
+
+        const tabFields = withBlockInstalled(tab.fields, block)
+        if (tabFields === tab.fields) return tab
+
+        tabsChanged = true
+        return { ...tab, fields: tabFields }
+      })
+
+      if (tabsChanged) updated = { ...updated, tabs }
+    }
+
+    if (updated !== field) changed = true
+
+    return updated
+  })
+
+  return changed ? next : fields
+}
+
+function withMarkdownBlockInCollectionBlocks(
+  collection: CollectionConfig,
+  block: Block,
+): CollectionConfig {
+  const fields = withBlockInstalled(collection.fields, block)
+
+  return fields === collection.fields ? collection : { ...collection, fields }
 }
 
 function collectionHasBlocksField(fields: Field[]): boolean {
@@ -118,32 +177,82 @@ function resolveCollectionInstallBehavior(
   }
 }
 
+/**
+ * The markdown block for one install scope (global or a collection): its
+ * editor gets the scope's themes and icon packs, and its params pre-fill from
+ * the scope's effective block defaults.
+ */
+function createMarkdownBlockForScope(
+  collectionSlug: string | undefined,
+  settings: PayloadMarkdownResolvedSettings,
+) {
+  const blockDefaults = resolveMarkdownBlockDefaults(collectionSlug, settings)
+
+  return createMarkdownBlock(
+    createEditorDirectiveConfig(blockDefaults),
+    resolveEffectiveMarkdownBlockParams(blockDefaults),
+  )
+}
+
 export const payloadMarkdown =
   (pluginOptions: PayloadMarkdownConfig = {}): Plugin =>
   (incomingConfig: Config): Config => {
     const config = { ...incomingConfig }
 
-    if (pluginOptions.enabled === false) return config
+    if (pluginOptions.enabled === false) {
+      // A disabled plugin must not leave a previous configuration's render
+      // defaults active (CORE-18).
+      clearPayloadMarkdownSettings()
+      return config
+    }
 
-    setPayloadMarkdownSettings(pluginOptions)
+    // The settings are owned by the config being built: a frozen snapshot on
+    // its server-only `custom`, also registered process-wide (shared by every
+    // installed copy of this package) for renderers without an explicit
+    // settings source. The last built config wins the registry.
+    const settings = setPayloadMarkdownSettings(pluginOptions)
 
-    ensureMarkdownBlock(config)
+    config.custom = { ...(config.custom ?? {}), [PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY]: settings }
+
+    // The admin editor gets the resolved theme names and icon pack aliases
+    // for its scope through field.admin.custom (CORE-8), computed from the
+    // settings this config owns.
+    ensureMarkdownBlock(
+      config,
+      createMarkdownBlockForScope(undefined, settings),
+    )
 
     if (!pluginOptions.collections || !config.collections) return config
 
-    for (const [collectionSlug, collectionOptions] of Object.entries(pluginOptions.collections)) {
-      if (!collectionOptions) continue
+    // Widened to string keys: collection.slug is a plain string here.
+    const collectionOptionsBySlug: Partial<Record<string, PayloadMarkdownCollectionConfig | true>> =
+      pluginOptions.collections
 
-      const collection = config.collections.find((entry) => entry.slug === collectionSlug)
-      if (!collection) continue
+    config.collections = config.collections.map((collection) => {
+      const collectionOptions = collectionOptionsBySlug[collection.slug]
+      if (!collectionOptions) return collection
 
       const resolved = resolveCollectionInstallBehavior(collection, collectionOptions)
+      let next = collection
 
-      if (resolved.installIntoBlocks) ensureMarkdownBlockInCollectionBlocks(collection)
+      if (resolved.installIntoBlocks)
+        next = withMarkdownBlockInCollectionBlocks(
+          next,
+          createMarkdownBlockForScope(collection.slug, settings),
+        )
 
       if (resolved.installField)
-        ensureMarkdownField(collection, resolved.fieldName, resolved.fieldOptions)
-    }
+        next = withMarkdownField(
+          next,
+          resolved.fieldName,
+          withEditorConfig(
+            resolved.fieldOptions,
+            createEditorDirectiveConfig(resolveMarkdownFieldDefaults(collection.slug, settings)),
+          ),
+        )
+
+      return next
+    })
 
     return config
   }
@@ -156,6 +265,7 @@ export {
   DEFAULT_CODE_LANGS,
   DEFAULT_COLUMNS_THEMES,
   DEFAULT_DETAILS_THEMES,
+  DEFAULT_MARKDOWN_MAX_LENGTH,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
   DEFAULT_TAB_THEMES,

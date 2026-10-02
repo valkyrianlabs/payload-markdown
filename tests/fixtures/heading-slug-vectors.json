@@ -1,0 +1,11 @@
+{
+  "description": "Heading anchor vectors for @valkyrianlabs/payload-markdown. Each case lists heading texts in document order and the ids the renderer assigns (see createHeadingSlugger / extractHeadingAnchors in ./advanced). Slugs are ASCII-only by design; non-ASCII-only headings fall back to \"section\".",
+  "cases": [
+    { "name": "plain", "headings": ["Install", "Configure the plugin"], "ids": ["install", "configure-the-plugin"] },
+    { "name": "duplicates", "headings": ["Install", "Install", "Install"], "ids": ["install", "install-1", "install-2"] },
+    { "name": "suffix collision", "headings": ["Foo", "Foo", "Foo 1"], "ids": ["foo", "foo-1", "foo-1-1"] },
+    { "name": "real heading before suffix", "headings": ["Foo 1", "Foo", "Foo"], "ids": ["foo-1", "foo", "foo-2"] },
+    { "name": "quotes and punctuation", "headings": ["Don't \"quote\" me", "C++ & C#", "  Trim  me  "], "ids": ["dont-quote-me", "c-c", "trim-me"] },
+    { "name": "ascii only", "headings": ["Café Überblick", "日本語", "中文", "🚀 Launch"], "ids": ["caf-berblick", "section", "section-1", "launch"] }
+  ]
+}

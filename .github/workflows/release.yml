@@ -8,6 +8,10 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  DOCS_SYNC_ENDPOINT: https://valkyrianlabs.com/api/documentation/sync
+  PMDOCS_SOURCE: payload-markdown
+
 concurrency:
   group: npm-production
   cancel-in-progress: false
@@ -21,15 +25,15 @@ jobs:
       url: https://www.npmjs.com/package/${{ vars.NPM_PACKAGE_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -180,16 +184,58 @@ jobs:
           console.log(`Version check passed: ${local} > ${published}`);
           NODE
 
-      - name: Run tests
+      # Docs are published with the native pmdocs CLI from the Valkyrian Labs APT repository.
+      # Install it and prove validate + an authenticated dry-run sync work BEFORE npm publish,
+      # so a missing tool or a rejected sync can never leave a published package without docs.
+      - name: Install pmdocs
         run: |
           set -euo pipefail
-          pnpm test:int
+          sudo install -d -m 0755 /etc/apt/keyrings
+          sudo curl -fsSL https://apt.valkyrianlabs.com/pubkey.gpg \
+            -o /etc/apt/keyrings/valkyrianlabs.gpg
+          sudo chmod 0644 /etc/apt/keyrings/valkyrianlabs.gpg
+          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/valkyrianlabs.gpg] https://apt.valkyrianlabs.com stable main" \
+            | sudo tee /etc/apt/sources.list.d/valkyrianlabs.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y pmdocs
+          pmdocs --version
+
+      - name: Validate docs
+        run: |
+          set -euo pipefail
+          pmdocs validate ./docs --source "$PMDOCS_SOURCE"
+
+      - name: Dry-run docs sync
+        run: |
+          set -euo pipefail
+          pmdocs push ./docs \
+            --endpoint "$DOCS_SYNC_ENDPOINT" \
+            --source "$PMDOCS_SOURCE" \
+            --github-oidc \
+            --dry-run
 
       - name: Build package
         run: |
           set -euo pipefail
           export NEXT_CPU_COUNT="$(nproc)"
           pnpm build
+
+      # After the build: several contract tests exercise the built dist (directive spec, plain-Node
+      # exports, settings shared across copies) and skip when it is missing.
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          pnpm test:int
+
+      # The same contract gates as Build and Test, before anything is published.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck dev app
+        run: pnpm exec tsc -p dev/tsconfig.json --noEmit
+
+      - name: Plain-Node export smoke
+        run: pnpm test:exports
 
       - name: Validate package contents
         shell: bash
@@ -224,12 +270,8 @@ jobs:
       - name: Publish docs to docs.valkyrianlabs.com
         run: |
           set -euo pipefail
-
-          pnpm exec payload-markdown-docs validate ./docs \
-            --source payload-markdown
-
-          pnpm exec payload-markdown-docs push \
-            --endpoint "https://valkyrianlabs.com/api/documentation/sync" \
-            --source payload-markdown \
+          pmdocs push ./docs \
+            --endpoint "$DOCS_SYNC_ENDPOINT" \
+            --source "$PMDOCS_SOURCE" \
             --github-oidc \
             --publish

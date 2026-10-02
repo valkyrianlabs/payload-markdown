@@ -2,6 +2,8 @@ import type { Completion, CompletionContext } from '@codemirror/autocomplete'
 
 import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
 
+import type { MarkdownEditorDirectiveConfig } from '../directiveConfig.js'
+
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getDirectiveThemeNames } from '../../directives/themes.js'
 
@@ -51,10 +53,18 @@ export function getDirectiveAttributeCompletionOptions(name: string): Completion
 export function getDirectiveThemeValueCompletionOptions(
   name: string,
   attribute: string,
+  config: MarkdownEditorDirectiveConfig = {},
 ): Completion[] {
   const definition = layoutDirectiveRegistry.get(name)
   const groupName = definition?.themeAttributes?.[attribute]
   const detailPrefix = name === 'button' || name === 'badge' ? `::${name}` : `:::${name}`
+
+  if (attribute === 'icon')
+    return (config.iconPacks ?? []).map((alias) => ({
+      type: 'constant',
+      detail: 'icon pack',
+      label: `@${alias}/`,
+    }))
 
   if (!groupName)
     return (definition?.attributeValues?.[attribute] ?? []).map((value) => ({
@@ -63,14 +73,17 @@ export function getDirectiveThemeValueCompletionOptions(
       label: value,
     }))
 
-  return getDirectiveThemeNames(groupName).map((themeName) => ({
+  return getDirectiveThemeNames(groupName, config.themes).map((themeName) => ({
     type: 'constant',
     detail: `${groupName} theme`,
     label: themeName,
   }))
 }
 
-function attributeCompletionSource(context: CompletionContext) {
+function attributeCompletionSource(
+  context: CompletionContext,
+  config: MarkdownEditorDirectiveConfig,
+) {
   const line = context.state.doc.lineAt(context.pos)
   const beforeCursor = line.text.slice(0, context.pos - line.from)
   const containerMatch = beforeCursor.match(/^\s*:::(\w+)(?:\[[^\]]*\])?\s*\{([^}]*)$/)
@@ -95,12 +108,12 @@ function attributeCompletionSource(context: CompletionContext) {
 
   const { name, attributesBeforeCursor } = directiveMatch
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|iconPosition|interval|linkScope|newTab|size|stack|stepTheme|style|tabTheme|target|type|variant|wrap)=["']?([^"'\s}]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|icon|iconPosition|interval|linkScope|newTab|size|stack|stepTheme|style|tabTheme|target|type|variant|wrap)=["']?([^"'\s}]*)$/,
   )
 
   if (valueMatch) {
     const [, attribute, typedValue] = valueMatch
-    const options = getDirectiveThemeValueCompletionOptions(name, attribute)
+    const options = getDirectiveThemeValueCompletionOptions(name, attribute, config)
 
     if (options.length === 0) return null
 
@@ -154,8 +167,11 @@ function findOpenDirectiveAttributeBlock(
   return null
 }
 
-function directiveCompletionSource(context: CompletionContext) {
-  const attributeResult = attributeCompletionSource(context)
+function directiveCompletionSource(
+  context: CompletionContext,
+  config: MarkdownEditorDirectiveConfig = {},
+) {
+  const attributeResult = attributeCompletionSource(context, config)
   if (attributeResult) return attributeResult
 
   const leafMatch = context.matchBefore(/::[\w-]*/)
@@ -188,7 +204,15 @@ function directiveCompletionSource(context: CompletionContext) {
   }
 }
 
-export const directiveCompletions = autocompletion({
-  activateOnTyping: true,
-  override: [directiveCompletionSource],
-})
+/**
+ * Directive completions that know the field's configured themes and icon
+ * packs (CORE-8). `config` comes from `field.admin.custom.payloadMarkdown`.
+ */
+export function createDirectiveCompletions(config: MarkdownEditorDirectiveConfig = {}) {
+  return autocompletion({
+    activateOnTyping: true,
+    override: [(context: CompletionContext) => directiveCompletionSource(context, config)],
+  })
+}
+
+export const directiveCompletions = createDirectiveCompletions()

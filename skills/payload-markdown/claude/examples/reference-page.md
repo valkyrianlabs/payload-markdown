@@ -71,5 +71,5 @@ Pass block fields directly with `{...block}`. Do not wrap the data in a `block` 
 ## Fallbacks
 
 :::details[Empty and warning fallback behavior]
-`emptyFallback` renders when Markdown is empty or whitespace-only. `errorFallback` renders when compilation produces warnings and you prefer not to show the compiled HTML.
+`emptyFallback` renders when Markdown is empty or whitespace-only. `errorFallback` renders when compilation fails; non-fatal warnings still render the compiled HTML.
 :::

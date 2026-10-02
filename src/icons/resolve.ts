@@ -1,6 +1,5 @@
 import type { Element, RootContent } from 'hast'
 
-import { fromHtml } from 'hast-util-from-html'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -10,6 +9,7 @@ import {
   hasUnsafeIconPathSegments,
   normalizePayloadMarkdownIconRef,
 } from './refs.js'
+import { instantiateSanitizedSvg, parseAndSanitizeSvg } from './sanitizeSvg.js'
 
 export type PayloadMarkdownIconResolution = {
   iconKey?: string
@@ -53,32 +53,40 @@ export function validatePayloadMarkdownIconsConfig(
   return warnings
 }
 
-function sanitizeSvg(value: string): string {
-  return value
-    .replace(/<\?xml[\s\S]*?\?>/gi, '')
-    .replace(/<!doctype[\s\S]*?>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
-    .replace(/<foreignObject\b[\s\S]*?<\/foreignObject>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*(?:".*?"|'.*?'|[^\s>]+)/gi, '')
-    .replace(/\s(?:href|xlink:href)\s*=\s*(['"])\s*javascript:[\s\S]*?\1/gi, '')
+type CachedIcon = {
+  mtimeMs: number
+  size: number
+  svg: Element | undefined
 }
 
-function addSvgRuntimeAttributes(svg: string, className: string): string {
-  return svg.replace(/<svg\b([^>]*)>/i, (_match, attributes: string) => {
-    const nextAttributes = attributes.replace(/\sclass=(["'])(.*?)\1/i, (_classMatch, quote, value) => {
-      return ` class=${quote}${value} ${className}${quote}`
-    })
-    const hasClass = /\sclass=/.test(attributes)
+const MAX_CACHED_ICONS = 2000
+const iconCache = new Map<string, CachedIcon>()
 
-    return `<svg${hasClass ? nextAttributes : `${nextAttributes} class="${className}"`} aria-hidden="true" focusable="false">`
-  })
+function loadSanitizedIcon(iconFile: string, stats: fs.Stats): Element | undefined {
+  const cached = iconCache.get(iconFile)
+
+  if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) return cached.svg
+
+  const svg = parseAndSanitizeSvg(fs.readFileSync(iconFile, 'utf8'))
+
+  if (iconCache.size >= MAX_CACHED_ICONS) {
+    const oldest = iconCache.keys().next().value
+    if (oldest !== undefined) iconCache.delete(oldest)
+  }
+
+  iconCache.set(iconFile, { mtimeMs: stats.mtimeMs, size: stats.size, svg })
+
+  return svg
 }
 
-function parseSvgFragment(svg: string): RootContent[] {
-  const root = fromHtml(svg, { fragment: true })
+function statFile(file: string): fs.Stats | undefined {
+  try {
+    const stats = fs.statSync(file)
 
-  return root.children.filter((node): node is Element => node.type === 'element')
+    return stats.isFile() ? stats : undefined
+  } catch {
+    return undefined
+  }
 }
 
 export function resolvePayloadMarkdownIcon(
@@ -111,18 +119,27 @@ export function resolvePayloadMarkdownIcon(
       warnings: [`Malformed icon ref "${ref}". Icon paths must stay within their icon pack.`],
     }
 
-  if (!fs.existsSync(iconFile))
+  const stats = statFile(iconFile)
+
+  if (!stats)
     return {
       iconKey: normalized.icon.key,
       nodes: [],
       warnings: [`Unknown icon "${normalized.icon.key}".`],
     }
 
-  const svg = addSvgRuntimeAttributes(sanitizeSvg(fs.readFileSync(iconFile, 'utf8')), className)
+  const svg = loadSanitizedIcon(iconFile, stats)
+
+  if (!svg)
+    return {
+      iconKey: normalized.icon.key,
+      nodes: [],
+      warnings: [`Icon "${normalized.icon.key}" does not contain an <svg> element.`],
+    }
 
   return {
     iconKey: normalized.icon.key,
-    nodes: parseSvgFragment(svg),
+    nodes: [instantiateSanitizedSvg(svg, className)],
     warnings: [],
   }
 }

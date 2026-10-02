@@ -2,7 +2,10 @@ import React, { Fragment } from 'react'
 
 import type { Page } from '../payload-types.ts'
 
-import { MarkdownBlockComponent } from '../../src/blocks/MarkdownBlock/Component.tsx'
+// Import the built package (like payload.config.ts and the frontend pages) so
+// the block shares the plugin's runtime settings and Turbopack resolves it.
+import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
+
 import { ArchiveBlock } from './ArchiveBlock/Component.tsx'
 
 const blockComponents = {
@@ -27,13 +30,13 @@ export const RenderBlocks: React.FC<{
           if (blockType && blockType in blockComponents) {
             const Block = blockComponents[blockType]
 
-            const blockProps = { block, collectionSlug }
-
             if (Block) {
+              // Spread the block data (content, blockType, ...) as props, as
+              // documented in docs/getting-started/fields-and-blocks.md.
               return (
                 <div className="my-16" key={index}>
-                  {/* @ts-expect-error - Need to verify block types more robustly */}
-                  <Block {...blockProps} />
+                  {/* @ts-expect-error - block unions are not narrowed per component */}
+                  <Block {...block} collectionSlug={collectionSlug} />
                 </div>
               )
             }

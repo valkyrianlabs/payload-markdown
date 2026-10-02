@@ -48,17 +48,97 @@ import {
 } from '@valkyrianlabs/payload-markdown/server'
 ```
 
+Client export (`'use client'` components for bundled apps):
+
+```ts
+import {
+  MarkdownRendererClient,
+  PayloadMarkdownField,
+} from '@valkyrianlabs/payload-markdown/client'
+```
+
+`PayloadMarkdownField` is the same component as the server export's `PayloadMarkdownField`. Fields created by `markdownField()` keep using the admin component path `@valkyrianlabs/payload-markdown/server#PayloadMarkdownField`, so existing import maps do not change; `@valkyrianlabs/payload-markdown/client#PayloadMarkdownField` resolves to the same component. `MarkdownRendererClient` adds tab and code-copy behavior to HTML rendered with `renderMarkdown()`: render it with `containerId` set to the id of the element that contains the HTML.
+
+The server and client exports require a bundler (they import CSS and React client code). The main, render and advanced exports load in plain Node.
+
+Headless render export (no React, Next.js or CSS; works in plain Node):
+
+```ts
+import {
+  compileMarkdown,
+  createHeadingSlugger,
+  extractHeadingAnchors,
+  getDirectiveSpec,
+  readPayloadMarkdownSettings,
+  renderMarkdown,
+  slugifyHeading,
+} from '@valkyrianlabs/payload-markdown/render'
+```
+
+Directive spec (generated from the directive registry at build time; the same data `getDirectiveSpec()` returns):
+
+```ts
+import spec from '@valkyrianlabs/payload-markdown/directive-spec.json' with { type: 'json' }
+```
+
+The spec lists every directive (`kind`, open and close markers, `[label]` attribute), its attributes with a `type` (`url`, `enum`, `string`, `boolean` or `number`), allowed values and theme group, the built-in theme names, badge types and targets, tab-value and heading-slug rules, and parser constraints. `specVersion` changes only when the JSON shape changes.
+
+Stylesheet export:
+
+```ts
+import '@valkyrianlabs/payload-markdown/styles.css'
+```
+
 Advanced export:
 
 ```ts
 import {
+  createHeadingSlugger,
   createPayloadMarkdownIconRegistryEntry,
   createPayloadMarkdownIconRegistrySource,
+  extractHeadingAnchors,
+  slugifyHeading,
   vlMdCodeBlockConfig,
   vlMdConfig,
   vlMdTailwindField,
 } from '@valkyrianlabs/payload-markdown/advanced'
 ```
+
+## `renderMarkdown`
+
+```ts
+function renderMarkdown(markdown: string, config?: RenderMarkdownConfig): Promise<RenderedMarkdown>
+
+type RenderMarkdownConfig = MarkdownRenderConfig & {
+  collectionSlug?: string
+  scope?: 'blocks' | 'field'
+  // settings object, Payload config or Payload instance; false: no plugin defaults
+  settings?: PayloadMarkdownSettingsSource | false | null
+}
+
+type RenderedMarkdown = {
+  diagnostics: RenderDiagnostic[]
+  errors: string[]
+  headings: Array<{ depth: number; id: string; text: string }>
+  html: string
+  links: Array<{ kind: 'definition' | 'directive' | 'image' | 'link'; url: string }>
+  text: string
+  warnings: string[]
+}
+
+type RenderDiagnostic = {
+  code?: string
+  column?: number
+  line?: number
+  message: string
+  severity: 'error' | 'info' | 'warning'
+  source: 'code' | 'directive' | 'icon' | 'render' | 'theme'
+}
+```
+
+Like `MarkdownRenderer`, `renderMarkdown` applies the plugin defaults for `scope` (default `field`) and `collectionSlug` from `settings`, or from the process-wide settings registry when `settings` is omitted. `readPayloadMarkdownSettings(source)` returns the settings stored on a Payload config or instance.
+
+`links` lists authored URLs before sanitization; unsafe directive links are removed from `html` and reported in `diagnostics`.
 
 ## `PayloadMarkdownConfig`
 
@@ -177,6 +257,7 @@ type MarkdownRendererProps = {
   errorFallback?: ReactNode
   markdown?: null | string
   scope?: 'blocks' | 'field'
+  settings?: PayloadMarkdownSettingsSource | false | null
 } & MarkdownRenderConfig
 ```
 

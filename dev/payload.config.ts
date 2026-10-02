@@ -1,6 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
@@ -13,7 +12,6 @@ import { Posts } from './collections/Posts'
 import { testEmailAdapter } from './helpers/testEmailAdapter'
 import { seed } from './seed'
 
-// @ts-expect-error - This is a valid import.meta use, the dev config doesn't actually export to js
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
@@ -21,18 +19,11 @@ if (!process.env.ROOT_DIR) {
   process.env.ROOT_DIR = dirname
 }
 
-const buildConfigWithMemoryDB = async () => {
-  if (process.env.NODE_ENV === 'test') {
-    const memoryDB = await MongoMemoryReplSet.create({
-      replSet: {
-        count: 3,
-        dbName: 'payloadmemory',
-      },
-    })
-
-    process.env.DATABASE_URL = `${memoryDB.getUri()}&retryWrites=true`
-  }
-
+// The dev app always uses the Postgres adapter, so DATABASE_URL must point at
+// Postgres in every environment (tests included). It previously swapped in a
+// MongoDB memory-server URI under NODE_ENV=test, which the Postgres adapter
+// cannot use.
+const buildDevConfig = async () => {
   return buildConfig({
     admin: {
       importMap: {
@@ -65,7 +56,17 @@ const buildConfigWithMemoryDB = async () => {
     plugins: [
       payloadMarkdown({
         collections: {
-          pages: true,
+          // Block-scope defaults for page markdown blocks; the e2e suite checks that
+          // per-block params start from these and override only what an editor changes.
+          pages: {
+            config: {
+              blocks: {
+                className: 'dev-pages-block',
+                mutedHeadings: true,
+                size: 'sm',
+              },
+            },
+          },
           posts: {
             config: {
               className: '[&_li::marker]:!text-cyan-200/90',
@@ -92,4 +93,4 @@ const buildConfigWithMemoryDB = async () => {
   })
 }
 
-export default buildConfigWithMemoryDB()
+export default buildDevConfig()

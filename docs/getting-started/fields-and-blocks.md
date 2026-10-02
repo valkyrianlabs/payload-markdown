@@ -152,3 +152,22 @@ payloadMarkdown({
 ```
 
 `MarkdownBlockComponent` resolves block scope internally. Direct field rendering should use `scope="field"` or omit `scope`, since `field` is the default.
+
+## Per-Block Params
+
+Each markdown block has a **Markdown Blocks Params** group. While **Enable Blocks Params** is unchecked, the block renders with the global and collection block settings above.
+
+Checking it fills the block's fields with exactly those effective values: the global `config`, then the collection's `config.blocks` and `code`, then the renderer's defaults. Enabling therefore changes nothing until you edit a field, and you only change the values you need. Unchecking clears the fields again.
+
+For a block with params enabled, the block's values are the highest-precedence layer for that block:
+
+| Layer | Precedence |
+|---|---|
+| Block params (enabled) | highest |
+| Collection `config.blocks` and collection `code` | |
+| Global `config` (blocks) and global `code` | |
+| Renderer defaults | lowest |
+
+A set block value replaces the inherited one (class names included). An empty or unset value inherits, so clearing a field never removes global or collection settings. The fields map to renderer options: `showLineNumbers` → `code.lineNumbers`, `theme` → `code.shikiTheme`, `enhancedCodeBlocks` → `code.enhanced` and `fullBleedCode` → `code.fullBleed`.
+
+Pass every block field to `MarkdownBlockComponent` (`<Block {...block} />`, as shown above) so `md-params` reaches it. The "Enable Blocks Params" checkbox is an admin component: run `payload generate:importmap` after upgrading so it appears in your import map.

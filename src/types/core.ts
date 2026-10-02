@@ -1,5 +1,7 @@
 import type { JSX, ReactNode } from 'react'
 
+import type { PayloadMarkdownSettingsSource } from '../runtime/index.js'
+
 export type MarkdownRendererScope = 'blocks' | 'field'
 
 /**
@@ -142,12 +144,20 @@ export type PayloadMarkdownIconsConfig = {
  */
 export type RenderMarkdownResult = {
   /**
+   * Fatal compilation errors. When this is non-empty, `html` is the generic
+   * failure placeholder rather than rendered content. `compileMarkdown`
+   * always sets it (empty when rendering succeeded).
+   */
+  errors?: string[]
+
+  /**
    * The rendered HTML output.
    */
   html: string
 
   /**
-   * Non-fatal warnings produced during rendering.
+   * Diagnostics produced during rendering. Includes non-fatal warnings and,
+   * for backwards compatibility, the messages of any `errors`.
    */
   warnings: string[]
 }
@@ -269,7 +279,9 @@ export type BaseMarkdownRendererProps = {
   emptyFallback?: ReactNode
 
   /**
-   * Content rendered when markdown compilation fails and a fallback is desired.
+   * Content rendered when markdown compilation fails (`errors` is non-empty)
+   * and a fallback is desired. Non-fatal warnings, such as an unknown theme
+   * or attribute, do not trigger it.
    */
   errorFallback?: ReactNode
 
@@ -287,7 +299,22 @@ export type BaseMarkdownRendererProps = {
  */
 export type MarkdownRendererProps = {
   collectionSlug?: string
+  /**
+   * Highest-precedence config layer, applied after the plugin's global and
+   * collection defaults and the other props. Unlike the lower layers, a set
+   * class name replaces the inherited one instead of being appended; empty or
+   * undefined values inherit. Markdown blocks pass their enabled `md-params`
+   * here.
+   */
+  overrides?: MarkdownRenderConfig
   scope?: MarkdownRendererScope
+  /**
+   * Plugin settings to render with: the settings object, a Payload config or
+   * a Payload instance (`settings={payload}`). Wins over the process-wide
+   * settings registry; needed when one process builds several Payload
+   * configs. `false` renders without plugin defaults.
+   */
+  settings?: false | null | PayloadMarkdownSettingsSource
 } & BaseMarkdownRendererProps & MarkdownRenderConfig
 
 /**
@@ -323,6 +350,39 @@ export interface MarkdownBlockData {
    * Optional Payload-generated block identifier.
    */
   id?: null | string
+
+  /**
+   * Per-block "Markdown Blocks Params" (`md-params`). Applied only when
+   * `enable` is true; set fields override the plugin's global and collection
+   * block defaults, empty fields inherit them.
+   */
+  'md-params'?: MarkdownBlockParams | null
+}
+
+/**
+ * Stored shape of the per-block `md-params` group created by `vlMdConfig()`.
+ * Values come from the database, so every property may be missing or null.
+ */
+export type MarkdownBlockParams = {
+  config?: MarkdownBlockParamsConfig | null
+  enable?: boolean | null
+}
+
+export type MarkdownBlockParamsConfig = {
+  className?: null | string
+  columnClassName?: null | string
+  enableGutter?: boolean | null
+  fullBleedCode?: boolean | null
+  mutedHeadings?: boolean | null
+  options?: {
+    enhancedCodeBlocks?: boolean | null
+    showLineNumbers?: boolean | null
+    theme?: null | string
+  } | null
+  sectionClassName?: null | string
+  size?: null | string
+  variant?: null | string
+  wrapperClassName?: null | string
 }
 
 /**
@@ -333,4 +393,7 @@ export interface MarkdownBlockProps extends MarkdownBlockData {
    * The slug of the collection this block is rendered within, if applicable.
    */
   collectionSlug?: string
+
+  /** Plugin settings source passed to `MarkdownRenderer` (see its `settings` prop). */
+  settings?: false | null | PayloadMarkdownSettingsSource
 }

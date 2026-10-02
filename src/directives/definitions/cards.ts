@@ -4,6 +4,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { resolveDirectiveTheme } from '../themes.js'
+import { getSafeHref, getUnsafeHrefWarnings } from '../urls.js'
 import { DEFAULT_CARD_LINK_SCOPE } from './card.js'
 
 export const CARD_GRID_COLUMNS = ['1', '2', '3', '4', 'auto'] as const
@@ -67,7 +68,7 @@ function getLinkProperties(href: string, newTab: boolean): Element['properties']
     href,
     ...(newTab
       ? {
-          rel: 'noopener noreferrer',
+          rel: ['noopener', 'noreferrer'],
           target: '_blank',
         }
       : {}),
@@ -117,7 +118,9 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       typeof node.properties.dataColumns === 'string'
         ? node.properties.dataColumns
         : DEFAULT_CARD_GRID_COLUMNS
-    const href = typeof node.properties.dataHref === 'string' ? node.properties.dataHref : undefined
+    // Re-validate at the hast stage: this is where the live <a href> is built.
+    const href = getSafeHref(node.properties.dataHref)
+    if (!href) delete node.properties.dataHref
     const linkScope =
       typeof node.properties.dataLinkScope === 'string' && isCardsLinkScope(node.properties.dataLinkScope)
         ? node.properties.dataLinkScope
@@ -188,7 +191,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       ':::cards{\n  columns="${3}"\n}\n\n:::card[${Title}]\n${Content}\n:::\n\n:::card[${Title}]\n${Content}\n:::\n\n:::\n${}',
   },
   getMdastRenderProperties(node) {
-    const href = getAttribute(node, 'href')
+    const href = getSafeHref(getAttribute(node, 'href'))
 
     return {
       dataCardTheme: typeof node.attributes?.cardTheme === 'string' ? node.attributes.cardTheme : undefined,
@@ -212,7 +215,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
     theme: 'cards',
   },
   validateAttributes({ attributes }) {
-    const warnings: string[] = []
+    const warnings: string[] = [...getUnsafeHrefWarnings('cards', attributes)]
 
     if (typeof attributes.columns === 'string' && !isCardGridColumns(attributes.columns))
       warnings.push(
@@ -229,7 +232,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
   validateMdast(node) {
     const warnings: string[] = []
 
-    if (getAttribute(node, 'href') && getCardsLinkScope(node) === 'section') {
+    if (getSafeHref(getAttribute(node, 'href')) && getCardsLinkScope(node) === 'section') {
       const hasOverrides = node.children.some(
         (child) => isContainerDirective(child) && child.name === 'card' && hasCardLinkOverride(child),
       )

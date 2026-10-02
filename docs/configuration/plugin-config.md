@@ -94,6 +94,27 @@ payloadMarkdown({
 Runtime helpers read plugin settings from `payloadMarkdown(...)`. If you use renderer helpers before the plugin initializes, `getPayloadMarkdownSettings()` throws. In normal Payload usage, include the plugin in the config before rendering Markdown.
 :::
 
+## Where Settings Live
+
+`payloadMarkdown(...)` resolves its render settings (`code`, `config`, `icons`, `themes` and each collection's `code`, `config` and `themes`) into a frozen, serialisable object and stores it in two places:
+
+- on the Payload config it returns, as `config.custom.payloadMarkdown` (server-only);
+- in a process-wide registry that every installed copy of `@valkyrianlabs/payload-markdown` shares, so a second copy (for example one installed by another plugin) renders with the same settings.
+
+`MarkdownRenderer`, `MarkdownBlockComponent` and `renderMarkdown` use, in order:
+
+1. the `settings` you pass: the settings object, a Payload config, or a Payload instance;
+2. otherwise the registry, which holds the settings of the most recently built config;
+3. otherwise no plugin defaults.
+
+```tsx
+<MarkdownRenderer markdown={doc.content} settings={payload} />
+```
+
+If one process builds several Payload configs with different Markdown settings (for example multi-tenant setups), pass `settings` explicitly; without it, every renderer uses the last built config. `enabled: false` clears the registry.
+
+When copies with different versions are loaded, the plugin logs one `console.warn` naming the versions. Install a single version to keep rendering consistent.
+
 ## Icons
 
 Configure local SVG icon packs with `icons`:
@@ -140,7 +161,7 @@ Only local SVG packs are supported. The plugin does not integrate FortAwesome pa
 
 Paid or pro icon files should stay local and gitignored. CI-safe tests and fixtures should use tiny committed SVG fixtures outside `public/icons`, and local paid-icon checks should be opt-in only.
 
-The server renderer emits sanitized inline SVG in the rendered HTML. If your app needs a bundler-backed static import registry for SVG component workflows, use the advanced icon registry helper to generate static imports from your local pack layout. Those imports rely on your host app's SVG support, such as Next, SVGR, Webpack, Turbopack, or an equivalent loader. Keep generated files that import paid icons out of source control.
+The server renderer emits sanitized inline SVG in the rendered HTML. Icon files are parsed with an HTML parser and filtered through a strict SVG allowlist: only the first top-level `<svg>` is kept; `<script>`, `<style>`, `<foreignObject>`, animation elements, images, event-handler attributes, and non-`#fragment` `href`s are removed. Icons that rely on an embedded `<style>` block (for example duotone class rules) should express those styles as SVG presentation attributes or in your site CSS. If your app needs a bundler-backed static import registry for SVG component workflows, use the advanced icon registry helper to generate static imports from your local pack layout. Those imports rely on your host app's SVG support, such as Next, SVGR, Webpack, Turbopack, or an equivalent loader. Keep generated files that import paid icons out of source control.
 
 ## Collection Options
 

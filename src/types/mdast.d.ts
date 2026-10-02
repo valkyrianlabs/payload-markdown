@@ -11,6 +11,10 @@ declare module 'mdast-util-directive' {
     vlCellHeadingDepth?: number
     vlDirectiveLabel?: string
     vlParentHeadingDepth?: number
+    /** 1-based source position of the directive's opening marker. */
+    vlPlace?: { column: number; line: number }
+    /** Position of a `tab` among its parent `tabs` block's tab children. */
+    vlTabIndex?: number
   }
 
   interface LeafDirectiveData {

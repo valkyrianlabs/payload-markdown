@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { tags as t, Tag } from '@lezer/highlight'
 
 import { hasUnclosedDirectiveAttributeBlock } from '../../directives/attributes.js'
+import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { supportedLangHighlight } from './support/highlighters.js'
 import { languages } from './support/lang.js'
 
@@ -250,8 +251,13 @@ function isDirectiveLine(line: MarkdownLine): boolean {
   return line.text.slice(line.pos).startsWith(':::')
 }
 
+// Leaf directive names come from the directive registry (button, badge).
+const LEAF_DIRECTIVE_LINE_PATTERN = new RegExp(
+  `^::(?:${layoutDirectiveRegistry.leafDirectiveNames.join('|')})(?:$|[\\s[{])`,
+)
+
 function isLeafDirectiveLine(line: MarkdownLine): boolean {
-  return /^::(?:button|badge)(?:$|[\s[{])/.test(line.text.slice(line.pos))
+  return LEAF_DIRECTIVE_LINE_PATTERN.test(line.text.slice(line.pos))
 }
 
 function skipInlineSpace(text: string, index: number): number {

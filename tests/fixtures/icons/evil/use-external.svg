@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg"><use href="https://evil.example/sprite.svg#a"/><use xlink:href="javascript:alert(8)"/><path d="M0"/></svg>

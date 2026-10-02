@@ -7,14 +7,20 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'skills/**'
   push:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'skills/**'
 
 permissions:
   id-token: write
   contents: read
+
+env:
+  # Replace with the Payload docs set slug. Do not infer this value.
+  PMDOCS_SOURCE: "<users-upstream-docs-id>"
 
 jobs:
   docs:
@@ -23,39 +29,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Install pmdocs
+        run: |
+          sudo install -d -m 0755 /etc/apt/keyrings
+          sudo curl -fsSL https://apt.valkyrianlabs.com/pubkey.gpg \
+            -o /etc/apt/keyrings/valkyrianlabs.gpg
+          sudo chmod 0644 /etc/apt/keyrings/valkyrianlabs.gpg
+          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/valkyrianlabs.gpg] https://apt.valkyrianlabs.com stable main" \
+            | sudo tee /etc/apt/sources.list.d/valkyrianlabs.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y pmdocs
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+      - name: Check pmdocs
+        run: |
+          pmdocs --version
+          pmdocs --help
 
-      - run: pnpm install --frozen-lockfile
+      - name: Validate docs package
+        run: pmdocs validate --source "$PMDOCS_SOURCE"
 
-      - name: Validate docs
-        run: pnpm exec payload-markdown-docs validate ./docs --source main-docs
-
-      - name: Dry-run docs sync
+      - name: Dry-run docs package sync
         if: github.event_name == 'pull_request'
         run: |
-          pnpm exec payload-markdown-docs push ./docs \
+          pmdocs push \
             --endpoint "$DOCS_SYNC_ENDPOINT" \
-            --source main-docs \
+            --source "$PMDOCS_SOURCE" \
             --github-oidc \
             --dry-run
         env:
           DOCS_SYNC_ENDPOINT: ${{ secrets.DOCS_SYNC_ENDPOINT }}
 
-      - name: Publish docs
+      - name: Publish docs package
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          pnpm exec payload-markdown-docs push ./docs \
+          pmdocs push \
             --endpoint "$DOCS_SYNC_ENDPOINT" \
-            --source main-docs \
+            --source "$PMDOCS_SOURCE" \
             --github-oidc \
-            --sync \
             --publish
         env:
           DOCS_SYNC_ENDPOINT: ${{ secrets.DOCS_SYNC_ENDPOINT }}

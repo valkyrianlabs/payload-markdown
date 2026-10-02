@@ -14,6 +14,7 @@
     ".next/types/**/*.ts"
   ],
   "compilerOptions": {
+    "module": "esnext",
     "moduleResolution": "bundler",
     "baseUrl": "./",
     "paths": {
@@ -25,9 +26,6 @@
       ],
       "payload-markdown/client": [
         "../src/exports/client.ts"
-      ],
-      "payload-markdown/rsc": [
-        "../src/exports/rsc.ts"
       ],
     },
     "noEmit": true,

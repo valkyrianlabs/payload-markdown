@@ -1,6 +1,6 @@
 {
   "name": "@valkyrianlabs/payload-markdown",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Structured Markdown editing and rendering for Payload CMS with CodeMirror, Shiki, directives, themes, and server-first output.",
   "repository": {
     "url": "https://github.com/valkyrianlabs/payload-markdown"
@@ -29,32 +29,43 @@
       "import": "./dist/exports/advanced.js",
       "types": "./dist/exports/advanced.d.ts",
       "default": "./dist/exports/advanced.js"
-    }
+    },
+    "./render": {
+      "import": "./dist/exports/render.js",
+      "types": "./dist/exports/render.d.ts",
+      "default": "./dist/exports/render.js"
+    },
+    "./directive-spec.json": "./dist/directive-spec.json",
+    "./styles.css": "./dist/components/MarkdownRenderer/index.css"
   },
   "files": [
     "dist",
     "skills"
   ],
   "scripts": {
-    "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
-    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
+    "build": "pnpm clean && pnpm copyfiles && pnpm build:types && pnpm build:swc && pnpm build:spec",
+    "build:spec": "node scripts/generate-directive-spec.mjs",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths --ignore \"**/*.d.ts\",\"**/*.d.*.ts\"",
     "build:types": "tsc --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
-    "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
+    "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" \"src/**/*.d.css.ts\" dist/",
     "dev": "next dev dev --turbo --no-server-fast-refresh",
     "dev:generate-importmap": "pnpm dev:payload generate:importmap",
     "dev:generate-types": "pnpm dev:payload generate:types",
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
+    "generate:spec": "pnpm build && node scripts/generate-directive-spec.mjs --skills",
     "generate:importmap": "pnpm dev:generate-importmap",
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
+    "sync:version": "node scripts/sync-version.mjs",
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
+    "test:exports": "node scripts/smoke-exports.mjs",
     "test:int": "vitest"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/eslintrc": "^3.3.7",
     "@payloadcms/db-mongodb": "latest",
     "@payloadcms/db-postgres": "latest",
     "@payloadcms/db-sqlite": "latest",
@@ -66,33 +77,32 @@
     "@playwright/test": "1.58.2",
     "@swc-node/register": "1.10.9",
     "@swc/cli": "0.6.0",
-    "@tailwindcss/postcss": "^4.3.0",
-    "@tailwindcss/typography": "^0.5.19",
-    "@types/hast": "^3.0.4",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/hast": "^3.0.5",
     "@types/mdast": "^4.0.4",
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@types/unist": "^3.0.3",
-    "@valkyrianlabs/payload-markdown-docs": "latest",
     "copyfiles": "2.4.1",
     "cross-env": "^7.0.3",
-    "eslint": "^9.39.4",
+    "eslint": "^9.39.5",
     "eslint-config-next": "16.2.1",
-    "graphql": "^16.14.0",
+    "graphql": "^16.14.2",
     "mongodb-memory-server": "10.1.4",
-    "next": "^16.2.6",
+    "next": "^16.3.8",
     "open": "^10.2.0",
     "payload": "latest",
-    "postcss": "^8.5.14",
-    "prettier": "^3.8.3",
+    "postcss": "^8.5.28",
+    "prettier": "^3.9.9",
     "qs-esm": "7.0.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rimraf": "3.0.2",
     "sharp": "0.34.2",
     "sort-package-json": "^2.15.1",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.7.3",
     "vite-tsconfig-paths": "6.0.5",
     "vitest": "4.0.18"
@@ -101,7 +111,7 @@
     "payload": "^3.0.0"
   },
   "engines": {
-    "node": "^18.20.2 || >=20.9.0",
+    "node": ">=20.9.0",
     "pnpm": "^9 || ^10"
   },
   "publishConfig": {
@@ -125,7 +135,14 @@
         "import": "./dist/exports/advanced.js",
         "types": "./dist/exports/advanced.d.ts",
         "default": "./dist/exports/advanced.js"
-      }
+      },
+      "./render": {
+        "import": "./dist/exports/render.js",
+        "types": "./dist/exports/render.d.ts",
+        "default": "./dist/exports/render.js"
+      },
+      "./directive-spec.json": "./dist/directive-spec.json",
+      "./styles.css": "./dist/components/MarkdownRenderer/index.css"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -141,17 +158,17 @@
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {
-    "@codemirror/autocomplete": "^6.20.2",
-    "@codemirror/commands": "^6.10.3",
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-angular": "^0.1.4",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",
-    "@codemirror/lang-html": "^6.4.11",
+    "@codemirror/lang-html": "^6.4.12",
     "@codemirror/lang-java": "^6.0.2",
     "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-json": "^6.0.2",
-    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/lang-php": "^6.0.2",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-rust": "^6.0.2",
@@ -160,11 +177,11 @@
     "@codemirror/lang-vue": "^0.1.3",
     "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/lang-yaml": "^6.1.3",
-    "@codemirror/language": "^6.12.3",
-    "@codemirror/lint": "^6.9.6",
-    "@codemirror/state": "^6.6.0",
-    "@codemirror/view": "^6.43.0",
-    "@lezer/highlight": "^1.2.3",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@lezer/highlight": "^1.2.5",
     "hast-util-from-html": "^2.0.3",
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-string": "^3.0.1",
@@ -175,7 +192,7 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "shiki": "^4.0.2",
+    "shiki": "^4.5.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0"
   },
