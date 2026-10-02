@@ -197,7 +197,9 @@ export const payloadMarkdown =
 
     if (!pluginOptions.collections || !config.collections) return config
 
-    const collectionOptionsBySlug = pluginOptions.collections
+    // Widened to string keys: collection.slug is a plain string here.
+    const collectionOptionsBySlug: Partial<Record<string, PayloadMarkdownCollectionConfig | true>> =
+      pluginOptions.collections
 
     config.collections = config.collections.map((collection) => {
       const collectionOptions = collectionOptionsBySlug[collection.slug]

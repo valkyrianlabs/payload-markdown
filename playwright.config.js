@@ -41,8 +41,13 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
+  // The first request compiles the admin and frontend with Turbopack, which
+  // can take well over the 30s/60s defaults on a cold cache.
+  timeout: 120_000,
+  expect: { timeout: 20_000 },
   webServer: {
     command: 'pnpm dev',
+    timeout: 300_000,
     env: {
       PORT: port,
     },

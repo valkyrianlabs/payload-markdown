@@ -1,5 +1,5 @@
 import type { Config } from 'payload'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -91,7 +91,7 @@ describe('CORE-18: plugin configuration hygiene', () => {
       blockType: 'vlMdBlock',
       collectionSlug: 'pages',
       content: '# Hi',
-    }) as ReactElement<Record<string, unknown>, (props: Record<string, unknown>) => Promise<unknown>>
+    }) as ReactElement<Record<string, unknown>, (props: Record<string, unknown>) => Promise<ReactNode>>
     const rendered = JSON.stringify(await element.type(element.props))
     const classNames = [...rendered.matchAll(/"className":"([^"]*)"/g)].map((match) => match[1])
     const articleClass = classNames.find((value) => value.includes('global-md')) ?? ''

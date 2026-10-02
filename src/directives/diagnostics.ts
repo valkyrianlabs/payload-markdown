@@ -446,7 +446,9 @@ export function lintMarkdownDirectives(
   }
 
   for (const node of tree.children) {
-    flushNestedBefore(node.position?.start.line ?? Number.POSITIVE_INFINITY)
+    flushNestedBefore(
+      ('position' in node ? node.position?.start.line : undefined) ?? Number.POSITIVE_INFINITY,
+    )
 
     if (node.type === 'paragraph') {
       lintParagraph(state, node, index, push)

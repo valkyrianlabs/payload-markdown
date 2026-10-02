@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 
 import { devUser } from './helpers/credentials'
 
+// The tests share one dev user and a cold Turbopack dev server; running them in
+// parallel made logins and first compiles race each other.
+test.describe.configure({ mode: 'serial' })
+
 test('admin shell still loads the markdown-enabled dev app', async ({ page }) => {
   await page.goto('/admin')
 
@@ -187,4 +191,26 @@ test('markdown field saves long documents and renders Payload field chrome', asy
   await expect(field.locator('.cm-editor')).toBeVisible()
   await expect(field.locator('.cm-content')).toContainText('# Long markdown')
   await expect(field.locator('.cm-content')).toHaveAttribute('contenteditable', 'true')
+})
+
+test('markdown blocks render on pages through RenderBlocks', async ({ page, request }) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  const { token } = (await login.json()) as { token: string }
+  const slug = `markdown-block-${Date.now()}`
+
+  const created = await request.post('/api/pages', {
+    data: {
+      slug,
+      _status: 'published',
+      layout: [{ blockType: 'vlMdBlock', content: '## Block heading\n\nRendered from a markdown block.' }],
+      title: 'Markdown block page',
+    },
+    headers: { Authorization: `JWT ${token}` },
+  })
+
+  expect(created.status()).toBe(201)
+
+  await page.goto(`/${slug}`)
+  await expect(page.locator('#block-heading')).toHaveText('Block heading')
+  await expect(page.getByText('Rendered from a markdown block.')).toBeVisible()
 })

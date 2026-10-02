@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -8,7 +8,7 @@ import { clearPayloadMarkdownSettings } from '../src/runtime'
 
 type AsyncComponentElement = ReactElement<
   Record<string, unknown>,
-  (props: Record<string, unknown>) => Promise<unknown>
+  (props: Record<string, unknown>) => Promise<ReactNode>
 >
 
 async function renderBlock(props: Record<string, unknown>): Promise<string> {
