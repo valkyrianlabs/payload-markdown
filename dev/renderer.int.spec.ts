@@ -49,3 +49,14 @@ describe('CORE-13: errors are distinguished from warnings', () => {
     expect(withError).toBe('FALLBACK')
   })
 })
+
+describe('standalone badges', () => {
+  it('use the label as alt text only, without repeating it as visible text', async () => {
+    const result = await compileMarkdown('::badge[npm version]{type="npm" target="version" package="x"}')
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toBe(
+      '<img alt="npm version" class="pmd-badge" data-directive="badge" src="https://img.shields.io/npm/v/x">',
+    )
+  })
+})

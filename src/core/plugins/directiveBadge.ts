@@ -88,6 +88,9 @@ export function makeBadgeDirective(line: string, file: MessageFile): LeafDirecti
           },
         }
       : {
+          // <img> is void: the [label] is the alt text and must not also be
+          // emitted as visible text after the image.
+          hChildren: [],
           hName: 'img',
           hProperties: imgProperties,
         },
