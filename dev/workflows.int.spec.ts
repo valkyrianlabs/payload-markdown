@@ -89,21 +89,34 @@ describe('CI workflows enforce the package contract', () => {
     expect(deploy).toContain("job.services.postgres.ports['5432']")
   })
 
-  it('runs lint, typecheck and the export smoke before publishing', () => {
+  it('releases through vl-release with every gate before npm publication', () => {
     const commands = getRunCommands(release)
-    const publish = commands.indexOf('npm publish --access public')
+    const publish = commands.indexOf('vlr publish-npm --require-enabled')
 
     expect(publish).toBeGreaterThan(0)
     for (const gate of [
+      'vlr check --release --tag "${RELEASE_REF#refs/tags/}"',
+      'vlr prepare --record release/meta/prepare.json',
       'pnpm install --frozen-lockfile --prefer-offline',
+      'vlr build-npm',
       'pnpm test:int',
       'pnpm lint',
       'pnpm exec tsc -p dev/tsconfig.json --noEmit',
       'pnpm test:exports',
+      'vlr validate-artifacts',
+      'vlr publish-npm --mode enabled --dry-run',
     ]) {
       expect(commands).toContain(gate)
       expect(commands.indexOf(gate)).toBeLessThan(publish)
     }
+
+    // npm trusted publishing is bound to this workflow file and the Production environment.
+    expect(release).toMatch(/^ {4}environment:\n {6}name: Production$/m)
+    expect(release).toContain('id-token: write # npm trusted publishing')
+    // The release is recorded on main only after publication and the GitHub release.
+    expect(commands.indexOf('vlr finalize --record release/meta/prepare.json')).toBeGreaterThan(
+      commands.indexOf('vlr github-release'),
+    )
   })
 
   it('smoke-tests every published subpath', () => {
