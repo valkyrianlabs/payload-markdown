@@ -7,7 +7,7 @@ description: Write elegant automated documentation with @valkyrianlabs/payload-m
 
 Use this skill to write documentation that renders well with `@valkyrianlabs/payload-markdown`, especially docs generated or maintained by agents for downstream `@valkyrianlabs/payload-markdown-docs` projects.
 
-This skill is about authoring clean Markdown content with Payload Markdown directives. It is not a Payload CMS implementation guide.
+This skill is about authoring clean Markdown content with Payload Markdown directives, in files or live in a Payload app over MCP. It is not a Payload CMS implementation guide.
 
 This package stores the Codex variant at `skills/payload-markdown/codex`. When installing into an environment that requires the skill directory name to match `name`, install or copy this subtree as `payload-markdown`.
 
@@ -20,12 +20,19 @@ This package stores the Codex variant at `skills/payload-markdown/codex`. When i
 5. Keep examples copyable. Use long fences when documenting Markdown that contains code fences.
 6. Run `scripts/check_payload_markdown_doc.py` on changed docs before finishing.
 
+## Live Content Over MCP
+
+When the `markdownGuide`, `markdownRead`, `markdownValidate`, `markdownWrite` and `markdownPublish` tools are available, edit Payload content directly: guide → read → validate until `ok` → write a draft with `ifUpdatedAt` → share the preview → publish only when asked. Read `reference/mcp-content-workflow.md` first.
+
+Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mcp` with `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`, the user creates a key in the admin (**MCP → API Keys**), and the MCP client connects to `<app URL>/api/mcp` (Streamable HTTP) with the header `Authorization: Bearer <key>`.
+
 ## Reference Map
 
 - Read `reference/automated-docs-workflow.md` for source-driven docs generation and audit flow.
 - Read `reference/formatting.md` for frontmatter, headings, links, prose, and fenced examples.
 - Read `reference/payload-markdown-directives.md` for supported directive syntax and recipes.
 - Read `reference/quality.md` before final review or docs drift audits.
+- Read `reference/mcp-content-workflow.md` before editing live content through the MCP tools.
 - `reference/directive-spec.json` is the machine-readable directive spec generated from the renderer: directive names, open and close markers, attributes with types and allowed values, theme groups, badge types and targets, and parser constraints. Prefer it over memory when unsure whether an attribute or value exists.
 
 ## Authoring Defaults

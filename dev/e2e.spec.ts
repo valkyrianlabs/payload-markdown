@@ -1,3 +1,5 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { expect, test } from '@playwright/test'
 
 import { devUser } from './helpers/credentials'
@@ -276,4 +278,78 @@ test('per-block markdown params start from inherited settings and override only 
   await expect(article).toHaveClass(/prose-sm/)
   await expect(article.locator('.md-line-number')).toHaveCount(0)
   await expect(article.locator('pre.shiki.github-dark')).toBeVisible()
+})
+
+test('an MCP agent edits a markdown block over /api/mcp and publishes it', async ({ baseURL, page, request }) => {
+  const login = await request.post('/api/users/login', { data: devUser })
+  const { token } = (await login.json()) as { token: string }
+  const headers = { Authorization: `JWT ${token}` }
+  const slug = `mcp-agent-${Date.now()}`
+
+  const created = await request.post('/api/pages', {
+    data: {
+      slug,
+      _status: 'published',
+      layout: [{ blockName: 'Intro', blockType: 'vlMdBlock', content: '## Before\n\nOriginal text.' }],
+      title: `MCP agent ${slug}`,
+    },
+    headers,
+  })
+  expect(created.status()).toBe(201)
+  const { doc } = (await created.json()) as { doc: { id: number | string } }
+
+  const apiKey = `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const key = await request.post('/api/payload-mcp-api-keys', {
+    data: { apiKey, enableAPIKey: true, label: 'e2e agent', pages: { find: true, update: true } },
+    headers,
+  })
+  expect(key.status()).toBe(201)
+
+  const client = new Client({ name: 'payload-markdown-e2e', version: '1.0.0' })
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL('/api/mcp', baseURL), {
+      requestInit: { headers: { Authorization: `Bearer ${apiKey}` } },
+    }),
+  )
+
+  const call = async (name: string, args: Record<string, unknown>) => {
+    const result = (await client.callTool({ name, arguments: args })) as { content: Array<{ text: string }>; isError?: boolean }
+    expect(result.isError ?? false, result.content[0].text).toBe(false)
+    return result.content[0].text
+  }
+
+  try {
+    expect(await call('markdownGuide', {})).toContain('## Workflow')
+
+    const { docs } = JSON.parse(await call('markdownRead', { id: doc.id, collection: 'pages' })) as {
+      docs: Array<{ targets: Array<{ ref: string }>; updatedAt: string }>
+    }
+    const markdown = '## After\n\n:::callout[Edited by an agent]{variant="tip"}\nWritten over MCP.\n:::'
+
+    expect(JSON.parse(await call('markdownValidate', { collection: 'pages', markdown, scope: 'blocks' })).ok).toBe(true)
+
+    const written = JSON.parse(
+      await call('markdownWrite', {
+        id: doc.id,
+        collection: 'pages',
+        edits: [{ action: 'replace', markdown, target: docs[0].targets[0].ref }],
+        ifUpdatedAt: docs[0].updatedAt,
+      }),
+    )
+    expect(written).toMatchObject({ saved: true, status: 'draft' })
+
+    // Drafts stay off the live page until the agent publishes.
+    await page.goto(`/${slug}`)
+    await expect(page.locator('#before')).toHaveText('Before')
+
+    expect(JSON.parse(await call('markdownPublish', { id: doc.id, collection: 'pages' }))).toMatchObject({
+      status: 'published',
+    })
+
+    await page.goto(`/${slug}`)
+    await expect(page.locator('#after')).toHaveText('After')
+    await expect(page.locator('[data-directive="callout"]')).toContainText('Written over MCP.')
+  } finally {
+    await client.close()
+  }
 })

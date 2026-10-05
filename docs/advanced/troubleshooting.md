@@ -134,3 +134,23 @@ If settings are missing, `getPayloadMarkdownSettings()` throws an error that say
 ## Duplicate Copies Warning
 
 `Duplicate copies of @valkyrianlabs/payload-markdown are loaded in this process` means two different versions of the package were imported, typically because another plugin installed its own copy. Settings are still shared between the copies, but each copy renders with its own code. Install one version, for example by aligning the dependency ranges or with a package manager override.
+
+## MCP: Invalid Relationship To `users`
+
+`InvalidFieldRelationship: Field User has invalid relationship 'users'` after adding `mcpPlugin` means the config relied on Payload's implicit users collection. The MCP API key collection is also an auth collection, so Payload no longer adds the default one. Define it explicitly and set `admin.user`:
+
+```ts
+export default buildConfig({
+  admin: { user: 'users' },
+  collections: [{ slug: 'users', admin: { useAsTitle: 'email' }, auth: true, fields: [] }],
+})
+```
+
+## MCP: Agent Gets `forbidden`
+
+The markdown tools need the API key's `Find` (read) or `Update` (write, publish) checkbox for the collection or global, in addition to the user's Payload access. The checkboxes only exist for collections and globals exposed in `mcpPlugin({ collections, globals })`. If you registered `payloadMarkdownMcpTools()` without `withPayloadMarkdownMcp()`, the key settings are not on the request: use the wrapper, or pass `access: 'user'`.
+
+## MCP: Writes Fail With `validation_failed`
+
+Nothing was saved. The error's `details` lists each edit's diagnostics with line and column; the most common causes are theme names, icons or code languages the site does not have. Agents should call `markdownGuide` for the site's real values and `markdownValidate` before writing.
+

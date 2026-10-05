@@ -1,0 +1,64 @@
+# vl-release repository contract: https://github.com/valkyrianlabs/vl-release
+# Release with `vlr cut patch|minor|major --push`; .github/workflows/release.yml does the rest.
+schema_version = 1
+
+[tool]
+requires = ">=0.2,<1"
+
+[project]
+name = "Payload Markdown"
+package = "payload-markdown"
+repository = "valkyrianlabs/payload-markdown"
+
+[version]
+canonical = { kind = "package_json", path = "package.json" }
+targets = [
+  { kind = "regex", path = "src/version.ts", pattern = "PAYLOAD_MARKDOWN_VERSION = '(?P<version>[^']+)'" },
+]
+
+[release]
+branch = "main"
+title = "v{version} - {title}"
+test_command = ["pnpm", "test:int"]
+
+# The published package: dist/ and skills/ plus README, LICENSE and package.json.
+[npm]
+pre_pack = [["pnpm", "build"]]
+required_paths = [
+  "package/package.json",
+  "package/README.md",
+  "package/LICENSE",
+  "package/dist/index.js",
+  "package/dist/index.d.ts",
+  "package/dist/exports/server.js",
+  "package/dist/exports/client.js",
+  "package/dist/exports/render.js",
+  "package/dist/exports/advanced.js",
+  "package/dist/exports/mcp.js",
+  "package/dist/directive-spec.json",
+  "package/dist/components/MarkdownRenderer/index.css",
+  "package/skills/payload-markdown/claude/SKILL.md",
+  "package/skills/payload-markdown/codex/SKILL.md",
+]
+forbidden_paths = [
+  "package/src/*",
+  "package/dev/*",
+  "package/docs/*",
+  "package/tests/*",
+  "package/node_modules/*",
+  "package/.env*",
+  "package/*.tsbuildinfo",
+]
+identical_files = [
+  { member = "package/README.md", source = "README.md" },
+  { member = "package/LICENSE", source = "LICENSE" },
+  { member = "package/skills/payload-markdown/claude/SKILL.md", source = "skills/payload-markdown/claude/SKILL.md" },
+  { member = "package/skills/payload-markdown/codex/SKILL.md", source = "skills/payload-markdown/codex/SKILL.md" },
+]
+
+# npmjs.com through npm trusted publishing: the package trusts this repository's
+# .github/workflows/release.yml (environment Production); no token secret.
+[[publish.npm]]
+name = "npmjs"
+registry = "https://registry.npmjs.org/"
+auth = "oidc"

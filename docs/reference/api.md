@@ -59,6 +59,24 @@ import {
 
 `PayloadMarkdownField` is the same component as the server export's `PayloadMarkdownField`. Fields created by `markdownField()` keep using the admin component path `@valkyrianlabs/payload-markdown/server#PayloadMarkdownField`, so existing import maps do not change; `@valkyrianlabs/payload-markdown/client#PayloadMarkdownField` resolves to the same component. `MarkdownRendererClient` adds tab and code-copy behavior to HTML rendered with `renderMarkdown()`: render it with `containerId` set to the id of the element that contains the HTML.
 
+MCP export (server-only, for `@payloadcms/plugin-mcp` and custom agents):
+
+```ts
+import {
+  getMarkdownGuide,
+  MarkdownAgentError,
+  payloadMarkdownMcpPrompts,
+  payloadMarkdownMcpTools,
+  publishMarkdown,
+  readMarkdownDocuments,
+  validateMarkdown,
+  withPayloadMarkdownMcp,
+  writeMarkdown,
+} from '@valkyrianlabs/payload-markdown/mcp'
+```
+
+See [AI Agents and MCP](/agents), the [MCP tools reference](/agents/mcp-tools) and [Custom Agents](/agents/custom-agents).
+
 The server and client exports require a bundler (they import CSS and React client code). The main, render and advanced exports load in plain Node.
 
 Headless render export (no React, Next.js or CSS; works in plain Node):

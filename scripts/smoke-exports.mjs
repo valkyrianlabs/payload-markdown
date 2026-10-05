@@ -2,7 +2,9 @@
 /**
  * Plain-Node export smoke test for the built package (run after `pnpm build`).
  *
- * - `.`, `./render` and `./advanced` must import in plain Node (no bundler).
+ * - `.`, `./render`, `./advanced` and `./mcp` must import in plain Node (no bundler).
+ * - The `./mcp` module graph must contain no CSS and no React/Next/Payload UI
+ *   imports (it runs inside the MCP endpoint).
  * - The `./render` module graph must contain no CSS and no React/Next/Payload
  *   UI imports.
  * - `./server` and `./client` are bundler-only (CSS side-effect import, React
@@ -27,7 +29,7 @@ const fail = (message) => {
   console.log(`FAIL ${message}`)
 }
 
-for (const subpath of ['', '/render', '/advanced']) {
+for (const subpath of ['', '/render', '/advanced', '/mcp']) {
   const specifier = `${PACKAGE}${subpath}`
 
   try {
@@ -90,6 +92,25 @@ else ok(`./render graph: ${graph.files.length} modules, no CSS`)
 
 if (forbidden.length > 0) fail(`./render imports UI packages: ${forbidden.join(', ')}`)
 else ok(`./render graph: no React/Next/Payload UI (${graph.bare.length} bare imports)`)
+
+const mcpGraph = collectModuleGraph(fileURLToPath(import.meta.resolve(`${PACKAGE}/mcp`)))
+const mcpForbidden = mcpGraph.bare.filter((specifier) => FORBIDDEN_BARE_IMPORTS.test(specifier))
+
+if (mcpGraph.files.some((file) => !file.endsWith('.js')) || mcpForbidden.length > 0)
+  fail(`./mcp imports CSS or UI packages: ${mcpForbidden.join(', ')}`)
+else ok(`./mcp graph: ${mcpGraph.files.length} modules, no CSS or UI packages`)
+
+try {
+  const { payloadMarkdownMcpTools, withPayloadMarkdownMcp } = await import(`${PACKAGE}/mcp`)
+  const names = payloadMarkdownMcpTools().map((tool) => tool.name)
+  const wrapped = withPayloadMarkdownMcp({ collections: {} })
+
+  if (names.length !== 5 || wrapped.mcp.tools.length !== 5 || typeof wrapped.overrideAuth !== 'function')
+    fail(`./mcp tools unexpected: ${names.join(', ')}`)
+  else ok(`./mcp tools: ${names.join(', ')}`)
+} catch (error) {
+  fail(`./mcp tools: ${error?.message ?? error}`)
+}
 
 // Detector self-check: the RSC entry is known to import CSS and React.
 const serverGraph = collectModuleGraph(fileURLToPath(import.meta.resolve(`${PACKAGE}/server`)))

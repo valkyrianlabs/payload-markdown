@@ -10,6 +10,15 @@ import type { MarkdownFieldOptions } from '../../types.ts'
  */
 export const DEFAULT_MARKDOWN_MAX_LENGTH = 1_000_000
 
+/** Import-map specifier of the markdown field's admin component. */
+export const PAYLOAD_MARKDOWN_FIELD_COMPONENT = '@valkyrianlabs/payload-markdown/server#PayloadMarkdownField'
+
+/**
+ * Key under field-level `custom` that marks a markdown field, so server code
+ * (for example the MCP tools) can find markdown fields in any config.
+ */
+export const PAYLOAD_MARKDOWN_FIELD_CUSTOM_KEY = 'payloadMarkdownField'
+
 export function markdownField(options: MarkdownFieldOptions = {}): Field {
   const {
     name = 'content',
@@ -28,9 +37,10 @@ export function markdownField(options: MarkdownFieldOptions = {}): Field {
       ...admin,
       components: {
         ...(admin?.components || {}),
-        Field: '@valkyrianlabs/payload-markdown/server#PayloadMarkdownField',
+        Field: PAYLOAD_MARKDOWN_FIELD_COMPONENT,
       },
     },
+    custom: { [PAYLOAD_MARKDOWN_FIELD_CUSTOM_KEY]: true },
     defaultValue,
     label,
     localized,

@@ -51,3 +51,10 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Local SQLite dev databases (DATABASE_URL=file:...)
+/dev/*.db
+/dev/*.db-*
+
+# vl-release output
+/release

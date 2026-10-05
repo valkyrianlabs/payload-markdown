@@ -1,4 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { sqliteAdapter } from '@payloadcms/db-sqlite'
+import { mcpPlugin } from '@payloadcms/plugin-mcp'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -6,6 +8,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { DEFAULT_CODE_LANGS, payloadMarkdown } from '../dist'
+import { withPayloadMarkdownMcp } from '../dist/exports/mcp.js'
 import { Archive } from './blocks/ArchiveBlock/config.ts'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
@@ -19,19 +22,23 @@ if (!process.env.ROOT_DIR) {
   process.env.ROOT_DIR = dirname
 }
 
-// The dev app always uses the Postgres adapter, so DATABASE_URL must point at
-// Postgres in every environment (tests included). It previously swapped in a
-// MongoDB memory-server URI under NODE_ENV=test, which the Postgres adapter
-// cannot use.
+// The dev app uses Postgres (CI included). A `file:` DATABASE_URL switches to
+// SQLite for local runs without a Postgres server, e.g. DATABASE_URL=file:./dev/dev.db.
+const databaseURL = process.env.DATABASE_URL || ''
+
 const buildDevConfig = async () => {
   return buildConfig({
     admin: {
       importMap: {
         baseDir: path.resolve(dirname),
       },
+      user: 'users',
     },
     blocks: [Archive],
     collections: [
+      // Explicit, because the MCP API key collection is also an auth collection
+      // (Payload only adds its default users collection when there is none).
+      { slug: 'users', admin: { useAsTitle: 'email' }, auth: true, fields: [] },
       Pages,
       Posts,
       {
@@ -42,11 +49,13 @@ const buildDevConfig = async () => {
         },
       },
     ],
-    db: postgresAdapter({
-      pool: {
-        connectionString: process.env.DATABASE_URL || '',
-      },
-    }),
+    db: databaseURL.startsWith('file:')
+      ? sqliteAdapter({ client: { url: databaseURL } })
+      : postgresAdapter({
+          pool: {
+            connectionString: databaseURL,
+          },
+        }),
     editor: lexicalEditor(),
     email: testEmailAdapter,
     globals: [],
@@ -84,6 +93,16 @@ const buildDevConfig = async () => {
           ]
         },
       }),
+      // AI agents: /api/mcp with the payload-markdown tools. Create a key in
+      // the admin under MCP → API Keys.
+      mcpPlugin(
+        withPayloadMarkdownMcp({
+          collections: {
+            pages: { description: 'Site pages built from layout blocks, including markdown blocks.', enabled: true },
+            posts: { description: 'Blog posts with a markdown content field.', enabled: true },
+          },
+        }),
+      ),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
