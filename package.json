@@ -35,6 +35,11 @@
       "types": "./dist/exports/render.d.ts",
       "default": "./dist/exports/render.js"
     },
+    "./mcp": {
+      "import": "./dist/exports/mcp.js",
+      "types": "./dist/exports/mcp.d.ts",
+      "default": "./dist/exports/mcp.js"
+    },
     "./directive-spec.json": "./dist/directive-spec.json",
     "./styles.css": "./dist/components/MarkdownRenderer/index.css"
   },
@@ -66,12 +71,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@payloadcms/db-mongodb": "latest",
     "@payloadcms/db-postgres": "latest",
     "@payloadcms/db-sqlite": "latest",
     "@payloadcms/eslint-config": "latest",
     "@payloadcms/live-preview-react": "latest",
     "@payloadcms/next": "latest",
+    "@payloadcms/plugin-mcp": "latest",
     "@payloadcms/richtext-lexical": "latest",
     "@payloadcms/ui": "latest",
     "@playwright/test": "1.58.2",
@@ -141,6 +148,11 @@
         "types": "./dist/exports/render.d.ts",
         "default": "./dist/exports/render.js"
       },
+      "./mcp": {
+        "import": "./dist/exports/mcp.js",
+        "types": "./dist/exports/mcp.d.ts",
+        "default": "./dist/exports/mcp.js"
+      },
       "./directive-spec.json": "./dist/directive-spec.json",
       "./styles.css": "./dist/components/MarkdownRenderer/index.css"
     },
@@ -194,7 +206,8 @@
     "remark-rehype": "^11.1.2",
     "shiki": "^4.5.0",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.1.0"
+    "unist-util-visit": "^5.1.0",
+    "zod": "^3.25.0 || ^4.0.0"
   },
   "packageManager": "pnpm@10.33.0"
 }
