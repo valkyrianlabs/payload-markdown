@@ -176,10 +176,10 @@ describe('readMarkdownDocuments', () => {
 
 describe('blockReferences', () => {
   it('finds and inserts markdown blocks referenced from config.blocks', async () => {
-    const doc = await payload.create({
-      collection: 'docs',
+    const doc = (await payload.create({
+      collection: 'docs' as never,
       data: { body: [{ blockType: 'vlMdBlock', content: '# Ref' }] } as never,
-    })
+    })) as unknown as { id: number | string }
 
     const [read] = (await readMarkdownDocuments({ id: doc.id, collection: 'docs', req })).docs
     expect(read.targets).toEqual([expect.objectContaining({ markdown: '# Ref', path: 'body.0.content', scope: 'blocks' })])
@@ -187,7 +187,7 @@ describe('blockReferences', () => {
 
     await writeMarkdown({
       id: doc.id,
-      collection: 'docs',
+      collection: 'docs' as never,
       edits: [{ action: 'insert', field: 'body', markdown: '## Added' }],
       req,
     })
@@ -239,13 +239,13 @@ describe('writeMarkdown', () => {
 
     const draft = await payload.findByID({ id: homeId, collection: 'pages', draft: true })
     const published = await payload.findByID({ id: homeId, collection: 'pages' })
-    const draftLayout = draft.layout as Array<Record<string, unknown>>
+    const draftLayout = draft.layout as unknown as Array<Record<string, unknown>>
 
     expect(draftLayout[0].content).toContain('Fresh intro.')
     expect(draftLayout[0].id).toBe(intro.ref)
     expect(draftLayout[1]).toMatchObject({ blockType: 'hero', heading: 'Keep me' })
     expect(draftLayout[2].content).toBe('## Features\n\n- One')
-    expect((published.layout as Array<Record<string, unknown>>)[0].content).toBe('# Welcome\n\nOld intro.')
+    expect((published.layout as unknown as Array<Record<string, unknown>>)[0].content).toBe('# Welcome\n\nOld intro.')
   })
 
   it('refuses edits that do not validate and saves nothing', async () => {
@@ -266,7 +266,7 @@ describe('writeMarkdown', () => {
     expect(JSON.stringify(error.details)).toContain('neon')
 
     const draft = await payload.findByID({ id: homeId, collection: 'pages', draft: true })
-    expect((draft.layout as Array<Record<string, unknown>>)[2].content).toBe('## Features\n\n- One')
+    expect((draft.layout as unknown as Array<Record<string, unknown>>)[2].content).toBe('## Features\n\n- One')
   })
 
   it('saves despite warnings only with allowWarnings, and dry runs save nothing', async () => {
@@ -358,7 +358,7 @@ describe('writeMarkdown', () => {
       req,
     })
     expect(footer.status).toBe('draft')
-    expect(((await payload.findGlobal({ slug: 'footer', draft: true })) as { about: { body: string } }).about.body).toBe(
+    expect(((await payload.findGlobal({ slug: 'footer' as never, draft: true })) as unknown as { about: { body: string } }).about.body).toBe(
       'Made with **Payload**.',
     )
   })
@@ -370,7 +370,7 @@ describe('publishMarkdown', () => {
     expect(result).toMatchObject({ saved: true, status: 'published' })
 
     const published = await payload.findByID({ id: homeId, collection: 'pages' })
-    expect((published.layout as Array<Record<string, unknown>>)[0].content).toContain('Fresh intro.')
+    expect((published.layout as unknown as Array<Record<string, unknown>>)[0].content).toContain('Fresh intro.')
     expect(published._status).toBe('published')
   })
 })

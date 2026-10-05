@@ -8,6 +8,7 @@ import {
   PAYLOAD_MARKDOWN_FIELD_COMPONENT,
   PAYLOAD_MARKDOWN_FIELD_CUSTOM_KEY,
 } from '../field/MarkdownField/config.js'
+import { localApi } from './localApi.js'
 
 /** Slug of the reusable markdown block (`createMarkdownBlock`). */
 export const MARKDOWN_BLOCK_SLUG = 'vlMdBlock'
@@ -96,7 +97,7 @@ export function getFieldBlocks(field: FlattenedField, payload: Payload): Flatten
 
   const references = field.blockReferences ?? []
   const resolved = references
-    .map((entry) => (typeof entry === 'string' ? payload.blocks?.[entry] : entry))
+    .map((entry) => (typeof entry === 'string' ? localApi(payload).blocks?.[entry] : entry))
     .filter((block): block is FlattenedBlock => Boolean(block))
 
   return [...(field.blocks ?? []), ...resolved]

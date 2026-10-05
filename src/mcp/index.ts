@@ -312,18 +312,17 @@ type McpPluginOptionsLike = {
  * mcpPlugin(withPayloadMarkdownMcp({ collections: { pages: { enabled: true } } }))
  * ```
  */
-export function withPayloadMarkdownMcp<T extends McpPluginOptionsLike>(
-  mcpOptions: T,
-  options: PayloadMarkdownMcpOptions = {},
-): T {
-  const userOverrideAuth = mcpOptions.overrideAuth
+export function withPayloadMarkdownMcp<T extends object>(mcpOptions: T, options: PayloadMarkdownMcpOptions = {}): T {
+  // Typed structurally (no dependency on @payloadcms/plugin-mcp's types); T stays the caller's type.
+  const current = mcpOptions as McpPluginOptionsLike
+  const userOverrideAuth = current.overrideAuth
 
   return {
     ...mcpOptions,
     mcp: {
-      ...(mcpOptions.mcp ?? {}),
-      prompts: [...(mcpOptions.mcp?.prompts ?? []), ...(options.prompts === false ? [] : payloadMarkdownMcpPrompts())],
-      tools: [...(mcpOptions.mcp?.tools ?? []), ...payloadMarkdownMcpTools(options)],
+      ...(current.mcp ?? {}),
+      prompts: [...(current.mcp?.prompts ?? []), ...(options.prompts === false ? [] : payloadMarkdownMcpPrompts())],
+      tools: [...(current.mcp?.tools ?? []), ...payloadMarkdownMcpTools(options)],
     },
     overrideAuth: async (req: PayloadRequest, getDefaultMcpAccessSettings: (overrideApiKey?: null | string) => Promise<unknown>) => {
       const settings = userOverrideAuth

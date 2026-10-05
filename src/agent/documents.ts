@@ -11,6 +11,7 @@ import type { MarkdownBlocksOutline, MarkdownTarget } from './targets.js'
 import type { MarkdownValidationResult } from './validate.js'
 
 import { assertAgentAccess, MarkdownAgentError } from './access.js'
+import { localApi } from './localApi.js'
 import { collectMarkdownTargets, MARKDOWN_BLOCK_SLUG } from './targets.js'
 import { validateMarkdown } from './validate.js'
 
@@ -57,7 +58,7 @@ function resolveEntity(req: PayloadRequest, ref: { collection?: string; global?:
     throw new MarkdownAgentError('invalid_edit', 'Pass either "collection" or "global", not both.')
 
   if (ref.collection) {
-    const config = req.payload.collections[ref.collection]?.config
+    const config = localApi(req.payload).collections[ref.collection]?.config
     if (!config) throw new MarkdownAgentError('not_found', `Unknown collection "${ref.collection}".`)
 
     return { slug: ref.collection, config, kind: 'collection' }
@@ -121,27 +122,27 @@ async function loadDocument(
 ): Promise<DataRecord> {
   try {
     if (entity.kind === 'global')
-      return (await req.payload.findGlobal({
+      return await localApi(req.payload).findGlobal({
         slug: entity.slug,
         depth: 0,
         draft: hasDrafts(entity),
-        locale: locale as never,
+        locale,
         overrideAccess: false,
         req,
-      })) as DataRecord
+      })
 
     if (id === undefined || id === null || id === '')
       throw new MarkdownAgentError('invalid_edit', `Pass the document "id" for collection "${entity.slug}".`)
 
-    return (await req.payload.findByID({
+    return await localApi(req.payload).findByID({
       id,
       collection: entity.slug,
       depth: 0,
       draft: hasDrafts(entity),
-      locale: locale as never,
+      locale,
       overrideAccess: false,
       req,
-    })) as DataRecord
+    })
   } catch (error) {
     if (error instanceof MarkdownAgentError) throw error
     const status = (error as { status?: number }).status
@@ -183,7 +184,7 @@ async function toMarkdownDocument(
 function searchWhere(req: PayloadRequest, entity: Entity, search: string): Where {
   const fields = entity.config.flattenedFields
   const titleField = entity.kind === 'collection' ? entity.config.admin?.useAsTitle : undefined
-  const idType = req.payload.collections[entity.slug]?.customIDType ?? req.payload.db.defaultIDType
+  const idType = localApi(req.payload).collections[entity.slug]?.customIDType ?? localApi(req.payload).db.defaultIDType
   const or: Where[] = []
 
   if (titleField && titleField !== 'id') or.push({ [titleField]: { like: search } })
@@ -233,12 +234,12 @@ export async function readMarkdownDocuments(
   if (options.where) clauses.push(options.where)
   if (options.search) clauses.push(searchWhere(req, entity, options.search))
 
-  const result = await req.payload.find({
+  const result = await localApi(req.payload).find({
     collection: entity.slug,
     depth: 0,
     draft: hasDrafts(entity),
     limit: Math.min(Math.max(options.limit ?? 5, 1), 25),
-    locale: locale as never,
+    locale,
     overrideAccess: false,
     req,
     ...(clauses.length ? { where: clauses.length === 1 ? clauses[0] : { and: clauses } } : {}),
@@ -246,7 +247,7 @@ export async function readMarkdownDocuments(
 
   return {
     docs: await Promise.all(
-      result.docs.map((doc) => toMarkdownDocument(req, entity, doc as DataRecord, { includeMarkdown, locale })),
+      result.docs.map((doc) => toMarkdownDocument(req, entity, doc, { includeMarkdown, locale })),
     ),
     totalDocs: result.totalDocs,
   }
@@ -507,27 +508,27 @@ export async function writeMarkdown(options: WriteMarkdownOptions): Promise<Writ
   try {
     saved =
       entity.kind === 'global'
-        ? ((await req.payload.updateGlobal({
+        ? await localApi(req.payload).updateGlobal({
             slug: entity.slug,
-            data: data as never,
+            data,
             depth: 0,
             draft,
-            locale: locale as never,
+            locale,
             overrideAccess: false,
             overrideLock: options.overrideLock ?? false,
             req,
-          })) as DataRecord)
-        : ((await req.payload.update({
+          })
+        : await localApi(req.payload).update({
             id: id as number | string,
             collection: entity.slug,
-            data: data as never,
+            data,
             depth: 0,
             draft,
-            locale: locale as never,
+            locale,
             overrideAccess: false,
             overrideLock: options.overrideLock ?? false,
             req,
-          })) as DataRecord)
+          })
   } catch (error) {
     throw toAgentError(error, entity)
   }
@@ -629,27 +630,27 @@ export async function publishMarkdown(options: PublishMarkdownOptions): Promise<
   try {
     saved =
       entity.kind === 'global'
-        ? ((await req.payload.updateGlobal({
+        ? await localApi(req.payload).updateGlobal({
             slug: entity.slug,
-            data: { _status: 'published' } as never,
+            data: { _status: 'published' },
             depth: 0,
             draft: false,
-            locale: locale as never,
+            locale,
             overrideAccess: false,
             overrideLock: options.overrideLock ?? false,
             req,
-          })) as DataRecord)
-        : ((await req.payload.update({
+          })
+        : await localApi(req.payload).update({
             id: id as number | string,
             collection: entity.slug,
-            data: { _status: 'published' } as never,
+            data: { _status: 'published' },
             depth: 0,
             draft: false,
-            locale: locale as never,
+            locale,
             overrideAccess: false,
             overrideLock: options.overrideLock ?? false,
             req,
-          })) as DataRecord)
+          })
   } catch (error) {
     throw toAgentError(error, entity)
   }
