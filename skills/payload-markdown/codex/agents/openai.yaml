@@ -1,4 +1,4 @@
 interface:
   display_name: "Payload Markdown"
-  short_description: "Write rich Payload Markdown docs"
+  short_description: "Write rich Payload Markdown docs and edit live content over MCP"
   default_prompt: "Use $payload-markdown to write elegant automated documentation with Payload Markdown directives."

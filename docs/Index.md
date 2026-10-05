@@ -74,6 +74,10 @@ Use readable directives for callouts, details, TOCs, steps, cards, buttons, badg
 
 :::
 
+:::callout[New: AI agents manage your content]{variant="success"}
+Connect Claude, Cursor or any MCP client to your Payload app and ask for changes in plain language. Agents read your pages, write payload-markdown with the directives your site supports, validate it with your renderer, and save drafts for review. [Set it up in four steps →](/agents)
+:::
+
 ## Quick Install
 
 ```bash
@@ -117,6 +121,7 @@ export function PostBody({ content }: { content?: string | null }) {
 - Local SVG icon packs for buttons, cards, and callouts.
 - Top-level and collection-scoped `code`, `themes`, and `config` namespaces.
 - Stable hook classes and `data-*` attributes for styling and tests.
+- MCP tools that let AI agents read, edit, validate and publish markdown content with drafts and API key permissions.
 
 ## Documentation Map
 
@@ -139,6 +144,10 @@ Supported directive syntax, attributes, defaults, diagnostics, and rendering beh
 
 :::card[Authoring]{href="/authoring"}
 Editor behavior, Markdown-in-Markdown examples, and copyable content patterns.
+:::
+
+:::card[AI Agents]{href="/agents"}
+MCP setup, agent tools, safety model, and building your own content agents.
 :::
 
 :::card[Advanced]{href="/advanced"}

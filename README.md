@@ -1,4 +1,4 @@
-![@valkyrianlabs/payload-markdown](https://media.valkyrianlabs.com/Payload%20Markdown%20v1.6.0%20Release%20Banner.png)
+![@valkyrianlabs/payload-markdown](https://media.valkyrianlabs.com/Payload%20Markdown%20v1.7.0%20Release%20Banner.png)
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml)](https://github.com/valkyrianlabs/payload-markdown/actions)
 &nbsp;
@@ -22,11 +22,67 @@ Just portable Markdown that renders like a real system.
 
 Payload Markdown now feels much closer to a Markdown-native design system: readable `[Title]` directive labels, expanded multiline args, local icon packs, button primitives, smarter autocomplete, richer card linking, and editor readability aids without giving up portable Markdown.
 
+**New in v1.7: AI agents can manage your content.** Connect Claude, Cursor, or any MCP client to your Payload app and ask for changes in plain language.
+
 ---
 
 ## Install
 
 `pnpm add @valkyrianlabs/payload-markdown`
+
+---
+
+## 🤖 Let AI agents manage your content
+
+> _"Rewrite the Home page from our launch post. Use cards for the features and add an FAQ after the hero."_
+
+Say that to Claude, Cursor, or any MCP client, and it gets done. The agent finds the page, writes payload-markdown using the directives, themes, icons, and code languages **your** site actually has, validates every block with **your** renderer, and saves a **draft** for you to review in the admin.
+
+`@valkyrianlabs/payload-markdown/mcp` plugs into Payload's official [`@payloadcms/plugin-mcp`](https://payloadcms.com/docs/plugins/mcp):
+
+```ts
+import { mcpPlugin } from '@payloadcms/plugin-mcp'
+import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { withPayloadMarkdownMcp } from '@valkyrianlabs/payload-markdown/mcp'
+
+export default buildConfig({
+  plugins: [
+    payloadMarkdown({ collections: { pages: true, posts: true } }),
+    mcpPlugin(
+      withPayloadMarkdownMcp({
+        collections: { pages: { enabled: true }, posts: { enabled: true } },
+      }),
+    ),
+  ],
+})
+```
+
+Create an API key in the admin (**MCP → API Keys**), then connect your agent:
+
+```bash
+claude mcp add --transport http payload http://localhost:3000/api/mcp \
+  --header "Authorization: Bearer <key>"
+```
+
+| Tool | What the agent gets |
+| --- | --- |
+| `markdownGuide` | A site-aware authoring guide, generated live from your config: where markdown lives, your themes, icons, and code languages, every directive and attribute. |
+| `markdownRead` | Find documents by id, title, slug, or query and see every markdown field and block with stable refs. |
+| `markdownValidate` | Render-exact validation with line and column diagnostics. |
+| `markdownWrite` | Atomic replace, insert, and remove edits. Validated first, saved as a draft, other blocks untouched. |
+| `markdownPublish` | Publish the draft, only when you ask. |
+
+**Built to be trusted with a real site:**
+
+- **Drafts by default.** Nothing goes live until you, or an agent you told to, publishes.
+- **Validation gate.** Broken directives, unknown themes, and missing icons are caught before anything is saved.
+- **Surgical, atomic edits.** Blocks are addressed by id, and only the fields that changed are written.
+- **Conflict-safe.** `ifUpdatedAt` refuses stale writes, and open (locked) documents are respected.
+- **Least privilege.** Every call runs as the key's user under your Payload access control, plus the key's per-collection checkboxes.
+
+The package also ships an agent skill (`skills/payload-markdown`) so Claude Code and Codex know the workflow out of the box.
+
+[AI Agents and MCP guide →](https://docs.valkyrianlabs.com/plugins/payload-markdown/agents)
 
 ---
 
@@ -73,6 +129,7 @@ This plugin takes the third path:
 - **Card links** — `linkScope` and `newTab` controls for card and cards layouts
 - **Scoped config** — global and collection-level overrides
 - **Portable storage** — clean Markdown source
+- **AI agents over MCP** — agents read, edit, validate, and publish content with drafts and API key permissions
 - **AI-friendly workflow** — content that agents and humans can edit sanely
 
 ![Payload Markdown directive preview](https://docs-media.valkyrianlabs.com/payload-markdown_v1.3_new_directives_example_1.png)
