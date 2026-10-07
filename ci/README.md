@@ -19,7 +19,14 @@ Nothing else runs with host privileges: the runner has no host `apt`, no Docker 
 ./ci/run-ci --postgres pnpm test:e2e     # plus a throwaway postgres:16 at 127.0.0.1:5432
 ./ci/run-playwright                      # = run-ci --postgres -- pnpm test:e2e --reporter=line
 ./ci/run-ci sudo apt-get install -y …    # fine: affects only this container
+./ci/run-ci --image ubuntu:24.04@sha256:… --root bash -c 'apt-get install -y ./x.deb'
+                                         # clean-install smoke test in a stock image
 ```
+
+The same `run-ci` is copied verbatim into every repository that uses the runner
+(payload-markdown, payload-markdown-docs, vl-release); it derives the image
+(`localhost/<repo>-ci`) and cache (`~/.cache/<repo>-ci`) names from the repository directory,
+and each repository keeps its own `ci/Containerfile`.
 
 - **Image**: `ci/Containerfile`, built on first use and tagged by its content plus the newest
   `vl-release`/`pmdocs` in the ValkyrianLabs APT index (a new tool release or a Containerfile edit
@@ -47,7 +54,8 @@ Nothing else runs with host privileges: the runner has no host `apt`, no Docker 
   clean the workspace.
 - **Exit status** is the command's.
 
-`CI_MEMORY`, `CI_TIMEOUT` (seconds) and `CI_CACHE_DIR` override the defaults.
+`--root` runs as container root (for stock images without sudo); `CI_MEMORY`, `CI_TIMEOUT`
+(seconds) and `CI_CACHE_DIR` override the defaults.
 
 Workflows call the wrappers; GitHub-hosted runners (used for pull requests from forks) have
 Podman too and build the same image.

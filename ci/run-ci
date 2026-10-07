@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # Run a command in the disposable CI container (rootless Podman; see ci/README.md).
 #
-#   ci/run-ci [--postgres] [--] COMMAND [ARGS...]
+#   ci/run-ci [--postgres] [--image IMAGE] [--] COMMAND [ARGS...]
 #
-#   --postgres   also start a throwaway postgres:16 in the same pod (data on tmpfs) and set
-#                DATABASE_URL to it unless the caller already set one
+#   --postgres      also start a throwaway postgres:16 in the same pod (data on tmpfs) and set
+#                   DATABASE_URL to it unless the caller already set one
+#   --image IMAGE   run IMAGE (e.g. a pinned stock distribution image for a clean-install smoke
+#                   test) instead of the repository's ci/Containerfile image, with the same
+#                   mounts and isolation
+#   --root          run as container root (still an unprivileged subordinate uid on the host),
+#                   for images without sudo; files it leaves in the workspace are handed back
 #
+# The same script is used by every repository on the runner; it derives the image and cache
+# names from the repository directory.
 # The repository is mounted at /workspace (read-write, files stay owned by the calling user);
 # nothing else from the host is visible except the pnpm/npm caches and, under GitHub Actions,
 # RUNNER_TEMP (where GITHUB_OUTPUT/GITHUB_ENV/GITHUB_STEP_SUMMARY live). Inside, any user may
@@ -18,16 +25,20 @@ die() {
 }
 
 postgres=false
+image=""
+root_user=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --postgres) postgres=true; shift ;;
+    --image) [ "$#" -ge 2 ] || die "--image needs a value"; image=$2; shift 2 ;;
     --) shift; break ;;
-    -h | --help) sed -n '2,13p' "$0"; exit 0 ;;
+    --root) root_user=true; shift ;;
+    -h | --help) sed -n '2,21p' "$0"; exit 0 ;;
     -*) die "unknown option $1" ;;
     *) break ;;
   esac
 done
-[ "$#" -gt 0 ] || die "usage: ci/run-ci [--postgres] [--] COMMAND [ARGS...]"
+[ "$#" -gt 0 ] || die "usage: ci/run-ci [--postgres] [--image IMAGE] [--] COMMAND [ARGS...]"
 
 command -v podman >/dev/null || die "podman is not installed (see ci/README.md)"
 
@@ -45,37 +56,47 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -S "${XDG_RUNTIME_DIR:-/nonexiste
   export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 fi
 
-cache="${CI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/payload-markdown-ci}"
+project="$(basename "$root" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9.\n-' '-')"
+cache="${CI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/$project-ci}"
 mkdir -p "$cache/pnpm-store" "$cache/npm"
 
 # --- image -----------------------------------------------------------------------------------
 # Tagged by the Containerfile and the newest ValkyrianLabs tool versions, so editing either
 # rebuilds it; otherwise the existing image is reused.
-tools="$(
-  for arch in all amd64; do curl -fsS --max-time 15 "https://apt.valkyrianlabs.com/dists/stable/main/binary-$arch/Packages" || true; done |
-    awk '$1 == "Package:" { name = $2 } $1 == "Version:" && (name == "vl-release" || name == "pmdocs") { print name "=" $2 }' |
-    sort -V | awk -F= '{ newest[$1] = $0 } END { for (n in newest) print newest[n] }' | sort | tr '\n' ' '
-)"
-repository=localhost/payload-markdown-ci
-tag="$({ cat "$root/ci/Containerfile"; echo "$tools"; } | sha256sum | cut -c1-16)"
-image="$repository:$tag"
+build_image() {
+  local tools repository tag latest
+  tools="$(
+    for arch in all amd64; do curl -fsS --max-time 15 "https://apt.valkyrianlabs.com/dists/stable/main/binary-$arch/Packages" || true; done |
+      awk '$1 == "Package:" { name = $2 } $1 == "Version:" && (name == "vl-release" || name == "pmdocs") { print name "=" $2 }' |
+      sort -V | awk -F= '{ newest[$1] = $0 } END { for (n in newest) print newest[n] }' | sort | tr '\n' ' '
+  )"
+  repository="localhost/$project-ci"
+  tag="$({ cat "$root/ci/Containerfile"; echo "$tools"; } | sha256sum | cut -c1-16)"
+  image="$repository:$tag"
 
-if ! podman image exists "$image"; then
-  if [ -z "$tools" ] && latest="$(podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" | head -n1)" && [ -n "$latest" ]; then
-    echo "run-ci: tool index unreachable; reusing $latest" >&2
-    image="$latest"
-  else
-    exec 9>"$cache/build.lock"
-    flock 9
-    if ! podman image exists "$image"; then
-      echo "run-ci: building $image (tools: ${tools:-unknown})" >&2
-      podman build --quiet --tag "$image" --build-arg "VALKYRIANLABS_TOOLS=$tools" \
-        --file "$root/ci/Containerfile" "$root/ci" >/dev/null
-      podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" |
-        grep -vx "$image" | xargs -r podman rmi --force >/dev/null 2>&1 || true
+  if ! podman image exists "$image"; then
+    if [ -z "$tools" ] && latest="$(podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" | head -n1)" && [ -n "$latest" ]; then
+      echo "run-ci: tool index unreachable; reusing $latest" >&2
+      image="$latest"
+    else
+      exec 9>"$cache/build.lock"
+      flock 9
+      if ! podman image exists "$image"; then
+        echo "run-ci: building $image (tools: ${tools:-unknown})" >&2
+        podman build --quiet --tag "$image" --build-arg "VALKYRIANLABS_TOOLS=$tools" \
+          --file "$root/ci/Containerfile" "$root/ci" >/dev/null
+        podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" |
+          grep -vx "$image" | xargs -r podman rmi --force >/dev/null 2>&1 || true
+      fi
+      flock -u 9
     fi
-    flock -u 9
   fi
+}
+
+if [ -n "$image" ]; then
+  podman image exists "$image" || podman pull --quiet "$image" >/dev/null
+else
+  build_image
 fi
 
 # --- environment -----------------------------------------------------------------------------
@@ -145,6 +166,7 @@ trap cleanup EXIT
 
 # --- optional postgres (same pod, so it is at 127.0.0.1:5432) --------------------------------
 run_args=(--rm --init --name "$name" --stop-timeout 10 --timeout "${CI_TIMEOUT:-10800}" --workdir "$workdir")
+if $root_user; then run_args+=(--user 0:0 --env HOME=/root); fi
 if $postgres; then
   pod="$name-pod"
   podman pod create --name "$pod" --hostname ci --userns=keep-id --shm-size 2g --label "ci.run-ci.pid=$$" >/dev/null
