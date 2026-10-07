@@ -79,7 +79,7 @@ Use four backticks when documenting Markdown that itself contains fenced code bl
 ### Install
 
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 
 ### Configure

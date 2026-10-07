@@ -55,7 +55,7 @@ Legacy `config.options` code settings still work, but new docs should use the to
 ### Update The Package
 
 ```bash
-pnpm up @valkyrianlabs/payload-markdown
+pnpm up payload-markdown
 ```
 
 ### Review Custom Themes

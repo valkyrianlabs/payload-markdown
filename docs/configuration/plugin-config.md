@@ -17,7 +17,7 @@ tags:
 ## Full Example
 
 ```ts
-import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from 'payload-markdown'
 
 payloadMarkdown({
   enabled: true,
@@ -99,7 +99,7 @@ Runtime helpers read plugin settings from `payloadMarkdown(...)`. If you use ren
 `payloadMarkdown(...)` resolves its render settings (`code`, `config`, `icons`, `themes` and each collection's `code`, `config` and `themes`) into a frozen, serialisable object and stores it in two places:
 
 - on the Payload config it returns, as `config.custom.payloadMarkdown` (server-only);
-- in a process-wide registry that every installed copy of `@valkyrianlabs/payload-markdown` shares, so a second copy (for example one installed by another plugin) renders with the same settings.
+- in a process-wide registry that every installed copy of the plugin shares (under either package name), so a second copy (for example one installed by another plugin) renders with the same settings.
 
 `MarkdownRenderer`, `MarkdownBlockComponent` and `renderMarkdown` use, in order:
 

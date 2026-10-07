@@ -1,5 +1,5 @@
 /**
- * `@valkyrianlabs/payload-markdown/mcp`: tools that let AI agents read,
+ * `payload-markdown/mcp`: tools that let AI agents read,
  * validate, edit and publish payload-markdown content through
  * `@payloadcms/plugin-mcp`, plus the same operations as plain functions for
  * custom agents. Server-only.

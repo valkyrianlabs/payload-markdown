@@ -21,13 +21,13 @@ Use `:::tabs` with child `:::tab` directives for package-manager examples, featu
 
 :::tab[pnpm]{value="pnpm"}
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
 ```bash
-npm install @valkyrianlabs/payload-markdown
+npm install payload-markdown
 ```
 :::
 
@@ -65,7 +65,7 @@ Tab panels support normal Markdown, code fences, and nested directives:
 
 :::tab[Install]{value="install"}
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 :::
 

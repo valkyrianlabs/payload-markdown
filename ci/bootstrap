@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# One-time (idempotent) host provisioning for the self-hosted runner. Run by an administrator,
+# never by CI:
+#
+#   sudo ci/bootstrap                  rootless Podman for the runner user + the ci-host broker
+#   sudo ci/bootstrap --sudoers        also replace /etc/sudoers.d/<runner> with ci/host/sudoers
+#                                      (only after CI passed through the broker; keeps a backup)
+#
+# Environment: RUNNER_USER (default gh-runner).
+set -euo pipefail
+
+runner="${RUNNER_USER:-gh-runner}"
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+install_sudoers=false
+[ "${1:-}" = --sudoers ] && install_sudoers=true
+
+[ "$(id -u)" -eq 0 ] || { echo "bootstrap: run as root (sudo)" >&2; exit 1; }
+id "$runner" >/dev/null 2>&1 || { echo "bootstrap: no user $runner" >&2; exit 1; }
+runner_uid="$(id -u "$runner")"
+
+echo "== rootless Podman"
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  podman uidmap passt slirp4netns crun catatonit containers-storage golang-github-containers-common
+grep -q "^$runner:" /etc/subuid || usermod --add-subuids 231072-296607 "$runner"
+grep -q "^$runner:" /etc/subgid || usermod --add-subgids 231072-296607 "$runner"
+loginctl enable-linger "$runner"
+for _ in $(seq 20); do [ -d "/run/user/$runner_uid" ] && break; sleep 0.5; done
+sudo -u "$runner" env -i HOME="$(getent passwd "$runner" | cut -d: -f6)" PATH=/usr/bin:/bin \
+  XDG_RUNTIME_DIR="/run/user/$runner_uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$runner_uid/bus" \
+  podman info --format 'rootless={{.Host.Security.Rootless}} cgroups={{.Host.CgroupManager}}/{{.Host.CgroupsVersion}} storage={{.Store.GraphDriverName}}'
+
+echo "== ci-host broker"
+install -o root -g root -m 0755 "$here/host/ci-host" /usr/local/sbin/ci-host
+install -d -o root -g root -m 0755 /etc/ci-host
+if [ -f /etc/ci-host/services ]; then
+  diff -u /etc/ci-host/services "$here/host/services" || echo "(kept the host's /etc/ci-host/services; reconcile by hand)"
+else
+  install -o root -g root -m 0644 "$here/host/services" /etc/ci-host/services
+fi
+
+if $install_sudoers; then
+  echo "== sudoers"
+  target="/etc/sudoers.d/$runner"
+  candidate="$(mktemp)"
+  sed "s/gh-runner/$runner/g" "$here/host/sudoers" > "$candidate"
+  visudo -cf "$candidate"
+  if [ -f "$target" ]; then cp -a "$target" "/root/sudoers.d-$runner.$(date +%Y%m%dT%H%M%S)"; fi
+  install -o root -g root -m 0440 "$candidate" "/etc/sudoers.d/.$runner.new"
+  visudo -cf "/etc/sudoers.d/.$runner.new"
+  mv -f "/etc/sudoers.d/.$runner.new" "$target"
+  rm -f "$candidate"
+  visudo -c >/dev/null
+  sudo -n -u "$runner" sudo -n -l
+fi
+
+echo "bootstrap: done"

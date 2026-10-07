@@ -30,7 +30,7 @@ This guide assumes a Payload 3 project with a working Next.js app.
 ### Install The Package
 
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 
 ### Register The Plugin
@@ -74,19 +74,19 @@ Shiki languages, themes, line numbers, and full-bleed code.
 
 :::tab[pnpm]{value="pnpm"}
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
 ```bash
-npm install @valkyrianlabs/payload-markdown
+npm install payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
 ```bash
-yarn add @valkyrianlabs/payload-markdown
+yarn add payload-markdown
 ```
 :::
 

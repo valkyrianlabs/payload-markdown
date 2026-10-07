@@ -19,7 +19,7 @@ Markdown rendering is server-friendly and centralized in the plugin renderer. Th
 ## Render A Markdown Field
 
 ```tsx
-import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
+import { MarkdownRenderer } from 'payload-markdown/server'
 
 export function PostBody({ content }: { content?: string | null }) {
   return (
@@ -90,7 +90,7 @@ Most applications should prefer plugin-level or collection-level config. Rendere
 ## Render Blocks
 
 ```tsx
-import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
+import { MarkdownBlockComponent } from 'payload-markdown/server'
 
 export function MarkdownLayoutBlock({
   block,
@@ -118,10 +118,10 @@ Rendering reports warnings for malformed directives, invalid directive attribute
 
 ## Headless Rendering
 
-`@valkyrianlabs/payload-markdown/render` renders Markdown without React, Next.js or CSS imports, so it works in plain Node scripts, search indexers, feeds, emails and docs tooling:
+`payload-markdown/render` renders Markdown without React, Next.js or CSS imports, so it works in plain Node scripts, search indexers, feeds, emails and docs tooling:
 
 ```ts
-import { renderMarkdown } from '@valkyrianlabs/payload-markdown/render'
+import { renderMarkdown } from 'payload-markdown/render'
 
 const result = await renderMarkdown(markdown)
 
@@ -143,5 +143,5 @@ result.errors // fatal errors; html is a placeholder when non-empty
 `MarkdownRenderer` imports its stylesheet for Next.js apps. Other consumers of the HTML, such as headless renders, can import the same file explicitly:
 
 ```ts
-import '@valkyrianlabs/payload-markdown/styles.css'
+import 'payload-markdown/styles.css'
 ```

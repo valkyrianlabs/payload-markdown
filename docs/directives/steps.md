@@ -121,7 +121,7 @@ Code fences, callouts, details, and normal Markdown render inside steps:
 ### Install
 
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 
 ### Configure

@@ -4,7 +4,7 @@ Use this workflow when you edit live Payload content through the payload-markdow
 
 ## Setup (If The Tools Are Missing)
 
-The app needs `@payloadcms/plugin-mcp` registered with `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`, and an API key from the admin (**MCP → API Keys**) with `Find`/`Update` ticked for the collections to edit. Point the MCP client at `<app URL>/api/mcp` (Streamable HTTP) with the header `Authorization: Bearer <key>`. Ask the user for the URL and key; never invent or print secrets. Full setup: https://docs.valkyrianlabs.com/plugins/payload-markdown/agents
+The app needs `@payloadcms/plugin-mcp` registered with `withPayloadMarkdownMcp()` from `payload-markdown/mcp` (or `@valkyrianlabs/payload-markdown/mcp` when the app installed the scoped name), and an API key from the admin (**MCP → API Keys**) with `Find`/`Update` ticked for the collections to edit. Point the MCP client at `<app URL>/api/mcp` (Streamable HTTP) with the header `Authorization: Bearer <key>`. Ask the user for the URL and key; never invent or print secrets. Full setup: https://docs.valkyrianlabs.com/plugins/payload-markdown/agents
 
 ## Workflow
 

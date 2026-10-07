@@ -15,12 +15,12 @@ this file says how it applies here.
 ## Versions
 
 - Canonical: `package.json`
-- Kept in sync by `vlr version …`: `src/version.ts` (regex)
+- Kept in sync by `vlr version …`: `src/version.ts` (regex), `skills/payload-markdown/claude/skill.json` (regex), `skills/payload-markdown/codex/skill.json` (regex)
 - Tags: `vX.Y.Z` on branch `main`; GitHub release title: `vX.Y.Z - <title>`
 
 ## Release channels
 
-- **npm package** (built by `vlr build-npm`): packed with `npm` from `.`, dist-tag `latest`, pre-pack: `pnpm build`
+- **npm package** (built by `vlr build-npm`): packed with `npm` from `.`, dist-tag `latest`, pre-pack: `pnpm build`, also published as `payload-markdown` (`[[npm.aliases]]`, derived from the same tarball)
   - registry `npmjs`: https://registry.npmjs.org/ (auth `oidc`), published with `vlr publish-npm`
 
 ## Before considering substantial work complete

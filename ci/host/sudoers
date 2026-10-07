@@ -1,0 +1,5 @@
+# /etc/sudoers.d/gh-runner: the GitHub Actions runner's only host privilege. ci-host parses its
+# arguments itself (exactly "service {restart|status} UNIT", UNIT from /etc/ci-host/services), so
+# the wildcard after "service" cannot reach anything else.
+Defaults:gh-runner !requiretty, env_reset, secure_path="/usr/sbin:/usr/bin:/sbin:/bin"
+gh-runner ALL=(root) NOPASSWD: /usr/local/sbin/ci-host service *

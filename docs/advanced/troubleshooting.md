@@ -67,8 +67,10 @@ Confirm Tailwind scans the package output and your source-defined theme classes:
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@source "../node_modules/@valkyrianlabs/payload-markdown/dist";
+@source "../node_modules/payload-markdown/dist";
 ```
+
+Installed the scoped package? Point `@source` at `../node_modules/@valkyrianlabs/payload-markdown/dist` instead.
 
 If custom directive theme classes are generated dynamically, Tailwind may not see them. Keep complete class strings in source config.
 
@@ -77,7 +79,7 @@ If custom directive theme classes are generated dynamically, Tailwind may not se
 Confirm the language is loaded in `code.langs`:
 
 ```ts
-import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from 'payload-markdown'
 
 payloadMarkdown({
   code: {
@@ -133,7 +135,7 @@ If settings are missing, `getPayloadMarkdownSettings()` throws an error that say
 
 ## Duplicate Copies Warning
 
-`Duplicate copies of @valkyrianlabs/payload-markdown are loaded in this process` means two different versions of the package were imported, typically because another plugin installed its own copy. Settings are still shared between the copies, but each copy renders with its own code. Install one version, for example by aligning the dependency ranges or with a package manager override.
+`Duplicate copies of payload-markdown are loaded in this process` means two different versions of the package were imported, typically because another plugin installed its own copy. Settings are still shared between the copies, but each copy renders with its own code. Install one version, for example by aligning the dependency ranges or with a package manager override. Installing both `payload-markdown` and `@valkyrianlabs/payload-markdown` also loads two copies: keep one name.
 
 ## MCP: Invalid Relationship To `users`
 

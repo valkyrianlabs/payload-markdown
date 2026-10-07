@@ -1,15 +1,24 @@
 ---
 name: payload-markdown
-description: Write elegant automated documentation with @valkyrianlabs/payload-markdown, and edit live Payload content through its MCP tools. Use when authoring, rewriting, auditing, or structuring docs with Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, badges, and layout primitives, or when updating pages, posts and markdown blocks in a Payload app via markdownRead/markdownWrite.
+description: Write elegant automated documentation with payload-markdown, and edit live Payload content through its MCP tools. Use when authoring, rewriting, auditing, or structuring docs with Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, badges, and layout primitives, or when updating pages, posts and markdown blocks in a Payload app via markdownRead/markdownWrite.
 ---
 
 # Payload Markdown
 
-Use this skill to write documentation that renders well with `@valkyrianlabs/payload-markdown`, especially docs generated or maintained by agents for downstream `@valkyrianlabs/payload-markdown-docs` projects.
+Use this skill to write documentation that renders well with `payload-markdown` (also published as `@valkyrianlabs/payload-markdown`; same package and version, so use whichever name the project installed in imports), especially docs generated or maintained by agents for downstream `@valkyrianlabs/payload-markdown-docs` projects.
 
 This skill is about authoring clean Markdown content with Payload Markdown directives, in files or live in a Payload app over MCP. It is not a Payload CMS implementation guide.
 
-This package stores the Claude variant at `skills/payload-markdown/claude`. When installing into an environment that requires the skill directory name to match `name`, install or copy this subtree as `payload-markdown`.
+## Keep This Skill Current
+
+This skill ships with `payload-markdown` (the Claude variant, installed at `.claude/skills/payload-markdown`). `skill.json` next to this file records the package version it came from and a `sha256` of the skill files.
+
+Check for drift before relying on it:
+
+- With shell access in a project that depends on the package, run `npx payload-markdown skill check`.
+- When the `markdownGuide` tool is available, compare the skill `sha256` it lists for `claude` with `sha256` in `skill.json`.
+
+If they differ, or `skill.json` is missing, tell the user the skill is out of date and suggest `npx payload-markdown skill install`, then re-read this skill after it is updated. The installer refuses to overwrite local edits unless run with `--force`.
 
 ## Workflow
 
@@ -24,7 +33,7 @@ This package stores the Claude variant at `skills/payload-markdown/claude`. When
 
 When the `markdownGuide`, `markdownRead`, `markdownValidate`, `markdownWrite` and `markdownPublish` tools are available, edit Payload content directly: guide → read → validate until `ok` → write a draft with `ifUpdatedAt` → share the preview → publish only when asked. Read `reference/mcp-content-workflow.md` first.
 
-Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mcp` with `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`, the user creates a key in the admin (**MCP → API Keys**), then:
+Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mcp` with `withPayloadMarkdownMcp()` from `payload-markdown/mcp`, the user creates a key in the admin (**MCP → API Keys**), then:
 
 ```bash
 claude mcp add --transport http payload http://localhost:3000/api/mcp --header "Authorization: Bearer <key>"
@@ -63,7 +72,7 @@ claude mcp add --transport http payload http://localhost:3000/api/mcp --header "
 Run the helper on changed Markdown files:
 
 ```bash
-python3 skills/payload-markdown/claude/scripts/check_payload_markdown_doc.py docs/**/*.md
+python3 .claude/skills/payload-markdown/scripts/check_payload_markdown_doc.py docs/**/*.md
 ```
 
 The checker reads `reference/directive-spec.json` (falling back to built-in tables when it is missing) and reports unknown directives, attributes and values, text after a container marker that is not `[label]` or `{…}`, markers inside list items or blockquotes, stray closers, and unclosed containers.

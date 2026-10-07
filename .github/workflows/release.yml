@@ -2,7 +2,13 @@
 #
 #   vlr cut patch|minor|major --push      (locally) -> pushes vX.Y.Z -> this workflow
 #
-# build ─▶ publish (npm + docs) ─▶ github-release ─▶ finalize
+# build ─▶ publish-npm ─▶ publish-docs ─▶ github-release ─▶ finalize
+#
+# Runners: everything runs on the self-hosted runner except publish-npm, because npm trusted
+# publishing (OIDC) only accepts GitHub-hosted runners. On the self-hosted runner every tool
+# (Node, pnpm, vlr, pmdocs, gh) runs inside the disposable CI container (`./ci/run-ci`, rootless
+# Podman; see ci/README.md): no host sudo, host packages or Docker. Nothing here touches the host
+# beyond the job workspace.
 #
 # `vlr prepare` promotes .release/RELEASE_NOTES_NEXT.md into RELEASE_NOTES.md in each job's work
 # tree only (it is deterministic, so every job renders the same documents). The npm tarball is
@@ -10,7 +16,12 @@
 # Nothing is written back to main unless npm publication, the docs sync and the GitHub release
 # all succeeded.
 #
-# npm: trusted publishing (OIDC). The npmjs.com package trusts this workflow file
+# npm: one build, two names. `vlr build-npm` packs @valkyrianlabs/payload-markdown and derives
+# payload-markdown from the same tarball (release.toml [[npm.aliases]]); `vlr publish-npm` plans
+# both before uploading either, uploads the alias first, and skips anything already published
+# with identical bytes, so a failed run can simply be re-run.
+#
+# npm: trusted publishing (OIDC). Both npmjs.com packages trust this workflow file
 # (`release.yml`) and the `Production` environment; keep both names. No token secret.
 # Optional: vars.RELEASE_PUBLISH_MODE (`enabled` by default here, `disabled` to rehearse).
 
@@ -47,7 +58,7 @@ env:
 jobs:
   build:
     name: Prepare, build and validate
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       id-token: write # pmdocs dry-run sync
@@ -61,20 +72,6 @@ jobs:
           ref: ${{ env.RELEASE_REF }}
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
-        with:
-          run_install: false
-
-      - name: Setup Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - name: Install vl-release and pmdocs
-        run: bash .github/scripts/install-valkyrianlabs-tools.sh vl-release pmdocs
-
       - name: Publication mode
         id: mode
         run: |
@@ -85,61 +82,52 @@ jobs:
           fi
 
       - name: Release gate
-        run: vlr check --release --tag "${RELEASE_REF#refs/tags/}"
+        run: ./ci/run-ci bash -c 'vlr check --release --tag "${RELEASE_REF#refs/tags/}"'
 
       - name: Prepare release documents (work tree only)
-        run: vlr prepare --record release/meta/prepare.json
+        run: ./ci/run-ci vlr prepare --record release/meta/prepare.json
 
       - name: Release state
         id: state
-        run: vlr status --github-output
+        run: ./ci/run-ci vlr status --github-output
 
       - name: Install dependencies
-        run: |
-          set -euo pipefail
-          corepack enable
-          pnpm install --frozen-lockfile --prefer-offline
+        run: ./ci/run-ci pnpm install --frozen-lockfile --prefer-offline
 
       # Runs `pnpm build` (pre_pack) and packs the tarball that every later step uses.
       - name: Build and pack
-        run: |
-          set -euo pipefail
-          export NEXT_CPU_COUNT="$(nproc)"
-          vlr build-npm
+        run: ./ci/run-ci bash -c 'NEXT_CPU_COUNT=$(nproc) vlr build-npm'
 
       # After the build: several contract tests exercise the built dist.
       - name: Run tests
-        run: pnpm test:int
+        run: ./ci/run-ci pnpm test:int
 
       - name: Lint
-        run: pnpm lint
+        run: ./ci/run-ci pnpm lint
 
       - name: Typecheck dev app
-        run: pnpm exec tsc -p dev/tsconfig.json --noEmit
+        run: ./ci/run-ci pnpm exec tsc -p dev/tsconfig.json --noEmit
 
       - name: Plain-Node export smoke
-        run: pnpm test:exports
+        run: ./ci/run-ci pnpm test:exports
+
+      # Both npm names from the built tarballs: same files, every export and type, the bin.
+      - name: Verify both npm packages
+        run: ./ci/run-ci node scripts/verify-npm-packages.mjs --release release
 
       - name: Validate docs and rehearse the docs sync
         run: |
-          set -euo pipefail
-          pmdocs validate ./docs --source "$PMDOCS_SOURCE"
-          pmdocs push ./docs \
-            --endpoint "$DOCS_SYNC_ENDPOINT" \
-            --source "$PMDOCS_SOURCE" \
-            --github-oidc \
-            --dry-run
+          ./ci/run-ci bash -euo pipefail -c '
+            pmdocs validate ./docs --source "$PMDOCS_SOURCE"
+            pmdocs push ./docs --endpoint "$DOCS_SYNC_ENDPOINT" --source "$PMDOCS_SOURCE" --github-oidc --dry-run
+          '
 
       - name: Checksums and package contract
-        run: |
-          set -euo pipefail
-          vlr checksums
-          vlr validate-artifacts
-          vlr artifacts
+        run: ./ci/run-ci bash -euo pipefail -c 'vlr checksums && vlr validate-artifacts && vlr artifacts'
 
-      # Read-only: fails now if this version is already on npm with different bytes.
+      # Read-only, for both names: fails now if this version is already on npm with different bytes.
       - name: Plan npm publication
-        run: vlr publish-npm --mode enabled --dry-run
+        run: ./ci/run-ci vlr publish-npm --mode enabled --dry-run
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -148,17 +136,19 @@ jobs:
           path: release
           if-no-files-found: error
 
-  publish:
-    name: Publish to npm and sync docs
+  # npm trusted publishing (OIDC) works only on GitHub-hosted runners, so this job stays there;
+  # every other job runs on the self-hosted runner.
+  publish-npm:
+    name: Publish to npm
     runs-on: ubuntu-latest
     needs: build
     if: needs.build.outputs.publish == 'true'
     environment:
       name: Production
-      url: https://www.npmjs.com/package/@valkyrianlabs/payload-markdown
+      url: https://www.npmjs.com/package/payload-markdown
     permissions:
       contents: read
-      id-token: write # npm trusted publishing + pmdocs
+      id-token: write # npm trusted publishing
     env:
       RELEASE_PUBLISH_MODE: ${{ vars.RELEASE_PUBLISH_MODE || 'enabled' }}
     steps:
@@ -173,8 +163,8 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      - name: Install vl-release and pmdocs
-        run: bash .github/scripts/install-valkyrianlabs-tools.sh vl-release pmdocs
+      - name: Install vl-release
+        run: bash .github/scripts/install-valkyrianlabs-tools.sh vl-release
 
       - name: Download release artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -182,27 +172,38 @@ jobs:
           name: payload-markdown-${{ needs.build.outputs.version }}
           path: release
 
-      # Publishes the validated tarball (or skips it if npm already has identical bytes), then
-      # waits until npm lists it by integrity under `latest`.
+      # Publishes both validated tarballs, payload-markdown first (or skips one npm already has with
+      # identical bytes), then waits until npm lists each by integrity under `latest`.
       - name: Publish to npm
         run: |
           set -euo pipefail
           vlr prepare
           vlr publish-npm --require-enabled
 
+  publish-docs:
+    name: Sync docs
+    runs-on: self-hosted
+    needs: [build, publish-npm]
+    environment:
+      name: Production
+      url: https://docs.valkyrianlabs.com/plugins/payload-markdown
+    permissions:
+      contents: read
+      id-token: write # pmdocs push --github-oidc
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ env.RELEASE_REF }}
+          fetch-depth: 0
+
       - name: Publish docs to docs.valkyrianlabs.com
-        run: |
-          set -euo pipefail
-          pmdocs push ./docs \
-            --endpoint "$DOCS_SYNC_ENDPOINT" \
-            --source "$PMDOCS_SOURCE" \
-            --github-oidc \
-            --publish
+        run: ./ci/run-ci bash -c 'pmdocs push ./docs --endpoint "$DOCS_SYNC_ENDPOINT" --source "$PMDOCS_SOURCE" --github-oidc --publish'
 
   github-release:
     name: GitHub release
-    runs-on: ubuntu-latest
-    needs: [build, publish]
+    runs-on: self-hosted
+    needs: [build, publish-npm, publish-docs]
     permissions:
       contents: write
     env:
@@ -214,9 +215,6 @@ jobs:
           ref: ${{ env.RELEASE_REF }}
           fetch-depth: 0
 
-      - name: Install vl-release
-        run: bash .github/scripts/install-valkyrianlabs-tools.sh vl-release
-
       - name: Download release artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -224,15 +222,12 @@ jobs:
           path: release
 
       - name: Create or update the release (notes from RELEASE_NOTES.md; assets immutable)
-        run: |
-          set -euo pipefail
-          vlr prepare
-          vlr github-release
+        run: ./ci/run-ci bash -euo pipefail -c 'vlr prepare && vlr github-release'
 
   finalize:
     name: Record the release on main
-    runs-on: ubuntu-latest
-    needs: [build, publish, github-release]
+    runs-on: self-hosted
+    needs: [build, publish-npm, publish-docs, github-release]
     permissions:
       contents: write
     steps:
@@ -241,9 +236,6 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
           fetch-depth: 0
-
-      - name: Install vl-release
-        run: bash .github/scripts/install-valkyrianlabs-tools.sh vl-release
 
       - name: Download release artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -254,7 +246,4 @@ jobs:
       # Re-prepare (deterministic), prove it matches what was built and published, then commit
       # RELEASE_NOTES.md and the cleared staging file onto main.
       - name: Finalize
-        run: |
-          set -euo pipefail
-          vlr prepare
-          vlr finalize --record release/meta/prepare.json
+        run: ./ci/run-ci bash -euo pipefail -c 'vlr prepare && vlr finalize --record release/meta/prepare.json'

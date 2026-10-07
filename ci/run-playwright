@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Run the Playwright suite in the CI container against a throwaway Postgres:
+#
+#   ci/run-playwright [PLAYWRIGHT ARGS...]
+#
+# Build first (ci/run-ci pnpm build): the dev app imports the package through its dist.
+set -euo pipefail
+export PAYLOAD_SECRET="${PAYLOAD_SECRET:-ci-secret}"
+exec "$(dirname "${BASH_SOURCE[0]}")/run-ci" --postgres -- pnpm test:e2e --reporter=line "$@"

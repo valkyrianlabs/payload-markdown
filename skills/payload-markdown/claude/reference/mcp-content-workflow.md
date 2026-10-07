@@ -4,7 +4,7 @@ Use this workflow when you edit live Payload content through the payload-markdow
 
 ## Setup (If The Tools Are Missing)
 
-The app needs `@payloadcms/plugin-mcp` registered with `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`, and an API key from the admin (**MCP → API Keys**) with `Find`/`Update` ticked for the collections to edit. Then connect:
+The app needs `@payloadcms/plugin-mcp` registered with `withPayloadMarkdownMcp()` from `payload-markdown/mcp` (or `@valkyrianlabs/payload-markdown/mcp` when the app installed the scoped name), and an API key from the admin (**MCP → API Keys**) with `Find`/`Update` ticked for the collections to edit. Then connect:
 
 ```bash
 claude mcp add --transport http payload http://localhost:3000/api/mcp --header "Authorization: Bearer <key>"

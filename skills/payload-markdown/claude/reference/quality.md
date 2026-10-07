@@ -43,7 +43,7 @@ Use this checklist before returning generated docs.
 Run:
 
 ```bash
-python3 skills/payload-markdown/codex/scripts/check_payload_markdown_doc.py path/to/docs.md
+python3 .claude/skills/payload-markdown/scripts/check_payload_markdown_doc.py path/to/docs.md
 ```
 
 If working inside a downstream docs package, run its docs validation command as well.

@@ -62,6 +62,8 @@ const scalar = (value: unknown): string =>
 const isRecord = (value: unknown): value is DataRecord =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
+const MARKDOWN_FIELD_COMPONENT_PATTERN = /^(?:@[\w.-]+\/)?payload-markdown\/server#PayloadMarkdownField$/
+
 function componentPath(component: unknown): string | undefined {
   if (typeof component === 'string') return component
   if (isRecord(component) && typeof component.path === 'string') return component.path
@@ -76,7 +78,8 @@ export function isMarkdownField(field: FlattenedField): boolean {
 
   const component = componentPath(field.admin?.components?.Field)
 
-  return component === PAYLOAD_MARKDOWN_FIELD_COMPONENT
+  // Either package name (scoped or unscoped) may have created the field.
+  return component === PAYLOAD_MARKDOWN_FIELD_COMPONENT || Boolean(component?.match(MARKDOWN_FIELD_COMPONENT_PATTERN))
 }
 
 function fieldLabel(field: FlattenedField): string {

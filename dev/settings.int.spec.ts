@@ -154,7 +154,7 @@ describe('settings ownership (CORE-18a, X-3)', () => {
     third.maybeGetPayloadMarkdownSettings()
 
     expect(warn).toHaveBeenCalledTimes(1)
-    expect(String(warn.mock.calls[0][0])).toContain('Duplicate copies of @valkyrianlabs/payload-markdown')
+    expect(String(warn.mock.calls[0][0])).toContain('Duplicate copies of payload-markdown')
     expect(String(warn.mock.calls[0][0])).toContain(`versions ${PAYLOAD_MARKDOWN_VERSION}, 0.0.0-other`)
     expect(String(warn.mock.calls[0][0])).toContain(`registered by ${PAYLOAD_MARKDOWN_VERSION}`)
 

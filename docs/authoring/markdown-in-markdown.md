@@ -72,13 +72,13 @@ Tabs examples usually contain directive nesting and package-manager code fences:
 
 :::tab[pnpm]{value="pnpm"}
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
 ```bash
-npm install @valkyrianlabs/payload-markdown
+npm install payload-markdown
 ```
 :::
 

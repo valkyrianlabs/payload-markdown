@@ -22,7 +22,7 @@ Use this section when wiring the plugin into a Payload project for the first tim
 
 ### Install
 
-Add `@valkyrianlabs/payload-markdown` to the Payload app.
+Add `payload-markdown` (or the scoped `@valkyrianlabs/payload-markdown`) to the Payload app.
 
 ### Configure
 

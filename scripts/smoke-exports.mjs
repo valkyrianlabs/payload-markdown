@@ -12,14 +12,17 @@
  * - `./styles.css` must resolve to a CSS file; `./directive-spec.json` must
  *   match `getDirectiveSpec()`.
  *
+ * - Admin component paths use the package's own (installed) name.
+ *
  * Exits non-zero on failure. Uses the package's self-reference, so it checks
- * the `exports` map exactly as a consumer sees it.
+ * the `exports` map exactly as a consumer sees it. scripts/verify-npm-packages.mjs
+ * runs a copy against each published name (PAYLOAD_MARKDOWN_SMOKE_PACKAGE).
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const PACKAGE = '@valkyrianlabs/payload-markdown'
+const PACKAGE = process.env.PAYLOAD_MARKDOWN_SMOKE_PACKAGE || '@valkyrianlabs/payload-markdown'
 const FORBIDDEN_BARE_IMPORTS = /^(?:react|react-dom|next|@payloadcms\/ui)(?:\/|$)/
 
 const failures = []
@@ -110,6 +113,17 @@ try {
   else ok(`./mcp tools: ${names.join(', ')}`)
 } catch (error) {
   fail(`./mcp tools: ${error?.message ?? error}`)
+}
+
+try {
+  const { markdownField } = await import(PACKAGE)
+  const component = markdownField().admin?.components?.Field
+
+  if (component !== `${PACKAGE}/server#PayloadMarkdownField`)
+    fail(`markdownField() admin component is ${JSON.stringify(component)}, not under ${PACKAGE}`)
+  else ok(`admin component path ${component}`)
+} catch (error) {
+  fail(`markdownField: ${error?.message ?? error}`)
 }
 
 // Detector self-check: the RSC entry is known to import CSS and React.

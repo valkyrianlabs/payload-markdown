@@ -9,6 +9,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "payload-markdown": "./bin/payload-markdown.mjs"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -44,6 +47,7 @@
     "./styles.css": "./dist/components/MarkdownRenderer/index.css"
   },
   "files": [
+    "bin",
     "dist",
     "skills"
   ],
@@ -58,7 +62,8 @@
     "dev:generate-importmap": "pnpm dev:payload generate:importmap",
     "dev:generate-types": "pnpm dev:payload generate:types",
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
-    "generate:spec": "pnpm build && node scripts/generate-directive-spec.mjs --skills",
+    "generate:skill": "node scripts/generate-skill-manifest.mjs",
+    "generate:spec": "pnpm build && node scripts/generate-directive-spec.mjs --skills && pnpm generate:skill",
     "generate:importmap": "pnpm dev:generate-importmap",
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
@@ -67,6 +72,7 @@
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
     "test:exports": "node scripts/smoke-exports.mjs",
+    "verify:packages": "node scripts/verify-npm-packages.mjs --pack",
     "test:int": "vitest"
   },
   "devDependencies": {

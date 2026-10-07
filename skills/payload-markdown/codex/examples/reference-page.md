@@ -36,7 +36,7 @@ Server component for Payload block data with `blockType: "vlMdBlock"`.
 ## Field Rendering
 
 ```tsx
-import { MarkdownRenderer } from '@valkyrianlabs/payload-markdown/server'
+import { MarkdownRenderer } from 'payload-markdown/server'
 
 export function PostBody({ content }: { content?: null | string }) {
   return (
@@ -57,7 +57,7 @@ Pass `collectionSlug` when collection-level `code`, `themes`, or `config` should
 ## Block Rendering
 
 ```tsx
-import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
+import { MarkdownBlockComponent } from 'payload-markdown/server'
 
 export function RenderMarkdownBlock({ block }: { block: { blockType: 'vlMdBlock'; content: string } }) {
   return <MarkdownBlockComponent {...block} collectionSlug="pages" />
