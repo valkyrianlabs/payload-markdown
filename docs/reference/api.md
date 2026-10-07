@@ -35,7 +35,7 @@ import {
   MarkdownBlock,
   markdownField,
   payloadMarkdown,
-} from '@valkyrianlabs/payload-markdown'
+} from 'payload-markdown'
 ```
 
 Server export:
@@ -45,7 +45,7 @@ import {
   MarkdownBlockComponent,
   MarkdownRenderer,
   PayloadMarkdownField,
-} from '@valkyrianlabs/payload-markdown/server'
+} from 'payload-markdown/server'
 ```
 
 Client export (`'use client'` components for bundled apps):
@@ -54,10 +54,10 @@ Client export (`'use client'` components for bundled apps):
 import {
   MarkdownRendererClient,
   PayloadMarkdownField,
-} from '@valkyrianlabs/payload-markdown/client'
+} from 'payload-markdown/client'
 ```
 
-`PayloadMarkdownField` is the same component as the server export's `PayloadMarkdownField`. Fields created by `markdownField()` keep using the admin component path `@valkyrianlabs/payload-markdown/server#PayloadMarkdownField`, so existing import maps do not change; `@valkyrianlabs/payload-markdown/client#PayloadMarkdownField` resolves to the same component. `MarkdownRendererClient` adds tab and code-copy behavior to HTML rendered with `renderMarkdown()`: render it with `containerId` set to the id of the element that contains the HTML.
+`PayloadMarkdownField` is the same component as the server export's `PayloadMarkdownField`. Fields created by `markdownField()` use the admin component path `<package>/server#PayloadMarkdownField`, where `<package>` is the name you installed (`payload-markdown` or `@valkyrianlabs/payload-markdown`), so existing import maps for the scoped package do not change; `<package>/client#PayloadMarkdownField` resolves to the same component. `MarkdownRendererClient` adds tab and code-copy behavior to HTML rendered with `renderMarkdown()`: render it with `containerId` set to the id of the element that contains the HTML.
 
 MCP export (server-only, for `@payloadcms/plugin-mcp` and custom agents):
 
@@ -72,7 +72,7 @@ import {
   validateMarkdown,
   withPayloadMarkdownMcp,
   writeMarkdown,
-} from '@valkyrianlabs/payload-markdown/mcp'
+} from 'payload-markdown/mcp'
 ```
 
 See [AI Agents and MCP](/agents), the [MCP tools reference](/agents/mcp-tools) and [Custom Agents](/agents/custom-agents).
@@ -90,13 +90,13 @@ import {
   readPayloadMarkdownSettings,
   renderMarkdown,
   slugifyHeading,
-} from '@valkyrianlabs/payload-markdown/render'
+} from 'payload-markdown/render'
 ```
 
 Directive spec (generated from the directive registry at build time; the same data `getDirectiveSpec()` returns):
 
 ```ts
-import spec from '@valkyrianlabs/payload-markdown/directive-spec.json' with { type: 'json' }
+import spec from 'payload-markdown/directive-spec.json' with { type: 'json' }
 ```
 
 The spec lists every directive (`kind`, open and close markers, `[label]` attribute), its attributes with a `type` (`url`, `enum`, `string`, `boolean` or `number`), allowed values and theme group, the built-in theme names, badge types and targets, tab-value and heading-slug rules, and parser constraints. `specVersion` changes only when the JSON shape changes.
@@ -104,7 +104,7 @@ The spec lists every directive (`kind`, open and close markers, `[label]` attrib
 Stylesheet export:
 
 ```ts
-import '@valkyrianlabs/payload-markdown/styles.css'
+import 'payload-markdown/styles.css'
 ```
 
 Advanced export:
@@ -119,7 +119,7 @@ import {
   vlMdCodeBlockConfig,
   vlMdConfig,
   vlMdTailwindField,
-} from '@valkyrianlabs/payload-markdown/advanced'
+} from 'payload-markdown/advanced'
 ```
 
 ## `renderMarkdown`

@@ -1,5 +1,5 @@
 /**
- * `@valkyrianlabs/payload-markdown/render`: the headless, CSS-free and
+ * `payload-markdown/render`: the headless, CSS-free and
  * React-free render API. Importable from plain Node (scripts, search
  * indexers, RSS/email, docs tooling) as well as from bundled apps.
  */

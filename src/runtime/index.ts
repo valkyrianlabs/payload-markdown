@@ -28,7 +28,9 @@ export const PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY = 'payloadMarkdown'
 /**
  * Process-wide settings registry key. `Symbol.for` makes every installed copy
  * of this package (for example one pulled in by another plugin) share one
- * registry instead of each keeping its own module-local settings.
+ * registry instead of each keeping its own module-local settings. The key is
+ * the same under both package names (scoped and unscoped), so mixing them is
+ * detected as duplicate copies too.
  */
 export const PAYLOAD_MARKDOWN_SETTINGS_REGISTRY_KEY = Symbol.for(
   '@valkyrianlabs/payload-markdown/settings',
@@ -54,7 +56,7 @@ function warnAboutDuplicateCopies(registry: SettingsRegistry) {
 
   // eslint-disable-next-line no-console
   console.warn(
-    `[payload-markdown] Duplicate copies of @valkyrianlabs/payload-markdown are loaded in this process ` +
+    `[payload-markdown] Duplicate copies of payload-markdown are loaded in this process ` +
       `(versions ${registry.versions.join(', ')}). They share one settings registry` +
       `${registry.registeredBy ? ` (registered by ${registry.registeredBy})` : ''}, but each copy renders with its own code. ` +
       'Install a single version, for example by making it a peer dependency or with a package manager override.',

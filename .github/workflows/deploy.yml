@@ -65,6 +65,12 @@ jobs:
       - name: Plain-Node export smoke
         run: pnpm test:exports
 
+      # Rehearses the dual npm publication: packs dist/, derives the unscoped
+      # payload-markdown tarball like vlr does, and checks both names (same
+      # files, every export, types and the bin).
+      - name: Verify both npm packages
+        run: pnpm verify:packages
+
       - name: Check published types (arethetypeswrong)
         run: pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only
 

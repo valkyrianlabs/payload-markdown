@@ -32,8 +32,10 @@ pnpm add @tailwindcss/typography
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@source "../node_modules/@valkyrianlabs/payload-markdown/dist";
+@source "../node_modules/payload-markdown/dist";
 ```
+
+Installed the scoped package? Point `@source` at `../node_modules/@valkyrianlabs/payload-markdown/dist` instead.
 
 If you define custom directive themes with Tailwind classes, keep those class strings in source/config so Tailwind can scan them.
 

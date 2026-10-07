@@ -57,7 +57,7 @@ This is useful for page collections that have a layout builder but also need a p
 Use `markdownField()` when you want direct schema ownership.
 
 ```ts
-import { markdownField } from '@valkyrianlabs/payload-markdown'
+import { markdownField } from 'payload-markdown'
 
 export const Posts = {
   slug: 'posts',
@@ -79,7 +79,7 @@ export const Posts = {
 Use `MarkdownBlock` when you want to place the block yourself.
 
 ```ts
-import { MarkdownBlock } from '@valkyrianlabs/payload-markdown'
+import { MarkdownBlock } from 'payload-markdown'
 
 export const Pages = {
   slug: 'pages',
@@ -100,7 +100,7 @@ The block slug is `vlMdBlock`. Generated Payload types use that value as the blo
 `MarkdownBlockComponent` accepts the block data fields directly. In a block renderer, pass the block object through as props and include `collectionSlug` when collection-scoped config should apply.
 
 ```tsx
-import { MarkdownBlockComponent } from '@valkyrianlabs/payload-markdown/server'
+import { MarkdownBlockComponent } from 'payload-markdown/server'
 
 const blockComponents = {
   vlMdBlock: MarkdownBlockComponent,

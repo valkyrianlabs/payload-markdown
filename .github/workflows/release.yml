@@ -10,7 +10,12 @@
 # Nothing is written back to main unless npm publication, the docs sync and the GitHub release
 # all succeeded.
 #
-# npm: trusted publishing (OIDC). The npmjs.com package trusts this workflow file
+# npm: one build, two names. `vlr build-npm` packs @valkyrianlabs/payload-markdown and derives
+# payload-markdown from the same tarball (release.toml [[npm.aliases]]); `vlr publish-npm` plans
+# both before uploading either, uploads the alias first, and skips anything already published
+# with identical bytes, so a failed run can simply be re-run.
+#
+# npm: trusted publishing (OIDC). Both npmjs.com packages trust this workflow file
 # (`release.yml`) and the `Production` environment; keep both names. No token secret.
 # Optional: vars.RELEASE_PUBLISH_MODE (`enabled` by default here, `disabled` to rehearse).
 
@@ -120,6 +125,10 @@ jobs:
       - name: Plain-Node export smoke
         run: pnpm test:exports
 
+      # Both npm names from the built tarballs: same files, every export and type, the bin.
+      - name: Verify both npm packages
+        run: node scripts/verify-npm-packages.mjs --release release
+
       - name: Validate docs and rehearse the docs sync
         run: |
           set -euo pipefail
@@ -137,7 +146,7 @@ jobs:
           vlr validate-artifacts
           vlr artifacts
 
-      # Read-only: fails now if this version is already on npm with different bytes.
+      # Read-only, for both names: fails now if this version is already on npm with different bytes.
       - name: Plan npm publication
         run: vlr publish-npm --mode enabled --dry-run
 
@@ -182,8 +191,8 @@ jobs:
           name: payload-markdown-${{ needs.build.outputs.version }}
           path: release
 
-      # Publishes the validated tarball (or skips it if npm already has identical bytes), then
-      # waits until npm lists it by integrity under `latest`.
+      # Publishes both validated tarballs, payload-markdown first (or skips one npm already has with
+      # identical bytes), then waits until npm lists each by integrity under `latest`.
       - name: Publish to npm
         run: |
           set -euo pipefail

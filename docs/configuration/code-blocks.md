@@ -22,7 +22,7 @@ Fenced code blocks are rendered with Shiki during the Markdown compile pipeline.
 Use the top-level `code` namespace:
 
 ```ts
-import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from 'payload-markdown'
 
 payloadMarkdown({
   code: {
@@ -74,7 +74,7 @@ cpp, java, js, ts, jsx, tsx, json, python, rust, html, css, yaml, sql
 Extend it when authors need additional Shiki languages:
 
 ```ts
-import { DEFAULT_CODE_LANGS, payloadMarkdown } from '@valkyrianlabs/payload-markdown'
+import { DEFAULT_CODE_LANGS, payloadMarkdown } from 'payload-markdown'
 
 payloadMarkdown({
   code: {

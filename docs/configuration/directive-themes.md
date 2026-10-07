@@ -206,7 +206,7 @@ import {
   DEFAULT_TAB_THEMES,
   DEFAULT_TABS_THEMES,
   DEFAULT_TOC_THEMES,
-} from '@valkyrianlabs/payload-markdown'
+} from 'payload-markdown'
 ```
 
 You usually do not need to spread these manually. Built-ins are included automatically unless `extendDefaults: false`.

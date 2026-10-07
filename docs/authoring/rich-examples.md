@@ -65,7 +65,7 @@ Collection-level `code`, `themes`, and `config` can override plugin defaults.
 ### Install
 
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 
 ### Register The Plugin
@@ -94,19 +94,19 @@ Pass `collectionSlug` when collection-scoped config should apply.
 
 :::tab[pnpm]{value="pnpm"}
 ```bash
-pnpm add @valkyrianlabs/payload-markdown
+pnpm add payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
 ```bash
-npm install @valkyrianlabs/payload-markdown
+npm install payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
 ```bash
-yarn add @valkyrianlabs/payload-markdown
+yarn add payload-markdown
 ```
 :::
 

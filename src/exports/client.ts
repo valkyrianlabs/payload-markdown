@@ -1,10 +1,10 @@
 export { MarkdownBlockParamsEnableField } from '../blocks/MarkdownBlock/ParamsEnableField.client.js'
 /**
- * `@valkyrianlabs/payload-markdown/client`: the package's `'use client'`
+ * `payload-markdown/client` (or the scoped `@valkyrianlabs/...` name): the package's `'use client'`
  * components, for bundled (Next.js / Payload admin) apps.
  *
  * - `PayloadMarkdownField` is the admin field component. The specifier
- *   `@valkyrianlabs/payload-markdown/server#PayloadMarkdownField` (used by
+ *   `<package>/server#PayloadMarkdownField` (used by
  *   `markdownField()` and existing import maps) re-exports the same component
  *   and keeps working.
  * - `MarkdownBlockParamsEnableField` is the markdown block's "Enable Blocks

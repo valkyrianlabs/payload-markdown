@@ -25,7 +25,7 @@ import {
   readMarkdownDocuments,
   validateMarkdown,
   writeMarkdown,
-} from '@valkyrianlabs/payload-markdown/mcp'
+} from 'payload-markdown/mcp'
 ```
 
 | Function | MCP tool | Returns |
@@ -45,7 +45,7 @@ A Payload endpoint that applies an agent's edits for the logged-in user:
 ```ts
 import type { Endpoint } from 'payload'
 
-import { MarkdownAgentError, writeMarkdown } from '@valkyrianlabs/payload-markdown/mcp'
+import { MarkdownAgentError, writeMarkdown } from 'payload-markdown/mcp'
 
 export const applyAgentEdits: Endpoint = {
   path: '/agent/markdown',

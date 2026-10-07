@@ -8,7 +8,7 @@ tags:
   - agents
   - mcp
 dependencies:
-  - "@valkyrianlabs/payload-markdown"
+  - "payload-markdown"
   - "@payloadcms/plugin-mcp"
 ---
 
@@ -16,7 +16,7 @@ dependencies:
 
 Point an AI agent at your Payload app and ask for changes in plain language: "rewrite the Home page intro from our launch post", "add an FAQ block after the hero", "fix the broken callouts on the pricing page". The agent finds the document, writes payload-markdown with the directives your site actually supports, validates it with the same renderer your site uses, and saves a draft for you to review.
 
-`@valkyrianlabs/payload-markdown/mcp` adds this to [Payload's official MCP plugin](https://payloadcms.com/docs/plugins/mcp). Any MCP client works: Claude Code, Claude Desktop, Cursor, VS Code, or your own agent.
+`payload-markdown/mcp` adds this to [Payload's official MCP plugin](https://payloadcms.com/docs/plugins/mcp). Any MCP client works: Claude Code, Claude Desktop, Cursor, VS Code, or your own agent.
 
 :::toc[On this page]{depth="2" theme="compact"}
 :::
@@ -41,8 +41,8 @@ Add `mcpPlugin` after `payloadMarkdown`, wrapping its options in `withPayloadMar
 
 ```ts
 import { mcpPlugin } from '@payloadcms/plugin-mcp'
-import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
-import { withPayloadMarkdownMcp } from '@valkyrianlabs/payload-markdown/mcp'
+import { payloadMarkdown } from 'payload-markdown'
+import { withPayloadMarkdownMcp } from 'payload-markdown/mcp'
 
 export default buildConfig({
   plugins: [

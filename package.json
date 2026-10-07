@@ -72,6 +72,7 @@
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
     "test:exports": "node scripts/smoke-exports.mjs",
+    "verify:packages": "node scripts/verify-npm-packages.mjs --pack",
     "test:int": "vitest"
   },
   "devDependencies": {

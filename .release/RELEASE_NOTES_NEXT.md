@@ -7,7 +7,22 @@ Format: the first line is "# <release title>" WITHOUT a version number (vlr adds
 Everything after the title is the Markdown release body. Describe the resulting behavior
 for users and operators; keep it representative of what actually ships.
 -->
-# Agent skill installer
+# Install as payload-markdown, plus an agent skill installer
+
+## `pnpm add payload-markdown`
+
+The plugin is now also published under the short name `payload-markdown`:
+
+```bash
+pnpm add payload-markdown
+```
+
+`@valkyrianlabs/payload-markdown` stays fully supported, and nothing changes for apps that use it. Both names come from the same build and are released together at the same version, with identical files. The only differences are the package name and the name Payload's admin import map uses for the plugin's components, which follows whichever name you installed. Import from the name you installed (`payload-markdown/server`, `payload-markdown/mcp`, and so on) and install only one of them.
+
+Switching an existing app to the short name: replace the dependency and the imports, point Tailwind's `@source` at `node_modules/payload-markdown/dist`, and run `payload generate:importmap`.
+
+The duplicate-copies warning now reads `Duplicate copies of payload-markdown are loaded`, and also fires when both names are installed in one app.
+
 
 ## Install the agent skill with one command
 

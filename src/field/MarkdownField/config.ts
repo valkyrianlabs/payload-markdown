@@ -2,6 +2,8 @@ import type { Field } from 'payload'
 
 import type { MarkdownFieldOptions } from '../../types.ts'
 
+import { PAYLOAD_MARKDOWN_PACKAGE } from '../../package.js'
+
 /**
  * Default maximum length of a markdown field, in characters. Payload text
  * fields otherwise inherit `config.defaultMaxTextLength` (40,000), which long
@@ -10,8 +12,8 @@ import type { MarkdownFieldOptions } from '../../types.ts'
  */
 export const DEFAULT_MARKDOWN_MAX_LENGTH = 1_000_000
 
-/** Import-map specifier of the markdown field's admin component. */
-export const PAYLOAD_MARKDOWN_FIELD_COMPONENT = '@valkyrianlabs/payload-markdown/server#PayloadMarkdownField'
+/** Import-map specifier of the markdown field's admin component (under the installed package name). */
+export const PAYLOAD_MARKDOWN_FIELD_COMPONENT = `${PAYLOAD_MARKDOWN_PACKAGE}/server#PayloadMarkdownField`
 
 /**
  * Key under field-level `custom` that marks a markdown field, so server code

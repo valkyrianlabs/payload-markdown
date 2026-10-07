@@ -1,17 +1,17 @@
 ---
 name: payload-markdown
-description: Write elegant automated documentation with @valkyrianlabs/payload-markdown. Use when Codex needs to author, rewrite, audit, or structure docs using Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, badges, and layout primitives.
+description: Write elegant automated documentation with payload-markdown. Use when Codex needs to author, rewrite, audit, or structure docs using Payload Markdown directives, theme names, cards, callouts, steps, tabs, TOCs, buttons, badges, and layout primitives.
 ---
 
 # Payload Markdown
 
-Use this skill to write documentation that renders well with `@valkyrianlabs/payload-markdown`, especially docs generated or maintained by agents for downstream `@valkyrianlabs/payload-markdown-docs` projects.
+Use this skill to write documentation that renders well with `payload-markdown` (also published as `@valkyrianlabs/payload-markdown`; same package and version, so use whichever name the project installed in imports), especially docs generated or maintained by agents for downstream `@valkyrianlabs/payload-markdown-docs` projects.
 
 This skill is about authoring clean Markdown content with Payload Markdown directives, in files or live in a Payload app over MCP. It is not a Payload CMS implementation guide.
 
 ## Keep This Skill Current
 
-This skill ships with `@valkyrianlabs/payload-markdown` (the Codex variant, installed at `.agents/skills/payload-markdown`). `skill.json` next to this file records the package version it came from and a `sha256` of the skill files.
+This skill ships with `payload-markdown` (the Codex variant, installed at `.agents/skills/payload-markdown`). `skill.json` next to this file records the package version it came from and a `sha256` of the skill files.
 
 Check for drift before relying on it:
 
@@ -33,7 +33,7 @@ If they differ, or `skill.json` is missing, tell the user the skill is out of da
 
 When the `markdownGuide`, `markdownRead`, `markdownValidate`, `markdownWrite` and `markdownPublish` tools are available, edit Payload content directly: guide → read → validate until `ok` → write a draft with `ifUpdatedAt` → share the preview → publish only when asked. Read `reference/mcp-content-workflow.md` first.
 
-Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mcp` with `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`, the user creates a key in the admin (**MCP → API Keys**), and the MCP client connects to `<app URL>/api/mcp` (Streamable HTTP) with the header `Authorization: Bearer <key>`.
+Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mcp` with `withPayloadMarkdownMcp()` from `payload-markdown/mcp`, the user creates a key in the admin (**MCP → API Keys**), and the MCP client connects to `<app URL>/api/mcp` (Streamable HTTP) with the header `Authorization: Bearer <key>`.
 
 ## Reference Map
 

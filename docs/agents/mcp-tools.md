@@ -12,7 +12,7 @@ tags:
 
 # MCP Tools Reference
 
-The tools registered by `withPayloadMarkdownMcp()` from `@valkyrianlabs/payload-markdown/mcp`. Results are JSON text; failures set the MCP `isError` flag and return `{ "error": "<code>", "message": "…" }`.
+The tools registered by `withPayloadMarkdownMcp()` from `payload-markdown/mcp`. Results are JSON text; failures set the MCP `isError` flag and return `{ "error": "<code>", "message": "…" }`.
 
 :::toc[On this page]{depth="2" theme="compact"}
 :::

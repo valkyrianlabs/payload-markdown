@@ -3,7 +3,7 @@
 schema_version = 1
 
 [tool]
-requires = ">=0.2,<1"
+requires = ">=0.3,<1"
 
 [project]
 name = "Payload Markdown"
@@ -24,6 +24,7 @@ title = "v{version} - {title}"
 test_command = ["pnpm", "test:int"]
 
 # The published package: bin/, dist/ and skills/ plus README, LICENSE and package.json.
+# Published as @valkyrianlabs/payload-markdown and, from the same tarball, as payload-markdown.
 [npm]
 pre_pack = [["pnpm", "build"]]
 required_paths = [
@@ -40,6 +41,7 @@ required_paths = [
   "package/dist/exports/advanced.js",
   "package/dist/exports/mcp.js",
   "package/dist/directive-spec.json",
+  "package/dist/package.js",
   "package/dist/components/MarkdownRenderer/index.css",
   "package/skills/payload-markdown/claude/SKILL.md",
   "package/skills/payload-markdown/codex/SKILL.md",
@@ -63,6 +65,13 @@ identical_files = [
   { member = "package/skills/payload-markdown/claude/skill.json", source = "skills/payload-markdown/claude/skill.json" },
   { member = "package/skills/payload-markdown/codex/skill.json", source = "skills/payload-markdown/codex/skill.json" },
 ]
+
+# The unscoped name: vlr derives payload-markdown-X.Y.Z.tgz from the canonical tarball. Only
+# package.json "name" and dist/package.js (PAYLOAD_MARKDOWN_PACKAGE, which Payload admin
+# component paths use) differ; validate-artifacts fails on any other difference.
+[[npm.aliases]]
+name = "payload-markdown"
+rewrite = ["package/dist/package.js", "package/dist/package.js.map"]
 
 # npmjs.com through npm trusted publishing: the package trusts this repository's
 # .github/workflows/release.yml (environment Production); no token secret.

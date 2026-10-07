@@ -2,6 +2,8 @@
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/valkyrianlabs/payload-markdown/deploy.yml)](https://github.com/valkyrianlabs/payload-markdown/actions)
 &nbsp;
+[![npm](https://img.shields.io/npm/v/payload-markdown)](https://www.npmjs.com/package/payload-markdown)
+&nbsp;
 [![npm](https://img.shields.io/npm/v/@valkyrianlabs/payload-markdown)](https://www.npmjs.com/package/@valkyrianlabs/payload-markdown)
 &nbsp;
 [![npm](https://img.shields.io/npm/dw/@valkyrianlabs/payload-markdown)](https://www.npmjs.com/package/@valkyrianlabs/payload-markdown)
@@ -12,7 +14,7 @@
 
 Structured Markdown editing and rendering for Payload CMS.
 
-`@valkyrianlabs/payload-markdown` gives Payload a Markdown-first authoring system with a CodeMirror editor, Shiki-powered code blocks, registry-backed directives, local SVG icon packs, buttons, cards, table-of-contents generation, autocomplete, diagnostics, and server-first rendering.
+`payload-markdown` gives Payload a Markdown-first authoring system with a CodeMirror editor, Shiki-powered code blocks, registry-backed directives, local SVG icon packs, buttons, cards, table-of-contents generation, autocomplete, diagnostics, and server-first rendering.
 
 No bloated rich text editor.  
 No JSON-shaped content prison.  
@@ -28,7 +30,7 @@ Payload Markdown now feels much closer to a Markdown-native design system: reada
 
 ## Install
 
-`pnpm add @valkyrianlabs/payload-markdown`
+`pnpm add payload-markdown`
 
 > [!IMPORTANT]
 > **Install the agent skill.** If you use Payload MCP or let AI agents (Claude Code, Codex) work in your repo, install the skill that ships with the package so they know every directive, theme and the MCP workflow:
@@ -39,6 +41,8 @@ Payload Markdown now feels much closer to a Markdown-native design system: reada
 >
 > Run it again after upgrading. `npx payload-markdown skill check` fails when the installed skill has drifted from the package, and agents are told to suggest the update when they notice.
 
+`payload-markdown` is also published as [`@valkyrianlabs/payload-markdown`](https://www.npmjs.com/package/@valkyrianlabs/payload-markdown): the same package, built once and released at the same version, and still fully supported. Import from whichever name you installed (`@valkyrianlabs/payload-markdown/server` instead of `payload-markdown/server`, and so on), and install only one of them.
+
 ---
 
 ## 🤖 Let AI agents manage your content
@@ -47,12 +51,12 @@ Payload Markdown now feels much closer to a Markdown-native design system: reada
 
 Say that to Claude, Cursor, or any MCP client, and it gets done. The agent finds the page, writes payload-markdown using the directives, themes, icons, and code languages **your** site actually has, validates every block with **your** renderer, and saves a **draft** for you to review in the admin.
 
-`@valkyrianlabs/payload-markdown/mcp` plugs into Payload's official [`@payloadcms/plugin-mcp`](https://payloadcms.com/docs/plugins/mcp):
+`payload-markdown/mcp` plugs into Payload's official [`@payloadcms/plugin-mcp`](https://payloadcms.com/docs/plugins/mcp):
 
 ```ts
 import { mcpPlugin } from '@payloadcms/plugin-mcp'
-import { payloadMarkdown } from '@valkyrianlabs/payload-markdown'
-import { withPayloadMarkdownMcp } from '@valkyrianlabs/payload-markdown/mcp'
+import { payloadMarkdown } from 'payload-markdown'
+import { withPayloadMarkdownMcp } from 'payload-markdown/mcp'
 
 export default buildConfig({
   plugins: [

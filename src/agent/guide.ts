@@ -12,6 +12,7 @@ import { resolveRenderMarkdownOptions } from '../core/codeConfig.js'
 import { resolveHighlighterConfig } from '../core/codeToHtml.js'
 import { getDirectiveSpec } from '../directives/spec.js'
 import { getDirectiveThemeNames } from '../directives/themes.js'
+import { PAYLOAD_MARKDOWN_PACKAGE } from '../package.js'
 import { resolveMarkdownRenderConfig } from '../runtime/index.js'
 import { PAYLOAD_MARKDOWN_VERSION } from '../version.js'
 import { allowedAgentSlugs } from './access.js'
@@ -259,7 +260,7 @@ function describeSkill(): string[] {
   return [
     '## Agent skill',
     '',
-    `This site runs @valkyrianlabs/payload-markdown ${PAYLOAD_MARKDOWN_VERSION}. The matching \`payload-markdown\` skill has this \`sha256\` in its \`skill.json\`:`,
+    `This site runs ${PAYLOAD_MARKDOWN_PACKAGE} ${PAYLOAD_MARKDOWN_VERSION}. The matching \`payload-markdown\` skill has this \`sha256\` in its \`skill.json\`:`,
     '',
     ...Object.entries(PAYLOAD_MARKDOWN_SKILL_SHA256).map(([variant, sha]) => `- ${variant}: \`${sha}\``),
     '',
