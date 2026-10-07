@@ -9,7 +9,16 @@ Use this skill to write documentation that renders well with `@valkyrianlabs/pay
 
 This skill is about authoring clean Markdown content with Payload Markdown directives, in files or live in a Payload app over MCP. It is not a Payload CMS implementation guide.
 
-This package stores the Codex variant at `skills/payload-markdown/codex`. When installing into an environment that requires the skill directory name to match `name`, install or copy this subtree as `payload-markdown`.
+## Keep This Skill Current
+
+This skill ships with `@valkyrianlabs/payload-markdown` (the Codex variant, installed at `.agents/skills/payload-markdown`). `skill.json` next to this file records the package version it came from and a `sha256` of the skill files.
+
+Check for drift before relying on it:
+
+- With shell access in a project that depends on the package, run `npx payload-markdown skill check`.
+- When the `markdownGuide` tool is available, compare the skill `sha256` it lists for `codex` with `sha256` in `skill.json`.
+
+If they differ, or `skill.json` is missing, tell the user the skill is out of date and suggest `npx payload-markdown skill install`, then re-read this skill after it is updated. The installer refuses to overwrite local edits unless run with `--force`.
 
 ## Workflow
 
@@ -59,7 +68,7 @@ Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mc
 Run the helper on changed Markdown files:
 
 ```bash
-python3 skills/payload-markdown/codex/scripts/check_payload_markdown_doc.py docs/**/*.md
+python3 .agents/skills/payload-markdown/scripts/check_payload_markdown_doc.py docs/**/*.md
 ```
 
 The checker reads `reference/directive-spec.json` (falling back to built-in tables when it is missing) and reports unknown directives, attributes and values, text after a container marker that is not `[label]` or `{…}`, markers inside list items or blockquotes, stray closers, and unclosed containers.

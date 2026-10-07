@@ -13,7 +13,9 @@ import { resolveHighlighterConfig } from '../core/codeToHtml.js'
 import { getDirectiveSpec } from '../directives/spec.js'
 import { getDirectiveThemeNames } from '../directives/themes.js'
 import { resolveMarkdownRenderConfig } from '../runtime/index.js'
+import { PAYLOAD_MARKDOWN_VERSION } from '../version.js'
 import { allowedAgentSlugs } from './access.js'
+import { PAYLOAD_MARKDOWN_SKILL_SHA256 } from './skill.js'
 import { describeMarkdownLocations } from './targets.js'
 
 /** Icons listed per pack before the guide summarizes the rest. */
@@ -252,6 +254,19 @@ function describeLocations(options: MarkdownGuideOptions): string[] {
   return lines
 }
 
+/** Current skill hashes, so an agent can tell when its installed payload-markdown skill has drifted. */
+function describeSkill(): string[] {
+  return [
+    '## Agent skill',
+    '',
+    `This site runs @valkyrianlabs/payload-markdown ${PAYLOAD_MARKDOWN_VERSION}. The matching \`payload-markdown\` skill has this \`sha256\` in its \`skill.json\`:`,
+    '',
+    ...Object.entries(PAYLOAD_MARKDOWN_SKILL_SHA256).map(([variant, sha]) => `- ${variant}: \`${sha}\``),
+    '',
+    'If your installed payload-markdown skill has a different `sha256` for its variant, or no `skill.json`, tell the user it is out of date: `npx payload-markdown skill install` in their project updates it. This guide stays authoritative either way.',
+  ]
+}
+
 /**
  * Markdown guide for AI agents that write payload-markdown content: the
  * workflow, where markdown lives in this Payload app, this site's directive
@@ -272,6 +287,8 @@ export function getMarkdownGuide(options: MarkdownGuideOptions): string {
     'Markdown in this Payload app is GitHub-flavored Markdown plus payload-markdown directives, rendered server-side.',
     '',
     WORKFLOW,
+    '',
+    ...describeSkill(),
     '',
     ...describeLocations(options),
     '',

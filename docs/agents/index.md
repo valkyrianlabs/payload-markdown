@@ -86,6 +86,14 @@ Clients configured with JSON, such as Cursor's `mcp.json`, use the same URL and 
 }
 ```
 
+### Install the agent skill
+
+Recommended for Claude Code and Codex: the skill adds directive recipes, formatting rules and this workflow.
+
+```text
+npx payload-markdown skill install
+```
+
 :::
 
 Then ask: _"Rewrite the Home page using our README at github.com/acme/widget. Use cards for the features."_
@@ -145,11 +153,30 @@ Agents often read websites or documents to write content. The guide and prompt t
 
 ## Agent Skill
 
-The package ships an agent skill in `skills/payload-markdown/` (Claude and Codex variants) with directive recipes, formatting rules and the MCP workflow. Copy the variant for your agent into its skills directory, for example:
+The package ships an agent skill for Claude Code and Codex with directive recipes, formatting rules and the MCP workflow. Install it from the project root:
 
-```text
-cp -r node_modules/@valkyrianlabs/payload-markdown/skills/payload-markdown/claude .claude/skills/payload-markdown
+```bash
+npx payload-markdown skill install
 ```
+
+| Agent | Installed at |
+| --- | --- |
+| Claude Code | `.claude/skills/payload-markdown` |
+| Codex | `.agents/skills/payload-markdown` |
+
+The installer updates skills that are already installed. Otherwise it installs for the agents the project uses (a `.claude/` directory or `CLAUDE.md` for Claude Code; `.agents/`, `.codex/` or `AGENTS.md` for Codex), and for both when it finds neither. Pass `--agent claude`, `--agent codex` or `--agent all` to choose, and `--dir <path>` to install into another project root. With pnpm, `pnpm exec payload-markdown skill install` does the same.
+
+### Keep It Current
+
+Each installed skill has a `skill.json` recording the package version it came from and a `sha256` of its files. Run the install again after upgrading the package. Drift shows up in three places:
+
+- `npx payload-markdown skill check` exits non-zero when an installed skill is outdated, unversioned or edited locally. Add it to CI to catch a stale skill in review.
+- `markdownGuide` lists the current skill hashes, and the skill tells agents to compare them with its `skill.json` and suggest an update when they differ.
+- With shell access, the skill tells agents to run `skill check` before relying on it.
+
+:::callout[Local edits are kept]{variant="info"}
+The installer refuses to overwrite a skill with local edits, or a directory that is not this skill, unless you pass `--force`.
+:::
 
 ## Next Steps
 

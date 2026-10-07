@@ -10,6 +10,7 @@
     "**/*.tsx",
     "../src/**/*.ts",
     "../src/**/*.tsx",
+    "../bin/*.mjs",
     "next.config.mjs",
     ".next/types/**/*.ts"
   ],

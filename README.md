@@ -30,6 +30,15 @@ Payload Markdown now feels much closer to a Markdown-native design system: reada
 
 `pnpm add @valkyrianlabs/payload-markdown`
 
+> [!IMPORTANT]
+> **Install the agent skill.** If you use Payload MCP or let AI agents (Claude Code, Codex) work in your repo, install the skill that ships with the package so they know every directive, theme and the MCP workflow:
+>
+> ```bash
+> npx payload-markdown skill install
+> ```
+>
+> Run it again after upgrading. `npx payload-markdown skill check` fails when the installed skill has drifted from the package, and agents are told to suggest the update when they notice.
+
 ---
 
 ## 🤖 Let AI agents manage your content
@@ -80,7 +89,7 @@ claude mcp add --transport http payload http://localhost:3000/api/mcp \
 - **Conflict-safe.** `ifUpdatedAt` refuses stale writes, and open (locked) documents are respected.
 - **Least privilege.** Every call runs as the key's user under your Payload access control, plus the key's per-collection checkboxes.
 
-The package also ships an agent skill (`skills/payload-markdown`) so Claude Code and Codex know the workflow out of the box.
+The package also ships an agent skill so Claude Code and Codex know the workflow out of the box: `npx payload-markdown skill install` (see [Install](#install)).
 
 [AI Agents and MCP guide →](https://docs.valkyrianlabs.com/plugins/payload-markdown/agents)
 

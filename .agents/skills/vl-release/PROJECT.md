@@ -15,7 +15,7 @@ this file says how it applies here.
 ## Versions
 
 - Canonical: `package.json`
-- Kept in sync by `vlr version …`: `src/version.ts` (regex)
+- Kept in sync by `vlr version …`: `src/version.ts` (regex), `skills/payload-markdown/claude/skill.json` (regex), `skills/payload-markdown/codex/skill.json` (regex)
 - Tags: `vX.Y.Z` on branch `main`; GitHub release title: `vX.Y.Z - <title>`
 
 ## Release channels

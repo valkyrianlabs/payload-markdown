@@ -7,6 +7,7 @@ import { mcpPlugin } from '@payloadcms/plugin-mcp'
 import { buildConfig, createLocalReq, createPayloadRequest, getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { PAYLOAD_MARKDOWN_SKILL_SHA256 } from '../src/agent/skill'
 import {
   getMarkdownGuide,
   MARKDOWN_GUIDE_EXAMPLES,
@@ -18,6 +19,7 @@ import {
   writeMarkdown,
 } from '../src/exports/mcp'
 import { markdownField, payloadMarkdown } from '../src/index'
+import { PAYLOAD_MARKDOWN_VERSION } from '../src/version'
 
 const API_KEY = 'payload-markdown-mcp-test-key-0123456789abcdef'
 
@@ -394,6 +396,15 @@ describe('getMarkdownGuide', () => {
     expect(guide).toContain('- callout: `soft`, `solid`, `glass`')
     expect(guide).toContain('No icon packs are configured')
     expect(guide).toContain('`:::callout[label]{…}`')
+  })
+
+  it('lists the current skill hashes so agents can spot a stale skill', () => {
+    const guide = getMarkdownGuide({ payload })
+
+    expect(guide).toContain(`@valkyrianlabs/payload-markdown ${PAYLOAD_MARKDOWN_VERSION}`)
+    expect(guide).toContain(`- claude: \`${PAYLOAD_MARKDOWN_SKILL_SHA256.claude}\``)
+    expect(guide).toContain(`- codex: \`${PAYLOAD_MARKDOWN_SKILL_SHA256.codex}\``)
+    expect(guide).toContain('npx payload-markdown skill install')
   })
 })
 

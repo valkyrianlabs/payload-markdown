@@ -14,6 +14,8 @@ repository = "valkyrianlabs/payload-markdown"
 canonical = { kind = "package_json", path = "package.json" }
 targets = [
   { kind = "regex", path = "src/version.ts", pattern = "PAYLOAD_MARKDOWN_VERSION = '(?P<version>[^']+)'" },
+  { kind = "regex", path = "skills/payload-markdown/claude/skill.json", pattern = '"version": "(?P<version>[^"]+)"' },
+  { kind = "regex", path = "skills/payload-markdown/codex/skill.json", pattern = '"version": "(?P<version>[^"]+)"' },
 ]
 
 [release]
@@ -21,13 +23,15 @@ branch = "main"
 title = "v{version} - {title}"
 test_command = ["pnpm", "test:int"]
 
-# The published package: dist/ and skills/ plus README, LICENSE and package.json.
+# The published package: bin/, dist/ and skills/ plus README, LICENSE and package.json.
 [npm]
 pre_pack = [["pnpm", "build"]]
 required_paths = [
   "package/package.json",
   "package/README.md",
   "package/LICENSE",
+  "package/bin/payload-markdown.mjs",
+  "package/bin/skill.mjs",
   "package/dist/index.js",
   "package/dist/index.d.ts",
   "package/dist/exports/server.js",
@@ -39,6 +43,8 @@ required_paths = [
   "package/dist/components/MarkdownRenderer/index.css",
   "package/skills/payload-markdown/claude/SKILL.md",
   "package/skills/payload-markdown/codex/SKILL.md",
+  "package/skills/payload-markdown/claude/skill.json",
+  "package/skills/payload-markdown/codex/skill.json",
 ]
 forbidden_paths = [
   "package/src/*",
@@ -54,6 +60,8 @@ identical_files = [
   { member = "package/LICENSE", source = "LICENSE" },
   { member = "package/skills/payload-markdown/claude/SKILL.md", source = "skills/payload-markdown/claude/SKILL.md" },
   { member = "package/skills/payload-markdown/codex/SKILL.md", source = "skills/payload-markdown/codex/SKILL.md" },
+  { member = "package/skills/payload-markdown/claude/skill.json", source = "skills/payload-markdown/claude/skill.json" },
+  { member = "package/skills/payload-markdown/codex/skill.json", source = "skills/payload-markdown/codex/skill.json" },
 ]
 
 # npmjs.com through npm trusted publishing: the package trusts this repository's

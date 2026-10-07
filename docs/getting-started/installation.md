@@ -20,6 +20,16 @@ Install the package in the Payload app:
 pnpm add @valkyrianlabs/payload-markdown
 ```
 
+:::callout[Install the agent skill]{variant="tip"}
+If you use Payload MCP or let AI agents such as Claude Code or Codex work in your repo, install the skill that ships with the package. It teaches agents every directive, theme and the MCP content workflow.
+
+```bash
+npx payload-markdown skill install
+```
+
+Run it again after upgrading the package. See [Agent Skill](/agents#agent-skill) for drift checks and options.
+:::
+
 ## Register The Plugin
 
 Add `payloadMarkdown()` to the Payload `plugins` array.
