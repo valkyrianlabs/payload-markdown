@@ -2,6 +2,6 @@
   "name": "payload-markdown",
   "package": "@valkyrianlabs/payload-markdown",
   "variant": "claude",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "sha256": "cc10d5c520f7a23d449ae88dc27cc312169fcc81100e8bd820555177ae78e6c6"
 }
