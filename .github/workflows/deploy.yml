@@ -127,8 +127,20 @@ jobs:
             echo "::error::Could not read Playwright's system dependency list."
             exit 1
           fi
-          sudo -n apt-get update
-          sudo -n apt-get install -y --no-install-recommends $deps
+          # Only the missing packages; the package lists are refreshed only if installing
+          # from the current ones fails (the self-hosted runner keeps its packages).
+          missing=""
+          for dep in $deps; do
+            dpkg-query -W -f='${Status}' "$dep" 2>/dev/null | grep -q "install ok installed" || missing="$missing $dep"
+          done
+          if [ -n "$missing" ]; then
+            if ! sudo -n apt-get install -y --no-install-recommends $missing; then
+              sudo -n apt-get update
+              sudo -n apt-get install -y --no-install-recommends $missing
+            fi
+          else
+            echo "Playwright system dependencies already installed"
+          fi
           pnpm exec playwright install chromium
 
       # The dev app's import map loads the package through its own exports
