@@ -5,7 +5,7 @@
 # (packageManager), git, the GitHub CLI and the ValkyrianLabs release tools. Built and run by
 # ci/run-ci; nothing here touches the host.
 # Pinned by digest; dev/ci.int.spec.ts keeps the tag in step with pnpm-lock.yaml's playwright.
-FROM mcr.microsoft.com/playwright:v1.58.2-noble@sha256:5bdfa9e125367842206f66ac7e7022c18cd5cf2e13198fba9b68b8f0dc8b0468
+FROM mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
 
 # .nvmrc and package.json "packageManager" (checked by dev/ci.int.spec.ts).
 ARG NODE_VERSION=24.13.1
