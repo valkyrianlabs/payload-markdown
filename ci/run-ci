@@ -15,8 +15,12 @@
 # names from the repository directory.
 # The repository is mounted at /workspace (read-write, files stay owned by the calling user);
 # nothing else from the host is visible except the pnpm/npm caches and, under GitHub Actions,
-# RUNNER_TEMP (where GITHUB_OUTPUT/GITHUB_ENV/GITHUB_STEP_SUMMARY live). Inside, any user may
-# sudo; container root is an unprivileged subordinate uid on the host.
+# RUNNER_TEMP (where GITHUB_OUTPUT/GITHUB_ENV/GITHUB_STEP_SUMMARY and the step scripts live). The
+# step's environment is forwarded (minus host-specific variables). Inside, any user may sudo;
+# container root is an unprivileged subordinate uid on the host.
+#
+# Also usable as a GitHub Actions shell, so a job's run steps need no per-step prefix:
+#   defaults: { run: { shell: "bash ./ci/run-ci bash -euo pipefail {0}" } }
 set -euo pipefail
 
 die() {
@@ -100,17 +104,21 @@ else
 fi
 
 # --- environment -----------------------------------------------------------------------------
-env_args=(--env CI=true --env HOME=/home/ci --env GITHUB_WORKSPACE=/workspace
+# The step's environment (workflow/job/step env, secrets it was given, GITHUB_*, RUNNER_*, OIDC
+# request variables) is forwarded, minus what describes the host itself; the step's own code on
+# the host would see exactly the same values. The container's own values are set last and win.
+env_args=()
+while IFS= read -r name; do
+  case "$name" in
+    PATH | HOME | USER | LOGNAME | SHELL | PWD | OLDPWD | SHLVL | _ | TERM | HOSTNAME | TMPDIR | MAIL | \
+      LANG | LANGUAGE | LC_* | XDG_* | DBUS_* | SSH_* | SUDO_* | INVOCATION_ID | JOURNAL_STREAM | \
+      SYSTEMD_EXEC_PID | MOTD_SHOWN | LS_COLORS | MANAGERPID | NOTIFY_SOCKET | \
+      PLAYWRIGHT_BROWSERS_PATH | COREPACK_HOME | PNPM_HOME | NVM_* | CI_* | BASH_FUNC_*) ;;
+    *) env_args+=(--env "$name") ;;
+  esac
+done < <(compgen -e)
+env_args+=(--env CI=true --env HOME=/home/ci --env GITHUB_WORKSPACE=/workspace
   --env npm_config_store_dir=/cache/pnpm-store --env NPM_CONFIG_CACHE=/cache/npm)
-forward=(ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN GH_TOKEN DATABASE_URL
-  PAYLOAD_SECRET NODE_OPTIONS NEXT_CPU_COUNT RELEASE_PUBLISH_MODE RELEASE_REF DOCS_SYNC_ENDPOINT
-  PMDOCS_SOURCE PLAYWRIGHT_PORT TZ)
-while IFS= read -r name; do forward+=("$name"); done < <(compgen -e | grep -E '^(GITHUB|RUNNER)_' | grep -vx GITHUB_WORKSPACE)
-# shellcheck disable=SC2206 # CI_ENV is a space-separated list of extra variable names
-forward+=(${CI_ENV:-})
-for name in "${forward[@]}"; do
-  if [ -n "${!name+x}" ]; then env_args+=(--env "$name"); fi
-done
 
 # actions/checkout (v6) keeps its token in a RUNNER_TEMP file pulled in by
 # `includeIf "gitdir:<host path>"`; repeat those includes for the /workspace mount so git inside

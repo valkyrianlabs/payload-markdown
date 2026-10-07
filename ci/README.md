@@ -44,10 +44,11 @@ and each repository keeps its own `ci/Containerfile`.
   stay owned by `gh-runner`), no `--privileged`, no extra capabilities, no Podman or Docker
   socket, no host `/`, `/etc`, `/root` or home directory. Limits: 12 GiB memory, 16384 pids,
   2 GiB `/dev/shm` (Chromium), `--timeout` 3 h. `--init` (catatonit) reaps child processes.
-- **Environment**: `CI`, `GITHUB_*`, `RUNNER_*`, the OIDC request variables (`pmdocs push
-  --github-oidc`), `GH_TOKEN`, `DATABASE_URL`, `PAYLOAD_SECRET`, `NODE_OPTIONS`, `NEXT_CPU_COUNT`,
-  `RELEASE_*`, `DOCS_SYNC_ENDPOINT`, `PMDOCS_SOURCE`, `PLAYWRIGHT_PORT`, `TZ`; more by name
-  with `CI_ENV="NAME …"`. `GITHUB_WORKSPACE` is `/workspace` inside.
+- **Environment**: the step's environment is forwarded (workflow/job/step `env`, secrets the
+  step was given, `GITHUB_*`, `RUNNER_*`, the OIDC request variables), minus variables that
+  describe the host (`PATH`, `HOME`, `XDG_*`, `DBUS_*`, locale, systemd/ssh/sudo variables, …) —
+  nothing the step's own code on the host could not already read. Inside, `CI=true`,
+  `HOME=/home/ci` and `GITHUB_WORKSPACE=/workspace`.
 - **Cleanup**: the container (and pod) is removed on exit and on SIGINT/SIGTERM (job
   cancellation). After a SIGKILL, the next `run-ci` reaps containers whose owner is gone. Files a
   step wrote as container root are handed back to the caller on exit, so checkout can always
@@ -57,7 +58,17 @@ and each repository keeps its own `ci/Containerfile`.
 `--root` runs as container root (for stock images without sudo); `CI_MEMORY`, `CI_TIMEOUT`
 (seconds) and `CI_CACHE_DIR` override the defaults.
 
-Workflows call the wrappers; GitHub-hosted runners (used for pull requests from forks) have
+Workflows either prefix steps (`./ci/run-ci pnpm test:int`) or make it a job's shell, so every
+`run:` block of that job runs in the container unchanged:
+
+```yaml
+defaults:
+  run:
+    shell: bash ./ci/run-ci bash -euo pipefail {0}   # {0}: the step script, in RUNNER_TEMP
+```
+
+A step that needs Postgres or a stock image overrides `shell:` (`bash ./ci/run-ci --postgres
+bash -euo pipefail {0}`). GitHub-hosted runners (used for pull requests from forks) have
 Podman too and build the same image.
 
 ## Host broker: `ci-host`
