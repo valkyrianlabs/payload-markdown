@@ -119,6 +119,8 @@ while IFS= read -r name; do
 done < <(compgen -e)
 env_args+=(--env CI=true --env HOME=/home/ci --env GITHUB_WORKSPACE=/workspace
   --env npm_config_store_dir=/cache/pnpm-store --env NPM_CONFIG_CACHE=/cache/npm)
+# As container root (stock images have no /home/ci), root's own home.
+if $root_user; then env_args+=(--env HOME=/root); fi
 
 # actions/checkout (v6) keeps its token in a RUNNER_TEMP file pulled in by
 # `includeIf "gitdir:<host path>"`; repeat those includes for the /workspace mount so git inside
@@ -174,7 +176,7 @@ trap cleanup EXIT
 
 # --- optional postgres (same pod, so it is at 127.0.0.1:5432) --------------------------------
 run_args=(--rm --init --name "$name" --stop-timeout 10 --timeout "${CI_TIMEOUT:-10800}" --workdir "$workdir")
-if $root_user; then run_args+=(--user 0:0 --env HOME=/root); fi
+if $root_user; then run_args+=(--user 0:0); fi
 if $postgres; then
   pod="$name-pod"
   podman pod create --name "$pod" --hostname ci --userns=keep-id --shm-size 2g --label "ci.run-ci.pid=$$" >/dev/null
