@@ -9,8 +9,10 @@ const read = (file: string) => fs.readFileSync(path.resolve(file), 'utf8')
 const deploy = read('.github/workflows/deploy.yml')
 const release = read('.github/workflows/release.yml')
 
-const PR_ROUTED_RUNNER =
-  "runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"ubuntu-latest-lts\"]') }}"
+// Fork pull requests (untrusted code) run on GitHub-hosted runners; pushes and same-repository
+// pull requests run on the self-hosted runner.
+const FORK_ROUTED_RUNNER =
+  "runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"ubuntu-latest-lts\"]') }}"
 
 /** `run:` commands of a workflow (single-line and block scalars). */
 function getRunCommands(workflow: string): string[] {
@@ -37,6 +39,17 @@ function getRunCommands(workflow: string): string[] {
   return commands
 }
 
+/** A workflow without its comment lines. */
+const code = (workflow: string) =>
+  workflow
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('#'))
+    .join('\n')
+
+/** Index of the first command that runs `gate` in the CI container, or -1. */
+const inContainer = (commands: string[], gate: string) =>
+  commands.findIndex((command) => /^\.\/ci\/run-(?:ci|playwright)\b/.test(command) && command.includes(gate))
+
 describe('CI workflows enforce the package contract', () => {
   it('pins every action to a commit SHA with its version', () => {
     for (const [name, workflow] of [
@@ -54,42 +67,41 @@ describe('CI workflows enforce the package contract', () => {
     }
   })
 
-  it('keeps pull requests off the self-hosted runners with read-only permissions', () => {
+  it('keeps fork pull requests off the self-hosted runner with read-only permissions', () => {
     const runsOn = [...deploy.matchAll(/^\s*runs-on:.*$/gm)].map(([line]) => line.trim())
 
     expect(deploy).toMatch(/^permissions:\n {2}contents: read$/m)
     expect(runsOn.length).toBeGreaterThanOrEqual(2)
-    for (const line of runsOn) expect(line).toBe(PR_ROUTED_RUNNER)
+    for (const line of runsOn) expect(line).toBe(FORK_ROUTED_RUNNER)
   })
 
-  it('runs every contract gate on pushes and pull requests', () => {
+  it('runs every contract gate in the CI container on pushes and pull requests', () => {
     const commands = getRunCommands(deploy)
 
     for (const gate of [
-      'pnpm install --frozen-lockfile --prefer-offline --unsafe-perm',
+      'actionlint',
+      'pnpm install --frozen-lockfile --prefer-offline',
       'pnpm lint',
       'pnpm build',
       'pnpm exec tsc -p dev/tsconfig.json --noEmit',
       'pnpm test:int',
       'pnpm test:exports',
+      'pnpm verify:packages',
       'pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only',
-      'pnpm exec playwright install chromium',
-      'pnpm test:e2e --reporter=line',
     ])
-      expect(commands).toContain(gate)
+      expect({ gate, index: inContainer(commands, gate) }).toMatchObject({ index: expect.any(Number) })
+    for (const gate of ['pnpm build', 'pnpm test:int', 'pnpm verify:packages'])
+      expect(inContainer(commands, gate)).toBeGreaterThanOrEqual(0)
 
     // Tests run after the build so the dist-backed checks are not skipped.
-    expect(commands.indexOf('pnpm test:int')).toBeGreaterThan(commands.indexOf('pnpm build'))
-    // System deps go through plain apt-get (allowed by the self-hosted runner's sudoers),
-    // never `--with-deps`, which needs `sudo sh -c`.
-    expect(commands.filter((command) => command.includes('--with-deps'))).toEqual([])
-    expect(commands).toContain('sudo -n apt-get install -y --no-install-recommends $deps')
-    expect(deploy).toContain('image: postgres:16')
-    expect(deploy).toContain('--health-cmd "pg_isready -U postgres"')
-    expect(deploy).toContain("job.services.postgres.ports['5432']")
+    expect(inContainer(commands, 'pnpm test:int')).toBeGreaterThan(inContainer(commands, 'pnpm build'))
+    // Playwright (browsers, OS libraries, Postgres) lives entirely in the container.
+    expect(commands).toContain('./ci/run-playwright')
+    // Nothing touches the host: no sudo, no host packages, no Docker service containers.
+    expect(code(deploy)).not.toMatch(/\bsudo\b|apt-get|services:|--with-deps|setup-node/)
   })
 
-  it('releases through vl-release with every gate before npm publication', () => {
+  it('releases through vl-release in the CI container with every gate before npm publication', () => {
     const commands = getRunCommands(release)
     const publish = commands.indexOf('vlr publish-npm --require-enabled')
 
@@ -103,19 +115,28 @@ describe('CI workflows enforce the package contract', () => {
       'pnpm lint',
       'pnpm exec tsc -p dev/tsconfig.json --noEmit',
       'pnpm test:exports',
+      'scripts/verify-npm-packages.mjs --release release',
       'vlr validate-artifacts',
       'vlr publish-npm --mode enabled --dry-run',
     ]) {
-      expect(commands).toContain(gate)
-      expect(commands.indexOf(gate)).toBeLessThan(publish)
+      const index = inContainer(commands, gate)
+      expect({ gate, index }).toMatchObject({ index: expect.any(Number) })
+      expect(index).toBeGreaterThanOrEqual(0)
+      expect(index).toBeLessThan(publish)
     }
 
-    // npm trusted publishing is bound to this workflow file and the Production environment.
+    // npm trusted publishing only accepts GitHub-hosted runners: publish-npm is the one job that
+    // leaves the self-hosted runner, bound to this workflow file and the Production environment.
+    const runners = [...release.matchAll(/^ {2}([\w-]+):\n(?: {4}.*\n)*? {4}runs-on: (.+)$/gm)].map(
+      ([, job, runner]) => [job, runner],
+    )
+    expect(runners.filter(([, runner]) => runner !== 'self-hosted')).toEqual([['publish-npm', 'ubuntu-latest']])
     expect(release).toMatch(/^ {4}environment:\n {6}name: Production$/m)
     expect(release).toContain('id-token: write # npm trusted publishing')
+    expect(code(release)).not.toMatch(/\bsudo\b|services:/)
     // The release is recorded on main only after publication and the GitHub release.
-    expect(commands.indexOf('vlr finalize --record release/meta/prepare.json')).toBeGreaterThan(
-      commands.indexOf('vlr github-release'),
+    expect(inContainer(commands, 'vlr finalize --record release/meta/prepare.json')).toBeGreaterThan(
+      inContainer(commands, 'vlr github-release'),
     )
   })
 

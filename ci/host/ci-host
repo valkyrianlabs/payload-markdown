@@ -1,0 +1,94 @@
+#!/bin/bash
+# ci-host: the one privileged entry point the GitHub Actions runner (gh-runner) has on this host.
+#
+#   sudo -n /usr/local/sbin/ci-host service restart <unit>
+#   sudo -n /usr/local/sbin/ci-host service status  <unit>
+#
+# <unit> must be listed in /etc/ci-host/services (root-owned, one unit name per line). Nothing
+# else is accepted: no other operations, no extra arguments, no paths, no options, no templates.
+# Install root:root 0755 at /usr/local/sbin/ci-host; see ci/host/README.md in payload-markdown.
+set -euo pipefail
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export LC_ALL=C SYSTEMD_PAGER='' SYSTEMD_LESS='' SYSTEMD_COLORS=0
+umask 022
+
+readonly ALLOWLIST=/etc/ci-host/services
+readonly SYSTEMCTL=/usr/bin/systemctl
+readonly START_TIMEOUT=60
+
+die() {
+  local code=$1
+  shift
+  echo "ci-host: $*" >&2
+  logger -t ci-host -p auth.warning "refused (${SUDO_USER:-$(id -un)}): $*" 2>/dev/null || true
+  exit "$code"
+}
+
+usage() {
+  die 64 "usage: ci-host service {restart|status} UNIT"
+}
+
+[ "$(id -u)" -eq 0 ] || die 77 "must run as root (through sudo)"
+
+# Exactly three arguments, parsed positionally; nothing is ever passed through to a shell.
+[ "$#" -eq 3 ] || usage
+[ "$1" = service ] || usage
+operation=$2
+unit=$3
+
+case "$operation" in
+  restart | status) ;;
+  *) usage ;;
+esac
+
+# A bare unit name: lowercase letters, digits and dashes. Rejects paths, globs, templates (@),
+# suffixes (.service/.socket), options (leading -), whitespace and shell metacharacters.
+[[ "$unit" =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || die 65 "invalid unit name"
+
+# The allowlist must be a root-owned regular file that nobody else can write.
+if [ ! -f "$ALLOWLIST" ] || [ -L "$ALLOWLIST" ]; then
+  die 78 "$ALLOWLIST is missing"
+fi
+read -r owner mode < <(stat -c '%u %a' "$ALLOWLIST")
+if [ "$owner" -ne 0 ] || (((8#$mode & 8#022) != 0)); then
+  die 78 "$ALLOWLIST must be owned by root and not group/world writable"
+fi
+
+allowed=false
+while IFS= read -r line || [ -n "$line" ]; do
+  line=${line%%#*}
+  line=${line//[[:space:]]/}
+  if [ "$line" = "$unit" ]; then
+    allowed=true
+    break
+  fi
+done < "$ALLOWLIST"
+$allowed || die 77 "unit '$unit' is not in $ALLOWLIST"
+
+service="$unit.service"
+[ "$("$SYSTEMCTL" show -p LoadState --value -- "$service")" = loaded ] || die 69 "$service is not a loaded unit"
+
+logger -t ci-host -p auth.notice "${SUDO_USER:-$(id -un)}: service $operation $unit" 2>/dev/null || true
+
+case "$operation" in
+  status)
+    exec "$SYSTEMCTL" status --no-pager --lines=20 -- "$service"
+    ;;
+  restart)
+    "$SYSTEMCTL" restart -- "$service"
+    for _ in $(seq "$START_TIMEOUT"); do
+      state=$("$SYSTEMCTL" is-active -- "$service" || true)
+      case "$state" in
+        active)
+          echo "ci-host: $service is active"
+          exit 0
+          ;;
+        activating | reloading) sleep 1 ;;
+        *) break ;;
+      esac
+    done
+    "$SYSTEMCTL" status --no-pager --lines=30 -- "$service" || true
+    die 1 "$service did not become active after restart (state: ${state:-unknown})"
+    ;;
+esac

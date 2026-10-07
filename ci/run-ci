@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# Run a command in the disposable CI container (rootless Podman; see ci/README.md).
+#
+#   ci/run-ci [--postgres] [--] COMMAND [ARGS...]
+#
+#   --postgres   also start a throwaway postgres:16 in the same pod (data on tmpfs) and set
+#                DATABASE_URL to it unless the caller already set one
+#
+# The repository is mounted at /workspace (read-write, files stay owned by the calling user);
+# nothing else from the host is visible except the pnpm/npm caches and, under GitHub Actions,
+# RUNNER_TEMP (where GITHUB_OUTPUT/GITHUB_ENV/GITHUB_STEP_SUMMARY live). Inside, any user may
+# sudo; container root is an unprivileged subordinate uid on the host.
+set -euo pipefail
+
+die() {
+  echo "run-ci: $*" >&2
+  exit 2
+}
+
+postgres=false
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --postgres) postgres=true; shift ;;
+    --) shift; break ;;
+    -h | --help) sed -n '2,13p' "$0"; exit 0 ;;
+    -*) die "unknown option $1" ;;
+    *) break ;;
+  esac
+done
+[ "$#" -gt 0 ] || die "usage: ci/run-ci [--postgres] [--] COMMAND [ARGS...]"
+
+command -v podman >/dev/null || die "podman is not installed (see ci/README.md)"
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+case "$(pwd -P)/" in
+  "$root"/*) workdir="/workspace${PWD#"$root"}" ;;
+  *) workdir=/workspace ;;
+esac
+
+# Rootless Podman needs the user's runtime directory and bus; the runner service is not a login
+# session, so point at the lingering user manager's.
+uid="$(id -u)"
+if [ -z "${XDG_RUNTIME_DIR:-}" ] && [ -d "/run/user/$uid" ]; then export XDG_RUNTIME_DIR="/run/user/$uid"; fi
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -S "${XDG_RUNTIME_DIR:-/nonexistent}/bus" ]; then
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+fi
+
+cache="${CI_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/payload-markdown-ci}"
+mkdir -p "$cache/pnpm-store" "$cache/npm"
+
+# --- image -----------------------------------------------------------------------------------
+# Tagged by the Containerfile and the newest ValkyrianLabs tool versions, so editing either
+# rebuilds it; otherwise the existing image is reused.
+tools="$(
+  for arch in all amd64; do curl -fsS --max-time 15 "https://apt.valkyrianlabs.com/dists/stable/main/binary-$arch/Packages" || true; done |
+    awk '$1 == "Package:" { name = $2 } $1 == "Version:" && (name == "vl-release" || name == "pmdocs") { print name "=" $2 }' |
+    sort -V | awk -F= '{ newest[$1] = $0 } END { for (n in newest) print newest[n] }' | sort | tr '\n' ' '
+)"
+repository=localhost/payload-markdown-ci
+tag="$({ cat "$root/ci/Containerfile"; echo "$tools"; } | sha256sum | cut -c1-16)"
+image="$repository:$tag"
+
+if ! podman image exists "$image"; then
+  if [ -z "$tools" ] && latest="$(podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" | head -n1)" && [ -n "$latest" ]; then
+    echo "run-ci: tool index unreachable; reusing $latest" >&2
+    image="$latest"
+  else
+    exec 9>"$cache/build.lock"
+    flock 9
+    if ! podman image exists "$image"; then
+      echo "run-ci: building $image (tools: ${tools:-unknown})" >&2
+      podman build --quiet --tag "$image" --build-arg "VALKYRIANLABS_TOOLS=$tools" \
+        --file "$root/ci/Containerfile" "$root/ci" >/dev/null
+      podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" |
+        grep -vx "$image" | xargs -r podman rmi --force >/dev/null 2>&1 || true
+    fi
+    flock -u 9
+  fi
+fi
+
+# --- environment -----------------------------------------------------------------------------
+env_args=(--env CI=true --env HOME=/home/ci --env GITHUB_WORKSPACE=/workspace
+  --env npm_config_store_dir=/cache/pnpm-store --env NPM_CONFIG_CACHE=/cache/npm)
+forward=(ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN GH_TOKEN DATABASE_URL
+  PAYLOAD_SECRET NODE_OPTIONS NEXT_CPU_COUNT RELEASE_PUBLISH_MODE RELEASE_REF DOCS_SYNC_ENDPOINT
+  PMDOCS_SOURCE PLAYWRIGHT_PORT TZ)
+while IFS= read -r name; do forward+=("$name"); done < <(compgen -e | grep -E '^(GITHUB|RUNNER)_' | grep -vx GITHUB_WORKSPACE)
+# shellcheck disable=SC2206 # CI_ENV is a space-separated list of extra variable names
+forward+=(${CI_ENV:-})
+for name in "${forward[@]}"; do
+  if [ -n "${!name+x}" ]; then env_args+=(--env "$name"); fi
+done
+
+# actions/checkout (v6) keeps its token in a RUNNER_TEMP file pulled in by
+# `includeIf "gitdir:<host path>"`; repeat those includes for the /workspace mount so git inside
+# the container authenticates exactly like git on the host would.
+git_includes=0
+while read -r key value; do
+  gitdir="${key#includeif.gitdir:}"
+  gitdir="${gitdir%.path}"
+  case "$gitdir" in
+    "$root"/*) ;;
+    *) continue ;;
+  esac
+  env_args+=(--env "GIT_CONFIG_KEY_$git_includes=includeIf.gitdir:/workspace${gitdir#"$root"}.path"
+    --env "GIT_CONFIG_VALUE_$git_includes=$value")
+  git_includes=$((git_includes + 1))
+done < <(git config --file "$root/.git/config" --get-regexp '^includeif\.gitdir:.*\.path$' 2>/dev/null || true)
+if [ "$git_includes" -gt 0 ]; then env_args+=(--env "GIT_CONFIG_COUNT=$git_includes"); fi
+
+mount_args=(--volume "$root:/workspace" --volume "$cache/pnpm-store:/cache/pnpm-store"
+  --volume "$cache/npm:/cache/npm")
+if [ -n "${RUNNER_TEMP:-}" ] && [ -d "$RUNNER_TEMP" ]; then
+  mount_args+=(--volume "$RUNNER_TEMP:$RUNNER_TEMP")
+fi
+
+# Containers and pods are labelled with the PID of the run-ci that owns them. One whose owner is
+# gone (a job killed with SIGKILL, which no trap sees) is reaped here, before anything new starts.
+reap() { # KIND LIST-ARGS...
+  local kind=$1 id owner
+  shift
+  while read -r id owner; do
+    if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then podman "$kind" rm --force --time 5 "$id" >/dev/null 2>&1 || true; fi
+  done < <(podman "$kind" ps "$@" --filter label=ci.run-ci.pid --format '{{.ID}} {{index .Labels "ci.run-ci.pid"}}' 2>/dev/null || true)
+}
+reap container --all
+reap pod
+
+name="ci-${GITHUB_RUN_ID:-local}-${GITHUB_JOB:-job}-$$"
+name="${name//[^a-zA-Z0-9_.-]/-}"
+pod=""
+limits=(--memory "${CI_MEMORY:-12g}" --pids-limit 16384 --label "ci.run-ci.pid=$$")
+
+# shellcheck disable=SC2317 # trap handler
+cleanup() {
+  podman rm --force --time 5 "$name" >/dev/null 2>&1 || true
+  if [ -n "$pod" ]; then podman pod rm --force --time 5 "$pod" >/dev/null 2>&1 || true; fi
+  # Files a step wrote as container root (sudo) belong to a subordinate uid on the host, which the
+  # runner could not delete at the next checkout; hand them back to the caller.
+  if [ -n "$(find "$root" ! -uid "$uid" -print -quit 2>/dev/null)" ]; then
+    podman unshare chown -R -h 0:0 "$root" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+# --- optional postgres (same pod, so it is at 127.0.0.1:5432) --------------------------------
+run_args=(--rm --init --name "$name" --stop-timeout 10 --timeout "${CI_TIMEOUT:-10800}" --workdir "$workdir")
+if $postgres; then
+  pod="$name-pod"
+  podman pod create --name "$pod" --hostname ci --userns=keep-id --shm-size 2g --label "ci.run-ci.pid=$$" >/dev/null
+  # The pod maps the caller's uid (keep-id), which would also become postgres's default user;
+  # start it as container root (an unprivileged subordinate uid on the host) so its entrypoint can
+  # set up the data directory and drop to the postgres user as usual.
+  podman run --detach --pod "$pod" --name "$name-postgres" --user 0:0 "${limits[@]}" \
+    --env POSTGRES_PASSWORD=postgres --env POSTGRES_DB=ci --tmpfs /var/lib/postgresql/data:rw,size=2g \
+    docker.io/library/postgres:16 >/dev/null
+  for _ in $(seq 60); do
+    if podman exec "$name-postgres" pg_isready -q -h 127.0.0.1 -U postgres 2>/dev/null; then break; fi
+    sleep 1
+  done
+  podman exec "$name-postgres" pg_isready -q -h 127.0.0.1 -U postgres || die "postgres did not start"
+  if [ -z "${DATABASE_URL:-}" ]; then env_args+=(--env DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/ci); fi
+  run_args+=(--pod "$pod")
+else
+  run_args+=(--hostname ci --userns=keep-id --shm-size 2g)
+fi
+
+# Run in the background so a cancelled job (SIGINT/SIGTERM) stops the container before we exit.
+# shellcheck disable=SC2317 # trap handler
+on_signal() {
+  podman stop --time 10 "$name" >/dev/null 2>&1 || true
+}
+trap on_signal INT TERM
+status=0
+podman run "${run_args[@]}" "${limits[@]}" "${mount_args[@]}" "${env_args[@]}" "$image" "$@" </dev/null &
+child=$!
+wait "$child" || status=$?
+# A signal interrupts `wait`; wait again for podman itself to finish.
+while kill -0 "$child" 2>/dev/null; do wait "$child" || status=$?; done
+exit "$status"

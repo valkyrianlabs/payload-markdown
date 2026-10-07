@@ -9,153 +9,88 @@ on:
 permissions:
   contents: read
 
-# Pull request code (possibly from forks) runs on GitHub-hosted runners only.
-# The persistent self-hosted runners also run Production release jobs, so they
-# only run trusted code from pushes to main.
+# Every build, test and browser step runs inside the disposable CI container (`./ci/run-ci`,
+# rootless Podman; see ci/README.md), so neither job needs host sudo, host packages or Docker.
 #
-# This workflow is the package contract: every gate below must stay green for
-# a change to land (lint, build, dev-app typecheck, unit/integration tests,
-# plain-Node imports of the published subpaths, type resolution of the packed
-# tarball, and the Playwright suite against Postgres).
+# Runners: pushes and pull requests from branches of this repository run on the self-hosted
+# runner; pull requests from forks (untrusted code that could also rewrite this file) run on
+# GitHub-hosted runners, which build the same container.
+#
+# This workflow is the package contract: every gate below must stay green for a change to land
+# (lint, build, dev-app typecheck, unit/integration tests, plain-Node imports of the published
+# subpaths, both npm package names, type resolution of the packed tarball, and the Playwright
+# suite against Postgres).
 jobs:
   build-and-test:
     name: Build, lint, typecheck, test
-    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # Reject invalid workflow files (unknown contexts, bad expressions) before they reach main;
       # GitHub otherwise reports them only as a failed run with no jobs.
       - name: Lint workflows
-        run: |
-          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
-          ./actionlint -color -shellcheck=
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: '.nvmrc'
+        run: ./ci/run-ci bash -c 'bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7 && ./actionlint -color -shellcheck='
 
       - name: Install dependencies
-        run: |
-          set -euo pipefail
-          corepack enable
-          pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
+        run: ./ci/run-ci pnpm install --frozen-lockfile --prefer-offline
 
       - name: Lint
-        run: pnpm lint
+        run: ./ci/run-ci pnpm lint
 
       - name: Build
-        run: |
-          set -euo pipefail
-          export NEXT_CPU_COUNT=$(nproc)
-          pnpm build
+        run: ./ci/run-ci bash -c 'NEXT_CPU_COUNT=$(nproc) pnpm build'
 
       - name: Typecheck dev app
-        run: pnpm exec tsc -p dev/tsconfig.json --noEmit
+        run: ./ci/run-ci pnpm exec tsc -p dev/tsconfig.json --noEmit
 
       # Runs after the build so the dist-backed checks (plain-Node exports,
       # generated directive spec, built/source settings sharing) are not skipped.
       - name: Run tests
-        run: pnpm test:int
+        run: ./ci/run-ci pnpm test:int
 
-      # Imports ".", "./render" and "./advanced" in plain Node through the
-      # package self-reference, walks the ./render module graph for CSS/React,
-      # and resolves the bundler-only "./server", "./client", "./styles.css"
-      # and "./directive-spec.json".
+      # Imports ".", "./render", "./advanced" and "./mcp" in plain Node through the package
+      # self-reference, walks the ./render and ./mcp module graphs for CSS/React, and resolves
+      # the bundler-only "./server", "./client", "./styles.css" and "./directive-spec.json".
       - name: Plain-Node export smoke
-        run: pnpm test:exports
+        run: ./ci/run-ci pnpm test:exports
 
       # Rehearses the dual npm publication: packs dist/, derives the unscoped
       # payload-markdown tarball like vlr does, and checks both names (same
       # files, every export, types and the bin).
       - name: Verify both npm packages
-        run: pnpm verify:packages
+        run: ./ci/run-ci pnpm verify:packages
 
       - name: Check published types (arethetypeswrong)
-        run: pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only
+        run: ./ci/run-ci pnpm dlx @arethetypeswrong/cli@0.18.5 --pack --profile esm-only
 
   e2e:
     name: Playwright e2e
-    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: payload_markdown_e2e
-          POSTGRES_PASSWORD: postgres
-        # Random host port: the self-hosted runners are persistent and may
-        # already have something on 5432.
-        ports:
-          - 5432/tcp
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","ubuntu-latest-lts"]') }}
     env:
       PAYLOAD_SECRET: ci-secret
-      # playwright.config.js reuses an existing server on its port; use one
-      # that nothing else on a persistent runner listens on.
-      PLAYWRIGHT_PORT: '3931'
     steps:
-      # The service port is only known at run time, and the `job` context is not available in
-      # job-level `env`, so export the connection string from a step.
-      - name: Export DATABASE_URL
-        run: echo "DATABASE_URL=postgres://postgres:postgres@localhost:${{ job.services.postgres.ports['5432'] }}/payload_markdown_e2e" >> "$GITHUB_ENV"
-
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: '.nvmrc'
-
       - name: Install dependencies
-        run: |
-          set -euo pipefail
-          corepack enable
-          pnpm install --frozen-lockfile --prefer-offline --unsafe-perm
-
-      # `playwright install --with-deps` runs `sudo -- sh -c "apt-get ..."`, which the
-      # self-hosted runner's sudoers policy (apt-get only) rightly does not allow. Ask
-      # Playwright for its package list and call the allowed apt-get commands directly.
-      - name: Install Playwright Chromium and its system dependencies
-        run: |
-          set -euo pipefail
-          deps="$(pnpm exec playwright install-deps --dry-run chromium \
-            | sed -n 's/.*--no-install-recommends \(.*\)"$/\1/p')"
-          if [ -z "$deps" ]; then
-            echo "::error::Could not read Playwright's system dependency list."
-            exit 1
-          fi
-          # Only the missing packages; the package lists are refreshed only if installing
-          # from the current ones fails (the self-hosted runner keeps its packages).
-          missing=""
-          for dep in $deps; do
-            dpkg-query -W -f='${Status}' "$dep" 2>/dev/null | grep -q "install ok installed" || missing="$missing $dep"
-          done
-          if [ -n "$missing" ]; then
-            if ! sudo -n apt-get install -y --no-install-recommends $missing; then
-              sudo -n apt-get update
-              sudo -n apt-get install -y --no-install-recommends $missing
-            fi
-          else
-            echo "Playwright system dependencies already installed"
-          fi
-          pnpm exec playwright install chromium
+        run: ./ci/run-ci pnpm install --frozen-lockfile --prefer-offline
 
       # The dev app's import map loads the package through its own exports
       # (dist), so the package is built before the dev server starts.
       - name: Build
-        run: pnpm build
+        run: ./ci/run-ci pnpm build
 
+      # Chromium and its OS dependencies come with the container image; the run gets its own
+      # throwaway Postgres (tmpfs) in the same pod.
       - name: Run Playwright
-        run: pnpm test:e2e --reporter=line
+        run: ./ci/run-playwright
 
-      - name: Upload Playwright traces
+      - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: playwright-test-results
-          path: test-results
+          name: playwright-report-${{ github.run_attempt }}
+          path: |
+            playwright-report
+            test-results
           if-no-files-found: ignore
-          retention-days: 7

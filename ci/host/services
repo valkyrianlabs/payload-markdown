@@ -1,0 +1,10 @@
+# Units the GitHub Actions runner may restart or check through ci-host (one bare unit name per
+# line, no ".service"). Installed root:root 0644 at /etc/ci-host/services. Adding an application
+# is one line here; sudoers never changes.
+gpg-keyserver
+mollie-jayne-hair-co
+portfolio
+tsp
+unforeseentravels
+valkyrianlabs
+vaulthalla-io
