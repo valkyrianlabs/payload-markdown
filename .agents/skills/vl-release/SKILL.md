@@ -35,7 +35,8 @@ vlr help ci         # the release CI transaction and workflow conventions
      `[[debian.packages]]` contract per binary package: the paths it must ship, and paths that
      must never ship.
    - `[npm]` only if the repository publishes an npm package (`package.json` without
-     `"private": true`), with a tarball contract (`package/...` paths it must and must never ship).
+     `"private": true`), with a tarball contract (`package/...` paths it must and must never ship),
+     and `[[npm.aliases]]` only when the same build must also be published under another name.
    - Publication (`[publish.apt]`, `[[publish.npm]]`, `[homebrew]`, `[source_archive]`):
      **ask the user** for repository URLs, registries, taps and which channels to enable; do not
      guess publication targets.

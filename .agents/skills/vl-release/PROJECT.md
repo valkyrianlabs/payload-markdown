@@ -20,7 +20,7 @@ this file says how it applies here.
 
 ## Release channels
 
-- **npm package** (built by `vlr build-npm`): packed with `npm` from `.`, dist-tag `latest`, pre-pack: `pnpm build`
+- **npm package** (built by `vlr build-npm`): packed with `npm` from `.`, dist-tag `latest`, pre-pack: `pnpm build`, also published as `payload-markdown` (`[[npm.aliases]]`, derived from the same tarball)
   - registry `npmjs`: https://registry.npmjs.org/ (auth `oidc`), published with `vlr publish-npm`
 
 ## Before considering substantial work complete
