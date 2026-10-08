@@ -43,3 +43,8 @@ It installs the skill at `.claude/skills/payload-markdown` (Claude Code) and/or 
 Copies installed by hand with `cp -r` have no `skill.json` and report as unversioned; run `npx payload-markdown skill install` once to replace them.
 
 The skill's own validation commands now point at the installed location (`.claude/skills/payload-markdown/scripts/…` or `.agents/skills/payload-markdown/scripts/…`).
+
+## About 1.7.1
+
+- `v1.7.1` was tagged, but its release stopped part-way: only `payload-markdown@1.7.1` reached npm while the new package name was being set up, and `@valkyrianlabs/payload-markdown` stayed at 1.7.0.
+- 1.7.2 contains the same changes and is the first release published under both names at once. Install 1.7.2 or later.
