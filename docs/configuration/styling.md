@@ -105,6 +105,20 @@ The renderer emits stable hooks such as:
 - `vl-md-card`
 - `vl-md-card--theme-forge`
 
+## Directive Content
+
+Markdown inside a card, callout, details block, tab panel, or step renders with the same Tailwind Typography styles as the rest of the document, so lists, links, inline code, tables, and quotes look the same everywhere. Typography overrides in `config.className` (for example `prose-a:text-pink-400`) apply inside directives too. Directive chrome such as card titles, eyebrows, tab triggers, and the table of contents is marked `not-prose`, and directive bodies carry `data-directive-body`.
+
+Code blocks read their background from the `--pmd-code-bg` custom property (default `#18191c`). Directive bodies set it to a slightly darker value so nested code reads as an inset well. Set it on any element to change the code background inside it:
+
+```ts
+payloadMarkdown({
+  config: {
+    className: '[--pmd-code-bg:#0d1117]',
+  },
+})
+```
+
 ## Deprecated Class Aliases
 
 These still work but should not be the preferred customization path:

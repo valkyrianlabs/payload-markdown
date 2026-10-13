@@ -70,7 +70,7 @@ Attributes:
 - `[Label]`: optional card title, preferred for new Markdown
 - `title`: optional card title retained for existing Markdown
 - `eyebrow`: optional small label above the title
-- `icon`: local icon reference such as `@fa-duotone/bolt`
+- `icon`: local icon reference such as `@fa-duotone/bolt`, or a comma-separated list such as `@fa-brands/debian, @fa-brands/ubuntu` to show several icons in a row
 - `href`: optional card link
 - `linkScope`: `full` or `title`
 - `newTab`: open `href` in a new tab when `true`
