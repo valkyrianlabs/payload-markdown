@@ -243,10 +243,15 @@ function buildTransformers(
     pre(node) {
       if (!useEnhanced) return
       setMergedClassNames(node, ['md-code-enhanced'])
+      // The code element is the scroll container (so the copy button and line
+      // numbers stay put), so it is the one that takes keyboard focus.
+      delete node.properties.tabindex
     },
 
     code(node) {
       if (!useEnhanced) return
+
+      node.properties.tabindex = 0
 
       if (node.children) {
         node.children = node.children.filter((child) => {

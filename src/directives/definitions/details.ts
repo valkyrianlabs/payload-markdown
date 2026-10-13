@@ -2,6 +2,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
@@ -27,7 +28,6 @@ export const detailsDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'not-prose',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,
@@ -38,7 +38,9 @@ export const detailsDirective: LayoutDirectiveDefinition = {
         type: 'element',
         children: [{ type: 'text', value: title }],
         properties: {
-          className: ['cursor-pointer text-sm font-semibold tracking-wide'],
+          className: [
+            'not-prose ml-4 cursor-pointer list-outside text-sm font-semibold tracking-wide transition-colors hover:text-(--tw-prose-headings) marker:text-(--tw-prose-captions)',
+          ],
         },
         tagName: 'summary',
       },
@@ -46,7 +48,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
         type: 'element',
         children,
         properties: {
-          className: ['mt-3 space-y-3 [&>:first-child]:mt-0 [&>:last-child]:mb-0'],
+          className: ['mt-3', DIRECTIVE_BODY_CLASS],
           dataDirectiveBody: 'details',
         },
         tagName: 'div',

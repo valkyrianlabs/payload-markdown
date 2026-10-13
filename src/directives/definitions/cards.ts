@@ -83,7 +83,7 @@ function makeSectionLink(href: string, newTab: boolean): Element {
       ...getLinkProperties(href, newTab),
       ariaLabel: 'Open card section',
       className: [
-        'absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        'not-prose absolute -inset-2 z-10 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
       ],
       dataDirectiveLink: 'cards',
     },
@@ -163,8 +163,11 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       node.properties.dataNewTab = newTab ? 'true' : 'false'
     }
     node.properties.className = mergeClassNames(
-      'not-prose my-8 grid gap-4',
-      href && linkScope === 'section' ? 'relative cursor-pointer [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20' : undefined,
+      // Spacing lives in the theme; the base only sets what every grid needs.
+      'grid [&>article]:my-0',
+      href && linkScope === 'section'
+        ? 'relative cursor-pointer [&>article]:transition-colors hover:[&>article]:border-white/15 [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
+        : undefined,
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,

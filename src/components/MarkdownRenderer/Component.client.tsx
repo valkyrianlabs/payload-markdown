@@ -29,9 +29,16 @@ function getTabsContainer(element: HTMLElement | null): HTMLElement | null {
   return element?.closest('[data-directive="tabs"]') as HTMLElement | null
 }
 
+/** Elements of this tabs block only, not of tabs nested in its panels. */
+function getOwnTabElements(tabs: HTMLElement, selector: string): HTMLElement[] {
+  return Array.from(tabs.querySelectorAll<HTMLElement>(selector)).filter(
+    (element) => getTabsContainer(element) === tabs,
+  )
+}
+
 function setActiveTab(tabs: HTMLElement, value: string) {
-  const triggers = Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-trigger]'))
-  const panels = Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-panel]'))
+  const triggers = getOwnTabElements(tabs, '[data-tab-trigger]')
+  const panels = getOwnTabElements(tabs, '[data-tab-panel]')
 
   for (const trigger of triggers) {
     const active = trigger.getAttribute('data-tab-value') === value
@@ -49,7 +56,7 @@ function setActiveTab(tabs: HTMLElement, value: string) {
 }
 
 function getEnabledTabTriggers(tabs: HTMLElement): HTMLElement[] {
-  return Array.from(tabs.querySelectorAll<HTMLElement>('[data-tab-trigger]')).filter(
+  return getOwnTabElements(tabs, '[data-tab-trigger]').filter(
     (trigger) => !trigger.hasAttribute('disabled'),
   )
 }
@@ -84,23 +91,9 @@ export function MarkdownRendererClient({ containerId }: MarkdownRendererClientPr
       button.setAttribute('aria-label', 'Copy code block')
       button.textContent = 'Copy'
 
-      button.style.position = 'absolute'
-      button.style.top = '0.6rem'
-      button.style.right = '0.6rem'
-      button.style.zIndex = '1'
-      button.style.border = '1px solid rgba(255,255,255,0.12)'
-      button.style.borderRadius = '0.5rem'
-      button.style.background = 'rgba(24,24,27,0.9)'
-      button.style.color = '#e5e7eb'
-      button.style.fontSize = '0.75rem'
-      button.style.fontWeight = '500'
-      button.style.lineHeight = '1'
-      button.style.padding = '0.45rem 0.65rem'
-      button.style.cursor = 'pointer'
-      button.style.userSelect = 'none'
-
-      const preStyle = window.getComputedStyle(pre)
-      if (preStyle.position === 'static') pre.style.position = 'relative'
+      // Styled by `[data-md-copy-button]` in the renderer stylesheet, which
+      // positions it against the pre.
+      if (window.getComputedStyle(pre).position === 'static') pre.style.position = 'relative'
 
       pre.appendChild(button)
     })

@@ -9,7 +9,7 @@ import { devUser } from './helpers/credentials'
 const demosDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'demos')
 
 function titleFromMarkdown(markdown: string, fallback: string): string {
-  return /^#\s+(.+)$/m.exec(markdown)?.[1]?.trim() ?? fallback
+  return /^# (.+)$/m.exec(markdown)?.[1]?.trim() ?? fallback
 }
 
 /**
@@ -28,11 +28,11 @@ async function seedDemoPosts(payload: Payload) {
     const slug = `demo-${name}`
     const content = fs.readFileSync(path.join(demosDir, file), 'utf8')
     const data = {
+      slug,
       _status: 'published' as const,
       content,
       generateSlug: false,
       publishedAt: new Date().toISOString(),
-      slug,
       title: `Demo: ${titleFromMarkdown(content, name)}`,
     }
 

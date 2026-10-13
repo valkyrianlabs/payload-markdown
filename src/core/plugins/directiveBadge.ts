@@ -31,7 +31,8 @@ function stringifyAttributes(attributes: Record<string, boolean | string>): Reco
 function makeBadgeImageProperties(src: string, alt: string, includeDirective: boolean) {
   return {
     alt,
-    className: ['pmd-badge'],
+    // Badge images opt out of Typography's image margins and rounding.
+    className: ['not-prose', 'pmd-badge'],
     ...(includeDirective ? { dataDirective: 'badge' } : {}),
     src,
   }

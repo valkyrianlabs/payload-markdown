@@ -525,6 +525,20 @@ A neighbour with a long eyebrow.
 
 :::
 
+### Cards: multiple icons (comma-separated)
+
+:::cards{columns="2"}
+
+:::card[Linux]{eyebrow="amd64 · Debian & Ubuntu" icon="@fa-duotone/debian, @fa-duotone/ubuntu" href="/docs/linux"}
+The production platform: a signed APT repository, systemd services and a native FUSE mount at `/mnt/vaulthalla`.
+:::
+
+:::card[macOS]{eyebrow="New · Apple Silicon · macOS 14+" icon="@fa-duotone/laptop" href="/docs/macos"}
+One Homebrew command or a self-contained installer that brings its own PostgreSQL and Caddy.
+:::
+
+:::
+
 ## Body Content
 
 ### Cards: unequal body lengths side by side

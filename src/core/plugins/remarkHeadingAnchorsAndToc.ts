@@ -35,6 +35,10 @@ function makeTocLink(heading: HeadingAnchor): Link {
 }
 
 function makeTocList(headings: HeadingAnchor[]): List {
+  // Each entry carries its level below the shallowest listed heading, so the
+  // flat list can be indented into an outline.
+  const minDepth = Math.min(...headings.map((heading) => heading.depth))
+
   return {
     type: 'list',
     children: headings.map(
@@ -46,6 +50,7 @@ function makeTocList(headings: HeadingAnchor[]): List {
             children: [makeTocLink(heading)],
           },
         ],
+        data: { hProperties: { dataTocLevel: String(heading.depth - minDepth) } },
         spread: false,
       }),
     ),

@@ -1,12 +1,21 @@
 pre.shiki.md-code-enhanced {
-  background: #18191c;
+  background: var(--pmd-code-bg, #18191c);
   padding: 0;
-  overflow-x: auto;
+  // The code element scrolls; the pre stays put so the copy button and the
+  // line-number gutter don't scroll away with long lines.
+  overflow: hidden;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 
   code {
+    overflow-x: auto;
+
+    &:focus-visible {
+      outline: 2px solid rgb(255 255 255 / 0.25);
+      outline-offset: -2px;
+    }
+
     span.md-line {
       display: block;
       position: relative;
@@ -16,50 +25,33 @@ pre.shiki.md-code-enhanced {
         padding-left: .75rem;
       }
 
-      &.md-line-digits-1 {
-        padding-left: 2rem;
-
-        .md-line-number {
-          width: 1.25rem;
-        }
+      &.md-line-digits-1 .md-line-number {
+        width: 1.25rem;
       }
 
-      &.md-line-digits-2 {
-        padding-left: 2.5rem;
-
-        .md-line-number {
-          width: 1.75rem;
-        }
+      &.md-line-digits-2 .md-line-number {
+        width: 1.75rem;
       }
 
-      &.md-line-digits-3 {
-        padding-left: 3rem;
-
-        .md-line-number {
-          width: 2.25rem;
-        }
+      &.md-line-digits-3 .md-line-number {
+        width: 2.25rem;
       }
 
-      &.md-line-digits-4 {
-        padding-left: 3.5rem;
-
-        .md-line-number {
-          width: 2.75rem;
-        }
+      &.md-line-digits-4 .md-line-number {
+        width: 2.75rem;
       }
 
-      &.md-line-digits-5 {
-        padding-left: 4rem;
-
-        .md-line-number {
-          width: 3.25rem;
-        }
+      &.md-line-digits-5 .md-line-number {
+        width: 3.25rem;
       }
 
       .md-line-number {
-        position: absolute;
+        position: sticky;
         left: 0;
-        top: 0;
+        z-index: 1;
+        display: inline-block;
+        margin-right: 0.75rem;
+        background: var(--pmd-code-bg, #18191c);
         text-align: right;
         color: #7c8596;
         opacity: 0.8;
@@ -82,6 +74,50 @@ pre.shiki.md-code-enhanced {
   }
 }
 
+[data-md-copy-button] {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: rgb(24 24 27 / 0.9);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    opacity 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: rgb(39 39 42 / 0.95);
+    border-color: rgb(255 255 255 / 0.2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgb(103 232 249);
+    outline-offset: 2px;
+  }
+}
+
+// On pointer devices the button appears with the block, keeping long first
+// lines readable; touch devices always show it.
+@media (hover: hover) {
+  pre.md-code-enhanced [data-md-copy-button] {
+    opacity: 0;
+  }
+
+  pre.md-code-enhanced:hover [data-md-copy-button],
+  pre.md-code-enhanced:focus-within [data-md-copy-button] {
+    opacity: 1;
+  }
+}
+
 .pmd-button {
   --pmd-button-bg: rgb(8 145 178);
   --pmd-button-border: rgb(8 145 178);
@@ -98,7 +134,8 @@ pre.shiki.md-code-enhanced {
   background: var(--pmd-button-bg);
   color: var(--pmd-button-color);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.25;
+  text-align: center;
   text-decoration: none;
   transition:
     background-color 160ms ease,
@@ -149,15 +186,13 @@ pre.shiki.md-code-enhanced {
   --pmd-button-hover-bg: transparent;
   --pmd-button-hover-border: transparent;
 
-  padding-right: 0;
-  padding-left: 0;
   text-decoration: underline;
   text-underline-offset: 0.22em;
 }
 
 .pmd-button--sm {
   min-height: 2rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
 }
 
@@ -171,6 +206,23 @@ pre.shiki.md-code-enhanced {
   min-height: 3rem;
   padding: 0.75rem 1.15rem;
   font-size: 1rem;
+}
+
+// Declared after the size rules, which would otherwise restore side padding.
+.pmd-button.pmd-button--link {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.pmd-button.pmd-button--icon-only {
+  aspect-ratio: 1;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+// Standalone buttons written next to each other; groups use their own gap.
+:not(.pmd-buttons) > .pmd-button + .pmd-button {
+  margin-inline-start: 0.5rem;
 }
 
 .pmd-button__icon {
@@ -213,6 +265,10 @@ pre.shiki.md-code-enhanced {
   flex-direction: column;
   align-items: stretch;
 
+  > .pmd-button--icon-only {
+    align-self: flex-start;
+  }
+
   @media (min-width: 640px) {
     flex-direction: row;
     align-items: center;
@@ -241,12 +297,11 @@ pre.shiki.md-code-enhanced {
 }
 
 .pmd-badges {
-  display: inline-flex;
+  display: flex;
   width: 100%;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  vertical-align: middle;
 }
 
 .pmd-badges--align-left {
@@ -279,6 +334,13 @@ pre.shiki.md-code-enhanced {
 
 .pmd-badges--wrap-false {
   flex-wrap: nowrap;
+  // A row that doesn't wrap scrolls on its own instead of widening the page.
+  overflow-x: auto;
+  justify-content: flex-start;
+
+  > * {
+    flex: none;
+  }
 }
 
 .pmd-badge-link {

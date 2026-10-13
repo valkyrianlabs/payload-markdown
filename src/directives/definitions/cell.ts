@@ -17,6 +17,7 @@ export const cellDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
+      '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,

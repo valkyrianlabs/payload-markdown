@@ -21,6 +21,7 @@ import { resolveRenderMarkdownOptions } from './codeConfig.js'
 import { highlightCode } from './codeToHtml.js'
 import { reportDiagnostic, toRenderDiagnostic } from './diagnostics.js'
 import { rehypeApplyLayoutClasses } from './plugins/rehypeApplyLayoutClasses.js'
+import { rehypeContentLayout } from './plugins/rehypeContentLayout.js'
 import { rehypeResolveIcons } from './plugins/rehypeResolveIcons.js'
 import { rehypeStripAuthoredInlineStyles } from './plugins/rehypeStripAuthoredInlineStyles.js'
 import {
@@ -199,7 +200,7 @@ const sanitizeSchema: Schema = {
       'tabIndex',
       'type',
     ],
-    code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className'],
+    code: [...getAttributeDefinitions(defaultSchema.attributes?.code ?? []), 'className', 'tabIndex'],
     details: [
       ...getAttributeDefinitions(defaultSchema.attributes?.details ?? []),
       'dataDirective',
@@ -266,7 +267,7 @@ const sanitizeSchema: Schema = {
       'width',
       'height',
     ],
-    li: [...getAttributeDefinitions(defaultSchema.attributes?.li ?? []), 'dataStep'],
+    li: [...getAttributeDefinitions(defaultSchema.attributes?.li ?? []), 'dataStep', 'dataTocLevel'],
     nav: [
       ...getAttributeDefinitions(defaultSchema.attributes?.nav ?? []),
       'ariaLabel',
@@ -391,6 +392,7 @@ export async function renderMarkdownDocument(
       .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeApplyLayoutClasses, config)
       .use(rehypeResolveIcons, config)
+      .use(rehypeContentLayout)
       .use(rehypeStringify)
       .process(markdown)
 
