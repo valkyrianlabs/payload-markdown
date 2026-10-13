@@ -23,6 +23,8 @@ export const SHIKI_TOKENIZE_TIME_LIMIT_MS = 10_000
 export const DEFAULT_CODE_LANG = 'text'
 export const DEFAULT_CODE_THEME = 'github-dark'
 export const DEFAULT_CODE_LANGS: readonly string[] = [
+  // Loading `bash` also registers its sh, shell, zsh, and shellscript aliases.
+  'bash',
   'cpp',
   'java',
   'js',

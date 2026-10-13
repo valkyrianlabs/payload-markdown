@@ -31,6 +31,9 @@ import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../src/styles/directiveSurface'
 const countLayout = (html: string, layout: string): number =>
   (html.match(new RegExp(`data-vl-layout="${layout}"`, 'g')) ?? []).length
 
+// Rendered text with tags stripped, e.g. a highlighted code line split into spans.
+const textContent = (html: string): string => html.replace(/<[^>]+>/g, '')
+
 const countDirective = (html: string, directive: string): number =>
   (html.match(new RegExp(`data-directive="${directive}"`, 'g')) ?? []).length
 
@@ -71,9 +74,6 @@ const countSyntaxNodes = (markdown: string, name: string): number => {
 }
 
 
-// ```bash is not in DEFAULT_CODE_LANGS; the renderer reports the plain-text fallback (CORE-14).
-const BASH_NOT_LOADED_WARNING =
-  'Code block language "bash" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.'
 
 describe('payloadMarkdown', () => {
   beforeEach(() => {
@@ -1356,6 +1356,26 @@ Check credentials.
     expect(result.html).toContain('labelColor=111')
   })
 
+  it('encodes a Shields path once whether it is written raw or copied pre-encoded', async () => {
+    const raw = await compileMarkdown('::badge[coverage]{path="badge/coverage-95%-brightgreen"}')
+    const encoded = await compileMarkdown('::badge[coverage]{path="badge/coverage-95%25-brightgreen"}')
+    const spaced = await compileMarkdown('::badge[docs]{path="badge/read%20the-docs-blue"}')
+
+    expect(raw.warnings).toEqual([])
+    expect(encoded.warnings).toEqual([])
+    expect(raw.html).toContain('src="https://img.shields.io/badge/coverage-95%25-brightgreen"')
+    expect(encoded.html).toContain('src="https://img.shields.io/badge/coverage-95%25-brightgreen"')
+    expect(spaced.html).toContain('src="https://img.shields.io/badge/read%20the-docs-blue"')
+  })
+
+  it('rejects Shields paths that decode to traversal or control characters', async () => {
+    for (const path of ['badge/%2E%2E/x', 'badge/a%0Ab']) {
+      const result = await compileMarkdown(`::badge[x]{path="${path}"}`)
+
+      expect(result.html, path).not.toContain('img.shields.io')
+    }
+  })
+
   it('validates Shields src escape hatch host', async () => {
     const valid = await compileMarkdown(
       '::badge[custom]{src="https://img.shields.io/badge/custom-ok-blue"}',
@@ -2016,11 +2036,11 @@ Nested card.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(result.html).toContain('vl-md-tabs--theme-glass')
     expect(result.html).toContain('vl-md-tab--theme-muted')
     expect(result.html).toContain('vl-md-tab--theme-glass')
-    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(textContent(result.html)).toContain('pnpm add @valkyrianlabs/payload-markdown')
     expect(result.html).toContain('md-code-enhanced')
     expect(countDirective(result.html, 'callout')).toBe(1)
     expect(countDirective(result.html, 'details')).toBe(1)
@@ -2138,13 +2158,13 @@ Add it to \`payload.config.ts\` with **markdown** enabled.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('<ol')
     expect(result.html).toContain('data-step="1"')
     expect(result.html).toContain('data-step="2"')
     expect(result.html).toContain('id="install-the-package"')
-    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(textContent(result.html)).toContain('pnpm add @valkyrianlabs/payload-markdown')
     expect(result.html).toContain('<strong>markdown</strong>')
   })
 
@@ -2188,7 +2208,7 @@ Add it to \`payload.config.ts\`.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('data-variant="cards"')
     expect(result.html).toContain('data-layout="stack"')
@@ -2200,7 +2220,7 @@ Add it to \`payload.config.ts\`.
     expect(result.html).toContain('m-0! list-none! gap-4 p-0!')
     expect(result.html).toContain('flex flex-col')
     expect(result.html).not.toContain('md:grid-cols-2')
-    expect(result.html).toContain('pnpm install')
+    expect(textContent(result.html)).toContain('pnpm install')
     expect(result.html).toContain('<code>payload.config.ts</code>')
   })
 

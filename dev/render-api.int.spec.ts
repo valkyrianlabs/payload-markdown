@@ -36,7 +36,7 @@ const SAMPLE = [
   '', // 10
   ':::', // 11
   '', // 12
-  '```bash', // 13
+  '```go', // 13
   'echo hi', // 14
   '```', // 15
   '', // 16
@@ -119,7 +119,7 @@ describe('renderMarkdown: headless structured render API', () => {
       {
         column: 1,
         line: 13,
-        message: expect.stringContaining('Code block language "bash" is not loaded'),
+        message: expect.stringContaining('Code block language "go" is not loaded'),
         severity: 'info',
         source: 'code',
       },
