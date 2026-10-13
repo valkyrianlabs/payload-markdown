@@ -1114,6 +1114,23 @@ Check credentials.
     expect(result.html.match(/<svg/g)?.length).toBe(2)
   })
 
+  it('spaces a card icon below the eyebrow only when the card has one', async () => {
+    const withEyebrow = await compileMarkdown(
+      ':::card[Linux]{eyebrow="amd64" icon="@fa-duotone/home"}\nBody.\n:::',
+      fixtureIconConfig,
+    )
+    const withoutEyebrow = await compileMarkdown(
+      ':::card[Linux]{icon="@fa-duotone/home"}\nBody.\n:::',
+      fixtureIconConfig,
+    )
+
+    expect(withEyebrow.warnings).toEqual([])
+    expect(withEyebrow.html).toMatch(/<svg[^>]*class="[^"]*pmd-card__icon[^"]*\bmt-2\b/)
+    expect(withoutEyebrow.warnings).toEqual([])
+    expect(withoutEyebrow.html).toContain('pmd-card__icon')
+    expect(withoutEyebrow.html).not.toMatch(/<svg[^>]*class="[^"]*\bmt-2\b/)
+  })
+
   it('emits diagnostics for malformed unknown and missing button icons without crashing', async () => {
     const malformed = await compileMarkdown('::button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
     const unknownPack = await compileMarkdown('::button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)

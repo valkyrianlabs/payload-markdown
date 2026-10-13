@@ -151,6 +151,8 @@ export const cardDirective: LayoutDirectiveDefinition = {
         ? [
             makeDirectiveIconPlaceholder(icon, [
               'pmd-card__icon mb-3 inline-flex size-5 text-current',
+              // The eyebrow's mb-2 alone leaves the icon cramped against it.
+              ...(eyebrow ? ['mt-2'] : []),
             ]),
           ]
         : []),
