@@ -28,7 +28,9 @@ Content stays Markdown.
 - `theme`: callout theme name
 - `[Label]`: optional title displayed above the body, preferred for new Markdown
 - `title`: optional title retained for existing Markdown
-- `icon`: local icon reference such as `@fa-duotone/triangle-exclamation`
+- `icon`: local icon reference such as `@fa-duotone/triangle-exclamation`, optionally with its own palette: `@fa-duotone/triangle-exclamation palette=amber`
+- `palette`: colour palette for the callout's surface, border, links and icon (see [Palettes](/configuration/palettes))
+- `iconPalette`: palette for the icon when it sets none
 
 Defaults:
 

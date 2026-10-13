@@ -55,6 +55,7 @@ Quick setup when the tools are missing: the app registers `@payloadcms/plugin-mc
 - Use `:::tabs` only for truly parallel alternatives such as package managers or framework variants.
 - Use `:::details` for optional caveats, migration notes, or advanced branches.
 - Use `:::section`, `:::2col`, `:::3col`, and `:::cell` sparingly for dense landing-style docs sections.
+- Colour icons and directives with named palettes (`palette=`, `iconPalette=`, `@pack/icon palette=name`), never CSS.
 - Avoid unsupported directives, MDX components, arbitrary HTML widgets, and runtime Tailwind classes in authored Markdown.
 
 ## Examples

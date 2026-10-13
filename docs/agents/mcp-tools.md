@@ -146,6 +146,31 @@ Result: `{ saved, status, updatedAt, adminUrl, previewUrl, edits: [{ index, acti
 
 Publishes the latest draft after validating every markdown target in it. Fails with `no_drafts` for collections and globals without drafts.
 
+## `markdownPalettes`
+
+| Argument | Type | Notes |
+| --- | --- | --- |
+| `collection` | string | Include palettes configured for this collection. |
+
+Lists every palette markdown can use, each with its colours and `source`: `built-in`, `config` (plugin or collection code) or `admin` (the Markdown Appearance global). `appearance` says whether runtime palettes are enabled and readable by this connection; `usage` shows the syntax. Admin palettes are read as the key's user; without read access the built-in and configured palettes are still listed.
+
+## `markdownPaletteSave`
+
+| Argument | Type | Notes |
+| --- | --- | --- |
+| `palette` | object | `name` (lowercase letters, digits, dashes), optional `label`, `color`, `secondaryColor`, `secondaryOpacity` (0–1), `background`, `border`, `accent`, and `dark` with any of the colours. |
+| `previousName` | string | Rename: the palette's current name. Markdown using the old name then reports an unknown palette. |
+
+Creates or replaces a palette in the Markdown Appearance global, by name. Colours are validated (hex, numeric colour functions, CSS colour names, `currentColor`, `transparent`, `var(--token)`); nothing is saved if any is invalid. The result has the saved palette, `created`, ready-to-use `usage` lines, and advisory `contrast` notes when the icon colour has less than 3:1 contrast in a scheme. Markdown can use the palette immediately; the site picks it up without a rebuild. Requires `appearance` in the plugin and the key's `Update` permission on the global.
+
+## `markdownPaletteDelete`
+
+| Argument | Type | Notes |
+| --- | --- | --- |
+| `name` | string | An admin palette. Built-in and configured palettes cannot be deleted here. |
+
+Markdown that still uses the palette renders without it and reports an unknown palette.
+
 ## `markdownEditDocument` Prompt
 
 Arguments `document`, `request` and optional `source`. Produces a user message with the full workflow (guide, read, validate, write a draft, report, publish only on request). Clients such as Claude Code list prompts as slash commands.
@@ -161,6 +186,8 @@ Arguments `document`, `request` and optional `source`. Produces a user message w
 | `conflict` | `ifUpdatedAt` did not match: read again and reapply. |
 | `locked` | Someone has the document open. Ask before retrying with `overrideLock`. |
 | `no_drafts` | `publish` on a collection or global without drafts. |
+| `invalid_palette` | A palette failed validation; `details.errors` lists why. Nothing was saved. |
+| `not_enabled` | Palette tools need the plugin's `appearance` option. |
 
 ## Plugin Options
 
@@ -168,7 +195,7 @@ Arguments `document`, `request` and optional `source`. Produces a user message w
 
 | Option | Default | Notes |
 | --- | --- | --- |
-| `tools` | all | Any of `guide`, `validate`, `read`, `write`, `publish`. |
+| `tools` | all | Any of `guide`, `validate`, `read`, `write`, `publish`, `palettes`, `savePalette`, `deletePalette`. Drop the write tools for read-only connections. |
 | `prompts` | `true` | Register `markdownEditDocument`. |
 | `access` | `mcpApiKey` | `mcpApiKey` honors the key's per-collection checkboxes; `user` relies on Payload access control only. |
 

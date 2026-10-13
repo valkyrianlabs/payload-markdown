@@ -97,6 +97,7 @@ Content.
 - `columns`: `1`, `2`, `3`, `4`, or `auto` for card-step grid layout
 - `numbered`: visible generated numbers for card steps
 - `theme`: steps wrapper theme
+- `palette`: colour palette for the wrapper and step cards (see [Palettes](/configuration/palettes))
 - `stepTheme`: card theme applied to individual step cards
 
 Defaults:

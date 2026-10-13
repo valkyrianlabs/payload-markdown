@@ -289,6 +289,12 @@ export const payloadMarkdown =
     return config
   }
 
+/**
+ * Palettes managed in the "Markdown Appearance" global (`appearance` option),
+ * cached per process. `MarkdownRenderer` loads them itself; pass the result as
+ * `runtimePalettes` to `renderMarkdown` to render with them elsewhere.
+ */
+export { loadAppearancePalettes as loadMarkdownPalettes } from './appearance/runtime.js'
 export {
   DEFAULT_CALLOUT_THEMES,
   DEFAULT_CARD_THEMES,

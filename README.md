@@ -234,6 +234,22 @@ Stable classes and data attributes are emitted for overrides, including `data-di
 
 ---
 
+## Colour palettes
+
+Palettes are named colour themes that colour individual icons and recolour directives, on top of their structural theme:
+
+```md
+:::card[Linux]{icon="@fa-brands/debian palette=debian, @fa-brands/ubuntu palette=ubuntu" theme="glass"}
+Debian and Ubuntu support.
+:::
+```
+
+Each icon carries its own palette, so order never swaps colours. Palettes paint the SVG itself (brand icons, duotone layers, explicit fills), follow light and dark mode, and come built in for every Tailwind hue. Define more in code, or enable `appearance: true` to manage them in the admin and over MCP at runtime, without CSS or a rebuild.
+
+[Palette documentation →](https://docs.valkyrianlabs.com/plugins/payload-markdown/configuration/palettes)
+
+---
+
 ## Code config
 
 Code block rendering has its own top-level `code` namespace.

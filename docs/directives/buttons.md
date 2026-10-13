@@ -29,7 +29,9 @@ Attributes:
 - `href`: required link target
 - `variant`: `primary`, `secondary`, `outline`, `ghost`, or `link`
 - `size`: `sm`, `md`, or `lg`
-- `icon`: local icon reference such as `@fa-duotone/home`
+- `icon`: local icon reference such as `@fa-duotone/home`, optionally with its own palette: `@fa-brands/ubuntu palette=ubuntu`
+- `palette`: colour palette for the button: fill from `background`, label from `color`, border from `border` (see [Palettes](/configuration/palettes))
+- `iconPalette`: palette for the icon when it sets none
 - `iconPosition`: `left` or `right`
 - `newTab`: open `href` in a new tab when `true`
 - `ariaLabel`: accessible label for icon-only buttons

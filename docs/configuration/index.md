@@ -28,7 +28,7 @@ payloadMarkdown({
 })
 ```
 
-Use `code` for Shiki and fenced code behavior, `icons` for local SVG icon packs, `themes` for directive theme registries, and `config` for Markdown wrapper presentation.
+Use `code` for Shiki and fenced code behavior, `icons` for local SVG icon packs, `themes` for directive theme registries, `palettes` for named colour palettes (managed at runtime with `appearance`), and `config` for Markdown wrapper presentation.
 
 :::cards{
   columns="3"

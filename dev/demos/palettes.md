@@ -92,11 +92,11 @@ Details with a palette.
 
 :::tabs{palette="indigo"}
 
-:::tab[First]
+:::tab[First]{value="first"}
 Tabs with a palette.
 :::
 
-:::tab[Second]
+:::tab[Second]{value="second"}
 Second panel.
 :::
 

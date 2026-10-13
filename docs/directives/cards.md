@@ -47,6 +47,8 @@ Attributes:
 - `newTab`: open `href` in a new tab when `true`
 - `theme`: cards container theme
 - `cardTheme`: default child card theme
+- `palette`: colour palette for the grid; child cards inherit its surface and border, and their icons use it unless they set their own (see [Palettes](/configuration/palettes))
+- `iconPalette`: palette for the icons of child cards that set no palette
 
 Defaults:
 
@@ -72,7 +74,9 @@ Attributes:
 - `[Label]`: optional card title, preferred for new Markdown
 - `title`: optional card title retained for existing Markdown
 - `eyebrow`: optional small label above the title
-- `icon`: local icon reference such as `@fa-duotone/bolt`, or a comma-separated list such as `@fa-brands/debian, @fa-brands/ubuntu` to show several icons in a row
+- `icon`: local icon reference such as `@fa-duotone/bolt`, or a comma-separated list such as `@fa-brands/debian, @fa-brands/ubuntu` to show several icons in a row. Each entry can carry its own palette: `@fa-brands/debian palette=debian, @fa-brands/ubuntu palette=ubuntu` (see [Palettes](/configuration/palettes))
+- `palette`: colour palette for the card's surface, border, links and icons
+- `iconPalette`: palette for the card's icons that set none
 - `href`: optional card link
 - `linkScope`: `full` or `title`
 - `newTab`: open `href` in a new tab when `true`

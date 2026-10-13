@@ -112,6 +112,11 @@
       "name": "section",
       "attributes": [
         {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "theme",
           "type": "string",
           "themeGroup": "section"
@@ -207,6 +212,11 @@
           "format": "icon"
         },
         {
+          "name": "iconPalette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "iconPosition",
           "default": "left",
           "type": "enum",
@@ -223,6 +233,11 @@
             "true",
             "false"
           ]
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
         },
         {
           "name": "size",
@@ -471,6 +486,16 @@
           "format": "icon"
         },
         {
+          "name": "iconPalette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "theme",
           "type": "string",
           "themeGroup": "callout"
@@ -513,6 +538,11 @@
             "true",
             "false"
           ]
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
         },
         {
           "name": "theme",
@@ -597,6 +627,11 @@
           ]
         },
         {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "stepTheme",
           "type": "string",
           "themeGroup": "card"
@@ -649,6 +684,11 @@
           "type": "url"
         },
         {
+          "name": "iconPalette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "linkScope",
           "default": "section",
           "type": "enum",
@@ -666,6 +706,11 @@
             "true",
             "false"
           ]
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
         },
         {
           "name": "theme",
@@ -699,6 +744,11 @@
           "format": "icon"
         },
         {
+          "name": "iconPalette",
+          "type": "string",
+          "format": "palette"
+        },
+        {
           "name": "linkScope",
           "default": "full",
           "type": "enum",
@@ -715,6 +765,11 @@
             "true",
             "false"
           ]
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
         },
         {
           "name": "theme",
@@ -742,6 +797,11 @@
         {
           "name": "default",
           "type": "string"
+        },
+        {
+          "name": "palette",
+          "type": "string",
+          "format": "palette"
         },
         {
           "name": "tabTheme",
