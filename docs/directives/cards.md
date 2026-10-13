@@ -57,6 +57,8 @@ Defaults:
 
 Invalid columns fall back to `3` and produce a non-fatal diagnostic where diagnostics are available.
 
+`columns` is a maximum. The grid fits as many columns as its own width allows, up to that number, keeping each card at least 14rem wide. So `columns="4"` shows four cards across in a wide layout, steps down to three or two in a narrower content column or sidebar, and one on a phone. It responds to the space the grid actually has, not the viewport.
+
 Cards-level `href`, `linkScope`, and `newTab` can provide defaults for child cards. Supported `linkScope` values are:
 
 - `section`: one overlay link covers the whole cards section; child card link overrides are ignored
@@ -270,7 +272,7 @@ Use rich Markdown directives, icon packs, buttons, cards, and clean autocomplete
 
 ## Dense Grids
 
-Use `columns="auto"` when cards have uneven lengths or the viewport width is unpredictable:
+Use `columns="auto"` when you want as many 16rem columns as fit, with no maximum:
 
 ```md
 :::cards{

@@ -104,7 +104,10 @@ function createColumnDirective(name: GridDirectiveName, columns: 2 | 3): LayoutD
         theme.hookClassName,
         theme.modifierClassName,
         theme.classes,
-        columns === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3',
+        // Columns collapse on the grid's own width, keeping each at least 12rem.
+        columns === 2
+          ? 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(12rem,calc((100%_-_2rem)/2))),1fr))]'
+          : 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(12rem,calc((100%_-_2*2rem)/3))),1fr))]',
       )
 
       const hasExplicitCells = node.children.some(

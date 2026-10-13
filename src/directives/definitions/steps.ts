@@ -155,12 +155,13 @@ function groupStepChildren(
     variant === 'cards'
       ? (group: ElementContent[], index: number) => makeCardStep(group, index, numbered, stepTheme)
       : makeStep
+  // Same container-width columns as `:::cards` (see cardGridColumnClasses).
   const gridColumnsClassNames: Record<StepCardColumns, string> = {
     '1': 'grid-cols-1',
-    '2': 'grid-cols-1 md:grid-cols-2',
-    '3': 'grid-cols-1 md:grid-cols-3',
-    '4': 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4',
-    auto: 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]',
+    '2': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2rem)/2))),1fr))]',
+    '3': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2*2rem)/3))),1fr))]',
+    '4': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_3*2rem)/4))),1fr))]',
+    auto: 'grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]',
   }
 
   for (const child of children) {

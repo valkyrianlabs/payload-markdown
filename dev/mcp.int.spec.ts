@@ -209,7 +209,7 @@ describe('validateMarkdown', () => {
     expect(theme.diagnostics[0]).toMatchObject({ severity: 'warning' })
 
     // Unloaded code languages fall back to plain text: informational, still ok.
-    const code = await validateMarkdown('```bash\nls\n```', { payload })
+    const code = await validateMarkdown('```go\nvar x int\n```', { payload })
     expect(code.ok).toBe(true)
     expect(code.counts.info).toBe(1)
   })
