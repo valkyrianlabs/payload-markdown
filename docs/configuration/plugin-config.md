@@ -228,6 +228,7 @@ payloadMarkdown({
 payloadMarkdown({
   config: {
     className: '[&_li::marker]:text-cyan-200/90',
+    colorScheme: 'auto',
     enableGutter: true,
     mutedHeadings: true,
     size: 'lg',
@@ -237,7 +238,7 @@ payloadMarkdown({
 })
 ```
 
-Supported variants are `blog`, `docs`, `compact`, and `unstyled`. Supported sizes are `lg`, `md`, and `sm`.
+Supported variants are `blog`, `docs`, `compact`, and `unstyled`. Supported sizes are `lg`, `md`, and `sm`. `colorScheme` is `auto` (default), `light`, or `dark`; see [Light And Dark](/configuration/styling#light-and-dark).
 
 ## Split Field And Block Config
 
