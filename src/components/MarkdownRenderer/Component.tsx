@@ -1,15 +1,29 @@
 import { randomUUID } from 'node:crypto'
+import { extendTailwindMerge } from 'tailwind-merge'
 
-import type { MarkdownRendererProps, MarkdownSize, MarkdownVariant } from '../../types/core.js'
+import type {
+  MarkdownColorScheme,
+  MarkdownRendererProps,
+  MarkdownSize,
+  MarkdownVariant,
+} from '../../types/core.js'
 
 import { resolveFullBleedCode } from '../../core/codeConfig.js'
 import { renderMarkdownDocument } from '../../core/renderMarkdown.js'
 import { resolveMarkdownRenderConfig } from '../../runtime/index.js'
-import { DIRECTIVE_SURFACE_RENDERER_PRE_CLASS } from '../../styles/directiveSurface.js'
+import {
+  DIRECTIVE_SURFACE_RENDERER_PRE_CLASS,
+  PMD_COLOR_SCHEME_CLASS_NAMES,
+} from '../../styles/directiveSurface.js'
 import { MarkdownRendererClient } from './Component.client.js'
 import './index.css'
 
 const cx = (...values: Array<false | null | string | undefined>) => values.filter(Boolean).join(' ')
+
+// In Tailwind v4 a font-size utility leaves `leading-*` in place (line height
+// goes through --tw-leading), so a later `prose-p:text-[…]` must not drop an
+// earlier `prose-p:leading-7` the way tailwind-merge's v3 rule would.
+const twMerge = extendTailwindMerge({ override: { conflictingClassGroups: { 'font-size': [] } } })
 
 // Colors come from Tailwind Typography's --tw-prose-* variables (they follow
 // prose-invert), never from app tokens such as `text-foreground`, which only
@@ -17,7 +31,7 @@ const cx = (...values: Array<false | null | string | undefined>) => values.filte
 // `:not(:where(.not-prose_*))` so they stay out of directive chrome (TOC lists)
 // without raising specificity above `[&_ul]`.
 const MARKDOWN_BASE_CLASS_NAME = cx(
-  'prose prose-neutral w-full max-w-none mx-0 p-0 dark:prose-invert',
+  'prose prose-neutral w-full max-w-none mx-0 p-0',
 
   // headings
   'prose-headings:font-semibold prose-headings:tracking-tight',
@@ -28,7 +42,9 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   'prose-p:leading-7 prose-li:leading-7',
 
   // links
-  'prose-a:font-medium prose-a:text-cyan-400 prose-a:transition-colors hover:prose-a:text-cyan-300',
+  'prose-a:font-medium prose-a:transition-colors',
+  'prose-a:text-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]',
+  'hover:prose-a:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))]',
 
   // hr
   'prose-hr:my-8',
@@ -77,7 +93,8 @@ const MARKDOWN_BASE_CLASS_NAME = cx(
   '[&_.footnotes]:mt-12 [&_.footnotes]:border-t [&_.footnotes]:border-(--tw-prose-hr) [&_.footnotes]:pt-6 [&_.footnotes]:text-[0.9rem]',
 
   // inline code
-  'prose-code:rounded prose-code:bg-black/5 prose-code:px-1 prose-code:py-0.5 prose-code:text-[0.9em] prose-code:font-medium dark:prose-code:bg-white/10',
+  'prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-[0.9em] prose-code:font-medium',
+  'prose-code:bg-[color:color-mix(in_oklab,rgb(255_255_255/0.1)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.05))]',
   'prose-code:before:content-none prose-code:after:content-none',
   '[&_:not(pre)>code]:[overflow-wrap:anywhere]',
 
@@ -121,6 +138,14 @@ const MARKDOWN_VARIANT_CLASS_NAMES: Record<MarkdownVariant, string> = {
   unstyled: '',
 }
 
+// Typography's own palette has to be inverted explicitly; everything else
+// follows --pmd-scheme-dark from PMD_COLOR_SCHEME_CLASS_NAMES.
+const MARKDOWN_COLOR_SCHEME_CLASS_NAMES: Record<MarkdownColorScheme, string> = {
+  auto: cx(PMD_COLOR_SCHEME_CLASS_NAMES.auto, 'dark:prose-invert'),
+  dark: cx(PMD_COLOR_SCHEME_CLASS_NAMES.dark, 'prose-invert'),
+  light: PMD_COLOR_SCHEME_CLASS_NAMES.light,
+}
+
 const MARKDOWN_SIZE_CLASS_NAMES: Record<MarkdownSize, string> = {
   lg: 'prose-lg',
   md: 'prose-base',
@@ -131,27 +156,40 @@ function buildWrapperClassName({
   enableGutter,
   wrapperClassName,
 }: Pick<MarkdownRendererProps, 'enableGutter' | 'wrapperClassName'>): string {
-  return cx(
+  return twMerge(
     'w-full mx-0',
     enableGutter && 'px-5 sm:px-6 lg:px-8',
     wrapperClassName,
   )
 }
 
+function resolveColorScheme(value: unknown): MarkdownColorScheme {
+  return value === 'dark' || value === 'light' ? value : 'auto'
+}
+
 function buildMarkdownClassName({
   className,
+  colorScheme,
   fullBleedCode,
   mutedHeadings,
   size,
   variant,
 }: Pick<
   MarkdownRendererProps,
-  'className' | 'fullBleedCode' | 'mutedHeadings' | 'size' | 'variant'
+  'className' | 'colorScheme' | 'fullBleedCode' | 'mutedHeadings' | 'size' | 'variant'
 >): string {
-  if (variant === 'unstyled') return className ?? ''
+  const scheme = resolveColorScheme(colorScheme)
 
-  return cx(
+  // Unstyled output skips the typography classes, but directives still need
+  // the colour scheme to pick their palette.
+  if (variant === 'unstyled') return twMerge(PMD_COLOR_SCHEME_CLASS_NAMES[scheme], className)
+
+  // twMerge drops a default when the consumer's className sets the same
+  // utility (`prose-a:font-bold` replaces `prose-a:font-medium`): equal
+  // specificity would otherwise leave the winner to stylesheet order.
+  return twMerge(
     MARKDOWN_BASE_CLASS_NAME,
+    MARKDOWN_COLOR_SCHEME_CLASS_NAMES[scheme],
     MARKDOWN_VARIANT_CLASS_NAMES[variant ?? 'blog'],
     MARKDOWN_SIZE_CLASS_NAMES[size ?? 'lg'],
     mutedHeadings && 'prose-headings:text-(--tw-prose-headings)/90',
@@ -180,6 +218,7 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
 
   const {
     className,
+    colorScheme,
     enableGutter = false,
     mutedHeadings = false,
     size = 'lg',
@@ -201,6 +240,7 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
 
   const resolvedMarkdownClassName = buildMarkdownClassName({
     className,
+    colorScheme,
     fullBleedCode,
     mutedHeadings,
     size,

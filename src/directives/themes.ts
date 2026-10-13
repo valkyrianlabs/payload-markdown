@@ -38,27 +38,27 @@ export const DEFAULT_CARD_THEMES: MarkdownDirectiveTheme[] = [
   {
     name: 'cyan',
     classes:
-      `group rounded-2xl border border-cyan-400/15 bg-cyan-950/25 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
+      `group rounded-2xl border border-[color:color-mix(in_oklab,rgb(34_211_238/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(8_145_178/0.2))] bg-[color:color-mix(in_oklab,rgb(8_51_68/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(6_182_212/0.06))] p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'violet',
     classes:
-      `group rounded-2xl border border-violet-400/15 bg-violet-950/25 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
+      `group rounded-2xl border border-[color:color-mix(in_oklab,rgb(167_139_250/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(124_58_237/0.2))] bg-[color:color-mix(in_oklab,rgb(46_16_101/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(139_92_246/0.06))] p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'emerald',
     classes:
-      `group rounded-2xl border border-emerald-400/15 bg-emerald-950/25 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
+      `group rounded-2xl border border-[color:color-mix(in_oklab,rgb(52_211_153/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(5_150_105/0.2))] bg-[color:color-mix(in_oklab,rgb(2_44_34/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(16_185_129/0.06))] p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'amber',
     classes:
-      `group rounded-2xl border border-amber-400/15 bg-amber-950/25 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
+      `group rounded-2xl border border-[color:color-mix(in_oklab,rgb(251_191_36/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(217_119_6/0.2))] bg-[color:color-mix(in_oklab,rgb(69_26_3/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(245_158_11/0.06))] p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
   {
     name: 'danger',
     classes:
-      `group rounded-2xl border border-red-400/15 bg-red-950/25 p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
+      `group rounded-2xl border border-[color:color-mix(in_oklab,rgb(248_113_113/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(220_38_38/0.2))] bg-[color:color-mix(in_oklab,rgb(69_10_10/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(239_68_68/0.06))] p-5 ${DIRECTIVE_SURFACE_SOFT_SHADOW_CLASS}`,
   },
 ]
 
@@ -81,7 +81,7 @@ export const DEFAULT_STEPS_THEMES: MarkdownDirectiveTheme[] = [
   },
   {
     name: 'cyan',
-    classes: `my-8 rounded-2xl border border-cyan-400/15 bg-cyan-950/20 p-5`,
+    classes: `my-8 rounded-2xl border border-[color:color-mix(in_oklab,rgb(34_211_238/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(8_145_178/0.2))] bg-[color:color-mix(in_oklab,rgb(8_51_68/0.2)_calc(var(--pmd-scheme-dark,1)*100%),rgb(6_182_212/0.05))] p-5`,
   },
 ]
 

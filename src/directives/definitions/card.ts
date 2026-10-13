@@ -13,7 +13,7 @@ export const CARD_BODY_CLASS_NAMES = DIRECTIVE_BODY_CLASS
 export const CARD_TITLE_CLASS_NAMES =
   'not-prose mb-3 text-lg font-semibold tracking-tight text-(--tw-prose-headings)'
 const CARD_TITLE_LINK_CLASS_NAMES =
-  'rounded-sm transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300'
+  'rounded-sm transition-colors hover:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]'
 export const CARD_LINK_SCOPES = ['full', 'title'] as const
 export const DEFAULT_CARD_LINK_SCOPE = 'full'
 
@@ -93,7 +93,7 @@ function makeFullCardLink(href: string, title: string | undefined, newTab: boole
       ...getLinkProperties(href, newTab),
       ariaLabel: title ? `Open ${title}` : 'Open card',
       className: [
-        'not-prose absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        'not-prose absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]',
       ],
       dataDirectiveLink: 'card',
     },
@@ -128,7 +128,9 @@ function makeEyebrow(eyebrow: string): Element {
     type: 'element',
     children: [{ type: 'text', value: eyebrow }],
     properties: {
-      className: ['not-prose mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-(--tw-prose-captions)'],
+      // Muted relative to the body text rather than a fixed grey, so small
+      // uppercase labels keep AA contrast on tinted or custom surfaces.
+      className: ['not-prose mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-(--tw-prose-body)/80'],
       dataDirectiveEyebrow: 'card',
     },
     tagName: 'p',
@@ -168,7 +170,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     node.properties.className = mergeClassNames(
       'my-6',
       href && linkScope === 'full'
-        ? 'relative cursor-pointer transition-colors hover:border-white/15 [&>[data-directive-title]]:transition-colors hover:[&>[data-directive-title]]:text-cyan-300 [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
+        ? 'relative cursor-pointer transition-colors hover:border-[color:color-mix(in_oklab,rgb(255_255_255/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] [&>[data-directive-title]]:transition-colors hover:[&>[data-directive-title]]:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))] [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
         : undefined,
       theme.hookClassName,
       theme.modifierClassName,

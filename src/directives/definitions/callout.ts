@@ -20,17 +20,21 @@ export type CalloutVariant = (typeof CALLOUT_VARIANTS)[number]
 
 // The tint is a background-image so it layers over the theme's background
 // color instead of competing with it, and the ring composes with the theme's
-// shadow. Titles and icons carry the variant accent.
+// shadow. Text, title and ring colours follow the colour scheme through
+// `--pmd-scheme-dark` (see styles/directiveSurface.ts).
 const calloutVariantClasses: Record<CalloutVariant, string> = {
   danger:
-    'bg-linear-to-r from-red-500/10 to-red-500/10 inset-ring inset-ring-red-400/15 text-red-50 [&>[data-directive-title]]:text-red-300',
-  info: 'bg-linear-to-r from-sky-500/10 to-sky-500/10 inset-ring inset-ring-sky-400/15 text-sky-50 [&>[data-directive-title]]:text-sky-300',
-  note: 'bg-linear-to-r from-slate-500/10 to-slate-500/10 inset-ring inset-ring-slate-400/15 text-slate-50 [&>[data-directive-title]]:text-slate-300',
+    'bg-linear-to-r from-red-500/10 to-red-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(248_113_113/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(220_38_38/0.2))] text-[color:color-mix(in_oklab,rgb(254_242_242)_calc(var(--pmd-scheme-dark,1)*100%),rgb(69_10_10))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(252_165_165)_calc(var(--pmd-scheme-dark,1)*100%),rgb(185_28_28))]',
+  info:
+    'bg-linear-to-r from-sky-500/10 to-sky-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(56_189_248/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(2_132_199/0.2))] text-[color:color-mix(in_oklab,rgb(240_249_255)_calc(var(--pmd-scheme-dark,1)*100%),rgb(8_47_73))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(125_211_252)_calc(var(--pmd-scheme-dark,1)*100%),rgb(3_105_161))]',
+  note:
+    'bg-linear-to-r from-slate-500/10 to-slate-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(148_163_184/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(100_116_139/0.2))] text-[color:color-mix(in_oklab,rgb(248_250_252)_calc(var(--pmd-scheme-dark,1)*100%),rgb(15_23_42))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(203_213_225)_calc(var(--pmd-scheme-dark,1)*100%),rgb(71_85_105))]',
   success:
-    'bg-linear-to-r from-emerald-500/10 to-emerald-500/10 inset-ring inset-ring-emerald-400/15 text-emerald-50 [&>[data-directive-title]]:text-emerald-300',
-  tip: 'bg-linear-to-r from-violet-500/10 to-violet-500/10 inset-ring inset-ring-violet-400/15 text-violet-50 [&>[data-directive-title]]:text-violet-300',
+    'bg-linear-to-r from-emerald-500/10 to-emerald-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(52_211_153/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(5_150_105/0.2))] text-[color:color-mix(in_oklab,rgb(236_253_245)_calc(var(--pmd-scheme-dark,1)*100%),rgb(2_44_34))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(110_231_183)_calc(var(--pmd-scheme-dark,1)*100%),rgb(4_120_87))]',
+  tip:
+    'bg-linear-to-r from-violet-500/10 to-violet-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(167_139_250/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(124_58_237/0.2))] text-[color:color-mix(in_oklab,rgb(245_243_255)_calc(var(--pmd-scheme-dark,1)*100%),rgb(46_16_101))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(196_181_253)_calc(var(--pmd-scheme-dark,1)*100%),rgb(109_40_217))]',
   warning:
-    'bg-linear-to-r from-amber-500/10 to-amber-500/10 inset-ring inset-ring-amber-400/15 text-amber-50 [&>[data-directive-title]]:text-amber-300',
+    'bg-linear-to-r from-amber-500/10 to-amber-500/10 inset-ring inset-ring-[color:color-mix(in_oklab,rgb(251_191_36/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(217_119_6/0.2))] text-[color:color-mix(in_oklab,rgb(255_251_235)_calc(var(--pmd-scheme-dark,1)*100%),rgb(69_26_3))] [&>[data-directive-title]]:text-[color:color-mix(in_oklab,rgb(252_211_77)_calc(var(--pmd-scheme-dark,1)*100%),rgb(146_64_14))]',
 }
 
 function isCalloutVariant(value: unknown): value is CalloutVariant {

@@ -173,6 +173,11 @@ export type MarkdownVariant = 'blog' | 'compact' | 'docs' | 'unstyled'
 export type MarkdownSize = 'lg' | 'md' | 'sm'
 
 /**
+ * Colour scheme for rendered markdown: follow the host's dark mode, or pin it.
+ */
+export type MarkdownColorScheme = 'auto' | 'dark' | 'light'
+
+/**
  * Core markdown presentation configuration.
  *
  * This type represents the configurable styling and behavior layer that can be
@@ -214,6 +219,16 @@ export type MarkdownConfig = {
    * Optional content rendered above the markdown body.
    */
   lead?: ReactNode
+
+  /**
+   * Colour scheme for the typography and directive defaults.
+   *
+   * - `'auto'` (default) follows the host's Tailwind `dark:` variant, so it
+   *   tracks a class- or attribute-based theme switcher when the host declares
+   *   one with `@custom-variant dark`, and the OS preference otherwise.
+   * - `'light'` / `'dark'` pin the palette, e.g. for a site that is always dark.
+   */
+  colorScheme?: MarkdownColorScheme
 
   /**
    * Whether heading colors should be slightly muted.

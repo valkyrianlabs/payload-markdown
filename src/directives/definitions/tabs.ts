@@ -101,7 +101,9 @@ function makeTabTrigger(tab: TabModel, active: boolean): Element {
   const className = [
     'vl-md-tabs-trigger',
     active ? 'vl-md-tabs-trigger--active' : undefined,
-    'rounded-lg px-3 py-2 text-sm font-medium text-current/65 transition-colors hover:bg-white/5 hover:text-current aria-selected:bg-white/10 aria-selected:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
+    // Inactive labels stay at 75% of the text colour: enough for AA contrast in
+    // both colour schemes while still reading as secondary.
+    'rounded-lg px-3 py-2 text-sm font-medium text-current/75 transition-colors hover:bg-[color:color-mix(in_oklab,rgb(255_255_255/0.05)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.04))] hover:text-current aria-selected:bg-[color:color-mix(in_oklab,rgb(255_255_255/0.1)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.06))] aria-selected:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_oklab,rgb(255_255_255/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
   ].filter((value): value is string => Boolean(value))
 
   return {
@@ -224,7 +226,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
           type: 'element',
           children: [{ type: 'text', value: 'No tabs configured.' }],
           properties: {
-            className: ['not-prose text-sm text-(--tw-prose-captions)'],
+            className: ['not-prose text-sm text-(--tw-prose-body)/80'],
           },
           tagName: 'p',
         },

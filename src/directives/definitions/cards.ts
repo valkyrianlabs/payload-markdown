@@ -86,7 +86,7 @@ function makeSectionLink(href: string, newTab: boolean): Element {
       ...getLinkProperties(href, newTab),
       ariaLabel: 'Open card section',
       className: [
-        'not-prose absolute -inset-2 z-10 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        'not-prose absolute -inset-2 z-10 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]',
       ],
       dataDirectiveLink: 'cards',
     },
@@ -169,7 +169,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       // Spacing lives in the theme; the base only sets what every grid needs.
       'grid [&>article]:my-0',
       href && linkScope === 'section'
-        ? 'relative cursor-pointer [&>article]:transition-colors hover:[&>article]:border-white/15 [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
+        ? 'relative cursor-pointer [&>article]:transition-colors hover:[&>article]:border-[color:color-mix(in_oklab,rgb(255_255_255/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
         : undefined,
       theme.hookClassName,
       theme.modifierClassName,

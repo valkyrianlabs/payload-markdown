@@ -35,10 +35,10 @@ export const tocDirective: LayoutDirectiveDefinition = {
     node.properties.className = mergeClassNames(
       'not-prose',
       // Title reads as a label; entries indent by heading level.
-      '[&>p:first-child]:mb-2 [&>p:first-child]:text-xs [&>p:first-child]:font-semibold [&>p:first-child]:uppercase [&>p:first-child]:tracking-[0.18em] [&>p:first-child]:text-(--tw-prose-captions)',
+      '[&>p:first-child]:mb-2 [&>p:first-child]:text-xs [&>p:first-child]:font-semibold [&>p:first-child]:uppercase [&>p:first-child]:tracking-[0.18em] [&>p:first-child]:text-(--tw-prose-body)/80',
       '[&_ol]:m-0 [&_ol]:list-none [&_ol]:p-0 [&_li+li]:mt-1',
       "[&_li[data-toc-level='1']]:pl-4 [&_li[data-toc-level='2']]:pl-8 [&_li[data-toc-level='3']]:pl-12 [&_li[data-toc-level='4']]:pl-16 [&_li[data-toc-level='5']]:pl-20",
-      '[&_a]:text-(--tw-prose-body) [&_a]:transition-colors [&_a:hover]:text-cyan-300',
+      '[&_a]:text-(--tw-prose-body) [&_a]:transition-colors [&_a:hover]:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))]',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,

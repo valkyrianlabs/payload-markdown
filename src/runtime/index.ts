@@ -294,6 +294,7 @@ export function mergeMarkdownConfigs(
     if (config.lead !== undefined) merged.lead = config.lead
     if (config.fullBleedCode !== undefined) merged.fullBleedCode = config.fullBleedCode
     if (config.mutedHeadings !== undefined) merged.mutedHeadings = config.mutedHeadings
+    if (config.colorScheme !== undefined) merged.colorScheme = config.colorScheme
     if (config.enableGutter !== undefined) merged.enableGutter = config.enableGutter
 
     if (config.options) {
@@ -416,6 +417,7 @@ export function applyMarkdownOverrides(
   if (overrides.size !== undefined) next.size = overrides.size
   if (overrides.enableGutter !== undefined) next.enableGutter = overrides.enableGutter
   if (overrides.mutedHeadings !== undefined) next.mutedHeadings = overrides.mutedHeadings
+  if (overrides.colorScheme !== undefined) next.colorScheme = overrides.colorScheme
   if (overrides.fullBleedCode !== undefined) next.fullBleedCode = overrides.fullBleedCode
 
   // Code options: fold the inherited legacy `options.*` and `code` together,

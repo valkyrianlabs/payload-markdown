@@ -106,7 +106,7 @@ function makeCardStep(
                   children: [{ type: 'text' as const, value: String(index + 1) }],
                   properties: {
                     className: [
-                      'pmd-step-number not-prose mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-current/25 bg-black/10 text-sm font-semibold dark:bg-white/10',
+                      'pmd-step-number not-prose mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-current/25 bg-[color:color-mix(in_oklab,rgb(255_255_255/0.1)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.05))] text-sm font-semibold',
                     ],
                     dataStepNumber: String(index + 1),
                   },

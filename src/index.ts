@@ -277,6 +277,7 @@ export {
 export type { MarkdownFieldOptions, PayloadMarkdownConfig }
 export type {
   MarkdownCodeConfig,
+  MarkdownColorScheme,
   MarkdownDirectiveTheme,
   MarkdownDirectiveThemeGroup,
   MarkdownDirectiveThemes,

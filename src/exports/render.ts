@@ -27,10 +27,15 @@ export {
   getDirectiveSpec,
 } from '../directives/spec.js'
 export { renderMarkdown, type RenderMarkdownConfig } from '../render/renderMarkdown.js'
+export { PMD_COLOR_SCHEME_CLASS_NAMES } from '../styles/directiveSurface.js'
 export {
   PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,
   type PayloadMarkdownResolvedSettings,
   type PayloadMarkdownSettingsSource,
   readPayloadMarkdownSettings,
 } from '../runtime/index.js'
-export type { MarkdownRenderConfig, RenderMarkdownResult } from '../types/core.js'
+export type {
+  MarkdownColorScheme,
+  MarkdownRenderConfig,
+  RenderMarkdownResult,
+} from '../types/core.js'

@@ -1,5 +1,13 @@
+// Light/dark values mix on --pmd-scheme-dark (1 = dark, 0 = light), set on the
+// renderer root; output without the renderer keeps the dark palette.
+@function scheme($dark, $light) {
+  @return color-mix(in oklab, #{$dark} calc(var(--pmd-scheme-dark, 1) * 100%), #{$light});
+}
+
+// Code blocks keep their Shiki theme's dark surface in both colour schemes. A
+// consumer --pmd-code-bg wins over the darker well used inside directives.
 pre.shiki.md-code-enhanced {
-  background: var(--pmd-code-bg, #18191c);
+  background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
   padding: 0;
   // The code element scrolls; the pre stays put so the copy button and the
   // line-number gutter don't scroll away with long lines.
@@ -51,7 +59,7 @@ pre.shiki.md-code-enhanced {
         z-index: 1;
         display: inline-block;
         margin-right: 0.75rem;
-        background: var(--pmd-code-bg, #18191c);
+        background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
         text-align: right;
         color: #7c8596;
         opacity: 0.8;
@@ -119,11 +127,12 @@ pre.shiki.md-code-enhanced {
 }
 
 .pmd-button {
-  --pmd-button-bg: rgb(8 145 178);
-  --pmd-button-border: rgb(8 145 178);
+  // cyan-700 keeps white labels at AA contrast (5.4:1); hover darkens.
+  --pmd-button-bg: rgb(14 116 144);
+  --pmd-button-border: rgb(14 116 144);
   --pmd-button-color: rgb(255 255 255);
-  --pmd-button-hover-bg: rgb(6 182 212);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-hover-bg: rgb(21 94 117);
+  --pmd-button-hover-border: rgb(21 94 117);
 
   display: inline-flex;
   align-items: center;
@@ -150,39 +159,39 @@ pre.shiki.md-code-enhanced {
   }
 
   &:focus-visible {
-    outline: 2px solid rgb(103 232 249);
+    outline: 2px solid var(--pmd-accent, #{scheme(rgb(103 232 249), rgb(14 116 144))});
     outline-offset: 2px;
   }
 }
 
 .pmd-button--secondary {
-  --pmd-button-bg: rgb(255 255 255 / 0.08);
-  --pmd-button-border: rgb(255 255 255 / 0.14);
-  --pmd-button-color: rgb(244 244 245);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.12);
-  --pmd-button-hover-border: rgb(255 255 255 / 0.2);
+  --pmd-button-bg: #{scheme(rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.04))};
+  --pmd-button-border: #{scheme(rgb(255 255 255 / 0.14), rgb(0 0 0 / 0.14))};
+  --pmd-button-color: #{scheme(rgb(244 244 245), rgb(24 24 27))};
+  --pmd-button-hover-bg: #{scheme(rgb(255 255 255 / 0.12), rgb(0 0 0 / 0.08))};
+  --pmd-button-hover-border: #{scheme(rgb(255 255 255 / 0.2), rgb(0 0 0 / 0.22))};
 }
 
 .pmd-button--outline {
   --pmd-button-bg: transparent;
-  --pmd-button-border: rgb(8 145 178 / 0.65);
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(8 145 178 / 0.12);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-border: #{scheme(rgb(8 145 178 / 0.65), rgb(14 116 144 / 0.5))};
+  --pmd-button-color: #{scheme(rgb(103 232 249), rgb(14 116 144))};
+  --pmd-button-hover-bg: #{scheme(rgb(8 145 178 / 0.12), rgb(14 116 144 / 0.08))};
+  --pmd-button-hover-border: #{scheme(rgb(6 182 212), rgb(14 116 144))};
 }
 
 .pmd-button--ghost {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.08);
+  --pmd-button-color: #{scheme(rgb(103 232 249), rgb(14 116 144))};
+  --pmd-button-hover-bg: #{scheme(rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.05))};
   --pmd-button-hover-border: transparent;
 }
 
 .pmd-button--link {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
+  --pmd-button-color: #{scheme(rgb(103 232 249), rgb(14 116 144))};
   --pmd-button-hover-bg: transparent;
   --pmd-button-hover-border: transparent;
 

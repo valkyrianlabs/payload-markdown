@@ -1523,8 +1523,8 @@ Read the docs.
     expect(result.html).toContain('data-directive-eyebrow="card"')
     expect(result.html).toContain('data-link-scope="full"')
     expect(result.html).toContain('data-new-tab="false"')
-    expect(result.html).toContain(
-      '<a href="/docs" aria-label="Open Docs Mode" class="not-prose absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="card"></a>',
+    expect(result.html).toMatch(
+      /<a href="\/docs" aria-label="Open Docs Mode" class="not-prose absolute inset-0 z-10 rounded-\[inherit\] [^"]*focus-visible:ring-2[^"]*" data-directive-link="card"><\/a>/,
     )
     expect(result.html).toContain('<h3 class="not-prose mb-3 text-lg font-semibold tracking-tight text-(--tw-prose-headings)" data-directive-title="card">Docs Mode</h3>')
     expect(result.html).toContain('Read the docs.')
@@ -1548,8 +1548,8 @@ Second body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('data-link-scope="section"')
     expect(result.html).toContain('data-new-tab="true"')
-    expect(result.html).toContain(
-      '<a href="/overview" rel="noopener noreferrer" target="_blank" aria-label="Open card section" class="not-prose absolute -inset-2 z-10 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="cards"></a>',
+    expect(result.html).toMatch(
+      /<a href="\/overview" rel="noopener noreferrer" target="_blank" aria-label="Open card section" class="not-prose absolute -inset-2 z-10 rounded-3xl [^"]*focus-visible:ring-2[^"]*" data-directive-link="cards"><\/a>/,
     )
     expect(result.html).not.toContain('data-directive-link="card"')
   })
@@ -1572,7 +1572,7 @@ Override body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('href="/docs" rel="noopener noreferrer" target="_blank"')
     expect(result.html).toContain('aria-label="Open Inherited"')
-    expect(result.html).toContain('<a href="/custom" class="rounded-sm transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Override</a>')
+    expect(result.html).toMatch(/<a href="\/custom" class="rounded-sm transition-colors [^"]*">Override<\/a>/)
     expect(result.html).not.toContain('href="/custom" rel="noopener noreferrer" target="_blank"')
   })
 
@@ -1588,7 +1588,7 @@ Title body.
 `)
 
     expect(result.warnings).toEqual([])
-    expect(result.html).toContain('<a href="/titles" class="rounded-sm transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">Title Link</a>')
+    expect(result.html).toMatch(/<a href="\/titles" class="rounded-sm transition-colors [^"]*">Title Link<\/a>/)
     expect(result.html).not.toContain('data-directive-link="card"')
     expect(result.html).not.toContain('data-directive-link="cards"')
   })
@@ -1619,8 +1619,8 @@ External card body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('data-link-scope="title"')
     expect(result.html).toContain('data-new-tab="true"')
-    expect(result.html).toContain(
-      '<a href="https://example.com" rel="noopener noreferrer" target="_blank" class="rounded-sm transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">External</a>',
+    expect(result.html).toMatch(
+      /<a href="https:\/\/example\.com" rel="noopener noreferrer" target="_blank" class="rounded-sm transition-colors [^"]*">External<\/a>/,
     )
     expect(result.html).not.toContain('data-directive-link="card"')
   })

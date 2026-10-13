@@ -1,5 +1,5 @@
 pre.shiki.md-code-enhanced {
-  background: var(--pmd-code-bg, #18191c);
+  background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
   padding: 0;
   overflow: hidden;
   position: relative;
@@ -42,7 +42,7 @@ pre.shiki.md-code-enhanced code span.md-line .md-line-number {
   z-index: 1;
   display: inline-block;
   margin-right: 0.75rem;
-  background: var(--pmd-code-bg, #18191c);
+  background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
   text-align: right;
   color: #7c8596;
   opacity: 0.8;
@@ -97,11 +97,11 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   }
 }
 .pmd-button {
-  --pmd-button-bg: rgb(8 145 178);
-  --pmd-button-border: rgb(8 145 178);
+  --pmd-button-bg: rgb(14 116 144);
+  --pmd-button-border: rgb(14 116 144);
   --pmd-button-color: rgb(255 255 255);
-  --pmd-button-hover-bg: rgb(6 182 212);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-hover-bg: rgb(21 94 117);
+  --pmd-button-hover-border: rgb(21 94 117);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -122,38 +122,38 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   color: var(--pmd-button-color);
 }
 .pmd-button:focus-visible {
-  outline: 2px solid rgb(103, 232, 249);
+  outline: 2px solid var(--pmd-accent, color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144)));
   outline-offset: 2px;
 }
 
 .pmd-button--secondary {
-  --pmd-button-bg: rgb(255 255 255 / 0.08);
-  --pmd-button-border: rgb(255 255 255 / 0.14);
-  --pmd-button-color: rgb(244 244 245);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.12);
-  --pmd-button-hover-border: rgb(255 255 255 / 0.2);
+  --pmd-button-bg: color-mix(in oklab, rgba(255, 255, 255, 0.08) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.04));
+  --pmd-button-border: color-mix(in oklab, rgba(255, 255, 255, 0.14) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.14));
+  --pmd-button-color: color-mix(in oklab, rgb(244, 244, 245) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(24, 24, 27));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(255, 255, 255, 0.12) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.08));
+  --pmd-button-hover-border: color-mix(in oklab, rgba(255, 255, 255, 0.2) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.22));
 }
 
 .pmd-button--outline {
   --pmd-button-bg: transparent;
-  --pmd-button-border: rgb(8 145 178 / 0.65);
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(8 145 178 / 0.12);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-border: color-mix(in oklab, rgba(8, 145, 178, 0.65) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(14, 116, 144, 0.5));
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(8, 145, 178, 0.12) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(14, 116, 144, 0.08));
+  --pmd-button-hover-border: color-mix(in oklab, rgb(6, 182, 212) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
 }
 
 .pmd-button--ghost {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.08);
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(255, 255, 255, 0.08) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.05));
   --pmd-button-hover-border: transparent;
 }
 
 .pmd-button--link {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
   --pmd-button-hover-bg: transparent;
   --pmd-button-hover-border: transparent;
   text-decoration: underline;
