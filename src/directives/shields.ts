@@ -66,8 +66,10 @@ function getRequiredStringAttributes(
   return out
 }
 
+// Shields splits a static badge path on single dashes after decoding it, so a
+// literal dash must use its own escape (`--`), not `%2D`.
 function encodeStaticPathPart(value: string): string {
-  return encodeURIComponent(value).replace(/-/g, '%2D')
+  return encodeURIComponent(value.replace(/-/g, '--'))
 }
 
 function normalizePathValue(value: string): string | undefined {
