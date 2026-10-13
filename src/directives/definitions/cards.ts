@@ -16,12 +16,15 @@ export const FALLBACK_CARDS_LINK_SCOPE = 'card'
 export type CardGridColumns = (typeof CARD_GRID_COLUMNS)[number]
 export type CardsLinkScope = (typeof CARDS_LINK_SCOPES)[number]
 
+// Columns collapse on the grid's own width (not the viewport): up to N
+// columns while each stays at least 14rem wide. The 2rem term covers the
+// widest theme gap, so a theme's gap never costs a column that would fit.
 const cardGridColumnClasses: Record<CardGridColumns, string> = {
   '1': 'grid-cols-1',
-  '2': 'grid-cols-1 md:grid-cols-2',
-  '3': 'grid-cols-1 md:grid-cols-3',
-  '4': 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4',
-  auto: 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]',
+  '2': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2rem)/2))),1fr))]',
+  '3': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2*2rem)/3))),1fr))]',
+  '4': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_3*2rem)/4))),1fr))]',
+  auto: 'grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]',
 }
 
 function isCardGridColumns(value: unknown): value is CardGridColumns {
@@ -83,7 +86,7 @@ function makeSectionLink(href: string, newTab: boolean): Element {
       ...getLinkProperties(href, newTab),
       ariaLabel: 'Open card section',
       className: [
-        'absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        'not-prose absolute -inset-2 z-10 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]',
       ],
       dataDirectiveLink: 'cards',
     },
@@ -163,8 +166,11 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       node.properties.dataNewTab = newTab ? 'true' : 'false'
     }
     node.properties.className = mergeClassNames(
-      'not-prose my-8 grid gap-4',
-      href && linkScope === 'section' ? 'relative cursor-pointer [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20' : undefined,
+      // Spacing lives in the theme; the base only sets what every grid needs.
+      'grid [&>article]:my-0',
+      href && linkScope === 'section'
+        ? 'relative cursor-pointer [&>article]:transition-colors hover:[&>article]:border-[color:color-mix(in_oklab,rgb(255_255_255/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
+        : undefined,
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,

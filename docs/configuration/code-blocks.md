@@ -68,8 +68,10 @@ payloadMarkdown({
 `DEFAULT_CODE_LANGS` includes:
 
 ```text
-cpp, java, js, ts, jsx, tsx, json, python, rust, html, css, yaml, sql
+bash, cpp, java, js, ts, jsx, tsx, json, python, rust, html, css, yaml, sql
 ```
+
+`bash` also highlights fences tagged `sh`, `shell`, `zsh`, or `shellscript`.
 
 Extend it when authors need additional Shiki languages:
 

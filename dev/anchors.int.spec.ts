@@ -39,16 +39,16 @@ describe('CORE-10: heading anchors', () => {
     const ids = headingIds(result.html)
 
     expect(new Set(ids).size).toBe(ids.length)
-    expect(result.html).toContain('<li><a href="#foo">Foo</a></li>')
-    expect(result.html).toContain('<li><a href="#foo-1">Foo</a></li>')
-    expect(result.html).toContain('<li><a href="#foo-1-1">Foo 1</a></li>')
+    expect(result.html).toContain('<li data-toc-level="0"><a href="#foo">Foo</a></li>')
+    expect(result.html).toContain('<li data-toc-level="0"><a href="#foo-1">Foo</a></li>')
+    expect(result.html).toContain('<li data-toc-level="0"><a href="#foo-1-1">Foo 1</a></li>')
   })
 
   it('keeps inline HTML out of TOC text without changing the anchor', async () => {
     const result = await compileMarkdown('## <b>Bold</b> head\n\n:::toc\n:::')
 
     expect(result.html).toContain('<h2 id="b-bold-b-head" data-heading-anchor="b-bold-b-head"><b>Bold</b> head</h2>')
-    expect(result.html).toContain('<li><a href="#b-bold-b-head">Bold head</a></li>')
+    expect(result.html).toContain('<li data-toc-level="0"><a href="#b-bold-b-head">Bold head</a></li>')
     expect(result.html).not.toContain('&#x3C;b>')
     expect(extractHeadingAnchors('## <b>Bold</b> head')).toEqual([
       { id: 'b-bold-b-head', depth: 2, text: 'Bold head' },

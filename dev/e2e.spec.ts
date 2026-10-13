@@ -3,6 +3,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { expect, test } from '@playwright/test'
 
 import { devUser } from './helpers/credentials'
+import { gridColumnCount, measureColors } from './helpers/visual'
 
 // The tests share one dev user and a cold Turbopack dev server; running them in
 // parallel made logins and first compiles race each other.
@@ -351,5 +352,149 @@ test('an MCP agent edits a markdown block over /api/mcp and publishes it', async
     await expect(page.locator('[data-directive="callout"]')).toContainText('Written over MCP.')
   } finally {
     await client.close()
+  }
+})
+
+// Text that must stay legible (WCAG AA, 4.5:1) in every colour scheme, on
+// whatever the directive actually paints behind it.
+const LEGIBLE_TEXT: Array<[label: string, selector: string]> = [
+  ['body paragraph', 'article > p'],
+  ['body link', 'article > p a'],
+  ['toc title', '[data-directive="toc"] > p'],
+  ['toc link', '[data-directive="toc"] a'],
+  ['card eyebrow', '[data-directive-eyebrow]'],
+  ['card title', '[data-directive="card"] [data-directive-title]'],
+  ['card body', '[data-directive="card"] [data-directive-body] p'],
+  ['card link', '[data-directive="card"] [data-directive-body] a'],
+  ['themed card body', '[data-directive="card"][data-theme="cyan"] [data-directive-body] p'],
+  ...['note', 'info', 'tip', 'warning', 'danger', 'success'].flatMap((variant): Array<[string, string]> => [
+    [`${variant} callout title`, `[data-directive="callout"][data-variant="${variant}"] [data-directive-title]`],
+    [`${variant} callout body`, `[data-directive="callout"][data-variant="${variant}"] [data-directive-body] p`],
+  ]),
+  ['callout link', '[data-directive="callout"] [data-directive-body] a'],
+  ['active tab', '[role="tab"][aria-selected="true"]'],
+  ['inactive tab', '[role="tab"][aria-selected="false"]:not([disabled])'],
+  ['tab panel', '[role="tabpanel"]:not([hidden]) p'],
+  ['details summary', 'summary'],
+  ['details body', '[data-directive="details"] [data-directive-body] p'],
+  ['step title', '[data-step-card] h3'],
+  ['step body', '[data-step-card] p'],
+  ['table cell', 'td'],
+  ...['primary', 'secondary', 'outline', 'ghost', 'link'].map((variant): [string, string] => [
+    `${variant} button`,
+    `.pmd-button--${variant}`,
+  ]),
+]
+
+const SCHEME_CASES = [
+  { dark: false, page: 'light', section: 'scheme-auto' },
+  { dark: true, page: 'dark', section: 'scheme-auto' },
+  // Pinned schemes ignore the page theme.
+  { dark: true, page: 'light', section: 'scheme-dark' },
+  { dark: false, page: 'dark', section: 'scheme-light' },
+] as const
+
+for (const { dark, page: pageTheme, section: sectionId } of SCHEME_CASES) {
+  test(`directive defaults are legible: ${sectionId} on a ${pageTheme} page`, async ({ page }, testInfo) => {
+    await page.goto(`/ui-fixtures?theme=${pageTheme}`)
+
+    const section = page.getByTestId(sectionId)
+    const card = section.locator('[data-directive="card"]').first()
+
+    await expect(card).toBeVisible()
+
+    const failures: string[] = []
+
+    for (const [label, selector] of LEGIBLE_TEXT) {
+      const target = section.locator(selector).first()
+
+      await expect(target, label).toHaveCount(1)
+
+      const { contrast } = await measureColors(target)
+      if (contrast < 4.5) failures.push(`${label}: ${contrast.toFixed(2)}:1`)
+    }
+
+    expect(failures).toEqual([])
+
+    // Surfaces follow the scheme: no dark panels on a light page or the reverse.
+    const { luminance } = await measureColors(card)
+    if (dark) expect(luminance).toBeLessThan(0.05)
+    else expect(luminance).toBeGreaterThan(0.8)
+
+    await testInfo.attach(`${sectionId}-${pageTheme}.png`, {
+      body: await section.screenshot(),
+      contentType: 'image/png',
+    })
+  })
+}
+
+for (const [pageTheme, surface, accent] of [
+  ['light', 'rgb(253, 242, 248)', 'rgb(190, 24, 93)'],
+  ['dark', 'rgb(42, 15, 29)', 'rgb(249, 168, 212)'],
+] as const) {
+  test(`consumer tokens, typography classes and themes override the defaults: ${pageTheme}`, async ({ page }) => {
+    await page.goto(`/ui-fixtures?theme=${pageTheme}`)
+
+    const overrides = page.getByTestId('overrides')
+    const card = overrides.locator('[data-directive="card"][data-theme="default"]').first()
+    const cardLink = card.locator('[data-directive-body] a')
+
+    // Public tokens win over the defaults (and over the host's --color-card).
+    await expect(card).toHaveCSS('background-color', surface)
+    await expect(cardLink).toHaveCSS('color', accent)
+    // A typography override in className reaches directive bodies and replaces
+    // the default it conflicts with (prose-a:font-medium).
+    await expect(cardLink).toHaveCSS('font-weight', '700')
+    // --pmd-code-bg wins over the darker well used inside directives too.
+    await expect(overrides.locator('article > pre').first()).toHaveCSS('background-color', 'rgb(11, 16, 33)')
+    await expect(overrides.locator('[data-directive-body] pre').first()).toHaveCSS(
+      'background-color',
+      'rgb(11, 16, 33)',
+    )
+
+    // A custom theme replaces the default surface entirely.
+    const brand = overrides.locator('[data-directive="card"][data-theme="brand"]')
+
+    await expect(brand).toHaveCSS('border-top-width', '2px')
+    await expect(brand).not.toHaveCSS('background-color', surface)
+
+    // Overridden content stays legible.
+    const failures: string[] = []
+
+    for (const [label, selector] of LEGIBLE_TEXT) {
+      const { contrast } = await measureColors(overrides.locator(selector).first())
+      if (contrast < 4.5) failures.push(`${label}: ${contrast.toFixed(2)}:1`)
+    }
+
+    expect(failures).toEqual([])
+  })
+}
+
+test('card grids collapse on container width, keeping the requested maximum', async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 })
+  await page.goto('/ui-fixtures?theme=light')
+
+  const columns = async (width: number) =>
+    gridColumnCount(page.getByTestId(`grid-${width}`).locator('[data-directive="cards"]'))
+
+  expect(await columns(1000)).toBe(4)
+  expect(await columns(700)).toBe(2)
+  expect(await columns(360)).toBe(1)
+})
+
+test('demo pages do not scroll sideways on a phone', async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 })
+
+  for (const demo of ['kitchen-sink', 'typography', 'cards', 'tabs', 'buttons-badges']) {
+    for (const theme of ['light', 'dark']) {
+      await page.goto(`/posts/demo-${demo}?theme=${theme}`)
+      await expect(page.locator('[id^="payload-markdown-"]')).toBeVisible()
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+
+      expect(overflow, `${demo} (${theme})`).toBe(0)
+    }
   }
 })

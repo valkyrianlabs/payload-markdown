@@ -98,18 +98,27 @@ describe('CORE-14: fence language resolution', () => {
     })
   }
 
+  it('highlights shell fences and their aliases by default', async () => {
+    for (const lang of ['bash', 'sh', 'shell', 'zsh', 'shellscript']) {
+      const result = await compileMarkdown(`\`\`\`${lang}\necho "$HOME"\n\`\`\``)
+
+      expect(result.warnings, lang).toEqual([])
+      expect(result.html, lang).toContain('style="color')
+    }
+  })
+
   it('reports languages that are not loaded and renders them as plain text', async () => {
-    const result = await compileMarkdown('```bash\npnpm add x\n```\n\n```bash\nnpm i x\n```')
+    const result = await compileMarkdown('```go\nfunc main() {}\n```\n\n```go\nvar x int\n```')
 
     expect(result.warnings).toEqual([
-      'Code block language "bash" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.',
+      'Code block language "go" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.',
     ])
     expect(result.html).not.toContain('style="color')
   })
 
   it('highlights a language once it is configured', async () => {
-    const result = await compileMarkdown('```bash\npnpm add x\n```', {
-      code: { langs: ['js', 'bash'] },
+    const result = await compileMarkdown('```go\nfunc main() {}\n```', {
+      code: { langs: ['js', 'go'] },
     })
 
     expect(result.warnings).toEqual([])

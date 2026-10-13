@@ -3,13 +3,17 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { getSafeHref, getUnsafeHrefWarnings } from '../urls.js'
 
-export const CARD_BODY_CLASS_NAMES = 'space-y-3 [&>:first-child]:mt-0 [&>:last-child]:mb-0'
-export const CARD_TITLE_CLASS_NAMES = 'mb-3 text-lg font-semibold tracking-tight'
+export const CARD_BODY_CLASS_NAMES = DIRECTIVE_BODY_CLASS
+export const CARD_TITLE_CLASS_NAMES =
+  'not-prose mb-3 text-lg font-semibold tracking-tight text-(--tw-prose-headings)'
+const CARD_TITLE_LINK_CLASS_NAMES =
+  'rounded-sm transition-colors hover:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]'
 export const CARD_LINK_SCOPES = ['full', 'title'] as const
 export const DEFAULT_CARD_LINK_SCOPE = 'full'
 
@@ -64,7 +68,7 @@ function makeTitle(title: string, href?: string, newTab = false): Element {
         {
           type: 'element',
           children: [{ type: 'text', value: title }],
-          properties: getLinkProperties(href, newTab),
+          properties: { ...getLinkProperties(href, newTab), className: [CARD_TITLE_LINK_CLASS_NAMES] },
           tagName: 'a',
         },
       ]
@@ -89,11 +93,33 @@ function makeFullCardLink(href: string, title: string | undefined, newTab: boole
       ...getLinkProperties(href, newTab),
       ariaLabel: title ? `Open ${title}` : 'Open card',
       className: [
-        'absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+        'not-prose absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pmd-accent,color-mix(in_oklab,#22d3ee_calc(var(--pmd-scheme-dark,1)*100%),#0e7490))]',
       ],
       dataDirectiveLink: 'card',
     },
     tagName: 'a',
+  }
+}
+
+/** `icon` takes one icon ref or a comma-separated list (`@fa/debian, @fa/ubuntu`). */
+export function parseCardIcons(value: string | undefined): string[] {
+  return value?.split(',').map((icon) => icon.trim()).filter(Boolean) ?? []
+}
+
+function makeIcons(icons: string[], hasEyebrow: boolean): Element {
+  return {
+    type: 'element',
+    children: icons.map((icon) =>
+      makeDirectiveIconPlaceholder(icon, ['pmd-card__icon inline-flex size-5 text-current']),
+    ),
+    properties: {
+      className: [
+        'not-prose pmd-card__icons mb-3 flex flex-wrap items-center gap-2',
+        // Clear of the eyebrow; its mb-2 collapses into this margin.
+        ...(hasEyebrow ? ['mt-4'] : []),
+      ],
+    },
+    tagName: 'div',
   }
 }
 
@@ -102,7 +128,9 @@ function makeEyebrow(eyebrow: string): Element {
     type: 'element',
     children: [{ type: 'text', value: eyebrow }],
     properties: {
-      className: ['mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground'],
+      // Muted relative to the body text rather than a fixed grey, so small
+      // uppercase labels keep AA contrast on tinted or custom surfaces.
+      className: ['not-prose mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-(--tw-prose-body)/80'],
       dataDirectiveEyebrow: 'card',
     },
     tagName: 'p',
@@ -124,7 +152,9 @@ export const cardDirective: LayoutDirectiveDefinition = {
     const newTab = node.properties.dataNewTab === 'true'
     const eyebrow =
       typeof node.properties.dataEyebrow === 'string' ? node.properties.dataEyebrow : undefined
-    const icon = typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined
+    const icons = parseCardIcons(
+      typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined,
+    )
     const theme = resolveDirectiveTheme(
       'card',
       typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : undefined,
@@ -138,8 +168,10 @@ export const cardDirective: LayoutDirectiveDefinition = {
       node.properties.dataNewTab = newTab ? 'true' : 'false'
     }
     node.properties.className = mergeClassNames(
-      'not-prose',
-      href && linkScope === 'full' ? 'relative cursor-pointer [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20' : undefined,
+      'my-6',
+      href && linkScope === 'full'
+        ? 'relative cursor-pointer transition-colors hover:border-[color:color-mix(in_oklab,rgb(255_255_255/0.15)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] [&>[data-directive-title]]:transition-colors hover:[&>[data-directive-title]]:text-[color:var(--pmd-accent-hover,color-mix(in_oklab,#67e8f9_calc(var(--pmd-scheme-dark,1)*100%),#155e75))] [&_a:not([data-directive-link])]:relative [&_a:not([data-directive-link])]:z-20'
+        : undefined,
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,
@@ -147,13 +179,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     node.children = [
       ...(href && linkScope === 'full' ? [makeFullCardLink(href, title, newTab)] : []),
       ...(eyebrow ? [makeEyebrow(eyebrow)] : []),
-      ...(icon
-        ? [
-            makeDirectiveIconPlaceholder(icon, [
-              'pmd-card__icon mb-3 inline-flex size-5 text-current',
-            ]),
-          ]
-        : []),
+      ...(icons.length > 0 ? [makeIcons(icons, Boolean(eyebrow))] : []),
       ...(title ? [makeTitle(title, href && linkScope === 'title' ? href : undefined, newTab)] : []),
       {
         type: 'element',

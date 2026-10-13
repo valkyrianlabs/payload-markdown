@@ -2,6 +2,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { getDirectiveLabel, getDirectiveLabelOrAttribute } from '../labels.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
@@ -109,11 +110,11 @@ export const tabDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'not-prose',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,
       'vl-md-tab-panel',
+      DIRECTIVE_BODY_CLASS,
     )
   },
   description: 'Single tab panel. Usually nested inside :::tabs.',

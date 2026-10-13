@@ -1,10 +1,17 @@
 pre.shiki.md-code-enhanced {
-  background: #18191c;
+  background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
   padding: 0;
-  overflow-x: auto;
+  overflow: hidden;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+pre.shiki.md-code-enhanced code {
+  overflow-x: auto;
+}
+pre.shiki.md-code-enhanced code:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.25);
+  outline-offset: -2px;
 }
 pre.shiki.md-code-enhanced code span.md-line {
   display: block;
@@ -14,40 +21,28 @@ pre.shiki.md-code-enhanced code span.md-line {
 pre.shiki.md-code-enhanced code span.md-line.md-line-no-numbers {
   padding-left: 0.75rem;
 }
-pre.shiki.md-code-enhanced code span.md-line.md-line-digits-1 {
-  padding-left: 2rem;
-}
 pre.shiki.md-code-enhanced code span.md-line.md-line-digits-1 .md-line-number {
   width: 1.25rem;
-}
-pre.shiki.md-code-enhanced code span.md-line.md-line-digits-2 {
-  padding-left: 2.5rem;
 }
 pre.shiki.md-code-enhanced code span.md-line.md-line-digits-2 .md-line-number {
   width: 1.75rem;
 }
-pre.shiki.md-code-enhanced code span.md-line.md-line-digits-3 {
-  padding-left: 3rem;
-}
 pre.shiki.md-code-enhanced code span.md-line.md-line-digits-3 .md-line-number {
   width: 2.25rem;
 }
-pre.shiki.md-code-enhanced code span.md-line.md-line-digits-4 {
-  padding-left: 3.5rem;
-}
 pre.shiki.md-code-enhanced code span.md-line.md-line-digits-4 .md-line-number {
   width: 2.75rem;
-}
-pre.shiki.md-code-enhanced code span.md-line.md-line-digits-5 {
-  padding-left: 4rem;
 }
 pre.shiki.md-code-enhanced code span.md-line.md-line-digits-5 .md-line-number {
   width: 3.25rem;
 }
 pre.shiki.md-code-enhanced code span.md-line .md-line-number {
-  position: absolute;
+  position: sticky;
   left: 0;
-  top: 0;
+  z-index: 1;
+  display: inline-block;
+  margin-right: 0.75rem;
+  background: var(--pmd-code-bg, var(--pmd-code-bg-nested, #18191c));
   text-align: right;
   color: #7c8596;
   opacity: 0.8;
@@ -66,12 +61,47 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   pointer-events: none;
 }
 
+[data-md-copy-button] {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  background: rgba(24, 24, 27, 0.9);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+[data-md-copy-button]:hover {
+  background: rgba(39, 39, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+[data-md-copy-button]:focus-visible {
+  outline: 2px solid rgb(103, 232, 249);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  pre.md-code-enhanced [data-md-copy-button] {
+    opacity: 0;
+  }
+  pre.md-code-enhanced:hover [data-md-copy-button],
+  pre.md-code-enhanced:focus-within [data-md-copy-button] {
+    opacity: 1;
+  }
+}
 .pmd-button {
-  --pmd-button-bg: rgb(8 145 178);
-  --pmd-button-border: rgb(8 145 178);
+  --pmd-button-bg: rgb(14 116 144);
+  --pmd-button-border: rgb(14 116 144);
   --pmd-button-color: rgb(255 255 255);
-  --pmd-button-hover-bg: rgb(6 182 212);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-hover-bg: rgb(21 94 117);
+  --pmd-button-hover-border: rgb(21 94 117);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +111,8 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   background: var(--pmd-button-bg);
   color: var(--pmd-button-color);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.25;
+  text-align: center;
   text-decoration: none;
   transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
 }
@@ -91,49 +122,47 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   color: var(--pmd-button-color);
 }
 .pmd-button:focus-visible {
-  outline: 2px solid rgb(103, 232, 249);
+  outline: 2px solid var(--pmd-accent, color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144)));
   outline-offset: 2px;
 }
 
 .pmd-button--secondary {
-  --pmd-button-bg: rgb(255 255 255 / 0.08);
-  --pmd-button-border: rgb(255 255 255 / 0.14);
-  --pmd-button-color: rgb(244 244 245);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.12);
-  --pmd-button-hover-border: rgb(255 255 255 / 0.2);
+  --pmd-button-bg: color-mix(in oklab, rgba(255, 255, 255, 0.08) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.04));
+  --pmd-button-border: color-mix(in oklab, rgba(255, 255, 255, 0.14) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.14));
+  --pmd-button-color: color-mix(in oklab, rgb(244, 244, 245) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(24, 24, 27));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(255, 255, 255, 0.12) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.08));
+  --pmd-button-hover-border: color-mix(in oklab, rgba(255, 255, 255, 0.2) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.22));
 }
 
 .pmd-button--outline {
   --pmd-button-bg: transparent;
-  --pmd-button-border: rgb(8 145 178 / 0.65);
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(8 145 178 / 0.12);
-  --pmd-button-hover-border: rgb(6 182 212);
+  --pmd-button-border: color-mix(in oklab, rgba(8, 145, 178, 0.65) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(14, 116, 144, 0.5));
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(8, 145, 178, 0.12) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(14, 116, 144, 0.08));
+  --pmd-button-hover-border: color-mix(in oklab, rgb(6, 182, 212) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
 }
 
 .pmd-button--ghost {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
-  --pmd-button-hover-bg: rgb(255 255 255 / 0.08);
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
+  --pmd-button-hover-bg: color-mix(in oklab, rgba(255, 255, 255, 0.08) calc(var(--pmd-scheme-dark, 1) * 100%), rgba(0, 0, 0, 0.05));
   --pmd-button-hover-border: transparent;
 }
 
 .pmd-button--link {
   --pmd-button-bg: transparent;
   --pmd-button-border: transparent;
-  --pmd-button-color: rgb(103 232 249);
+  --pmd-button-color: color-mix(in oklab, rgb(103, 232, 249) calc(var(--pmd-scheme-dark, 1) * 100%), rgb(14, 116, 144));
   --pmd-button-hover-bg: transparent;
   --pmd-button-hover-border: transparent;
-  padding-right: 0;
-  padding-left: 0;
   text-decoration: underline;
   text-underline-offset: 0.22em;
 }
 
 .pmd-button--sm {
   min-height: 2rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
 }
 
@@ -147,6 +176,21 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   min-height: 3rem;
   padding: 0.75rem 1.15rem;
   font-size: 1rem;
+}
+
+.pmd-button.pmd-button--link {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.pmd-button.pmd-button--icon-only {
+  aspect-ratio: 1;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+:not(.pmd-buttons) > .pmd-button + .pmd-button {
+  margin-inline-start: 0.5rem;
 }
 
 .pmd-button__icon {
@@ -188,6 +232,9 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
   flex-direction: column;
   align-items: stretch;
 }
+.pmd-buttons--stack-mobile > .pmd-button--icon-only {
+  align-self: flex-start;
+}
 @media (min-width: 640px) {
   .pmd-buttons--stack-mobile {
     flex-direction: row;
@@ -217,12 +264,11 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
 }
 
 .pmd-badges {
-  display: inline-flex;
+  display: flex;
   width: 100%;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  vertical-align: middle;
 }
 
 .pmd-badges--align-left {
@@ -255,6 +301,11 @@ pre.shiki.md-code-enhanced code span.md-line .md-empty-line {
 
 .pmd-badges--wrap-false {
   flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: flex-start;
+}
+.pmd-badges--wrap-false > * {
+  flex: none;
 }
 
 .pmd-badge-link {

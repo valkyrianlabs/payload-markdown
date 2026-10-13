@@ -33,4 +33,9 @@ export {
   type PayloadMarkdownSettingsSource,
   readPayloadMarkdownSettings,
 } from '../runtime/index.js'
-export type { MarkdownRenderConfig, RenderMarkdownResult } from '../types/core.js'
+export { PMD_COLOR_SCHEME_CLASS_NAMES } from '../styles/directiveSurface.js'
+export type {
+  MarkdownColorScheme,
+  MarkdownRenderConfig,
+  RenderMarkdownResult,
+} from '../types/core.js'

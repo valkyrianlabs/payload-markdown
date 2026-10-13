@@ -116,6 +116,7 @@ export function makeButtonDirective(
           'pmd-button',
           `pmd-button--${variant}`,
           `pmd-button--${size}`,
+          ...(!label && icon ? ['pmd-button--icon-only'] : []),
         ],
         dataButton: '',
         dataDirective: 'button',

@@ -302,6 +302,7 @@ Required pieces:
 - install `@tailwindcss/typography`
 - enable the typography plugin
 - add the plugin `dist` directory to Tailwind sources
+- if your site switches between light and dark with a class or attribute, declare it with `@custom-variant dark` so the Markdown output follows it
 
 Theme class strings defined in your app config should also live in scanned source files.
 

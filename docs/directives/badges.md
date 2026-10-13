@@ -93,6 +93,8 @@ Use `path` for a Shields path that is not covered by the curated resolver map:
 }
 ```
 
+A path copied from shields.io is usually percent-encoded already (`95%25`); you can paste it as is or write the raw text (`95%`). Both render the same badge. Segments are encoded once, and paths that decode to `..` or control characters are rejected.
+
 Use `src` only for full Shields URLs. The renderer rejects non-`https://img.shields.io` hosts.
 
 ```md

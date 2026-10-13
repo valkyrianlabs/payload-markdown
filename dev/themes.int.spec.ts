@@ -64,3 +64,31 @@ describe('CORE-17: directive theme merging and fallbacks', () => {
     expect(custom.warnings).toEqual(['Unknown theme "missing" on "callout". Falling back to "brand".'])
   })
 })
+
+describe('grid cellTheme', () => {
+  it('applies cellTheme to generated and unthemed explicit cells', async () => {
+    const result = await compileMarkdown(`
+:::2col {cellTheme="panel"}
+## First
+Alpha
+
+## Second
+Beta
+:::endcol
+
+:::3col {cellTheme="panel"}
+:::cell
+Explicit unthemed cell.
+:::
+
+:::cell {theme="default"}
+Explicit themed cell.
+:::
+:::endcol
+`)
+
+    expect(result.warnings).toEqual([])
+    expect(result.html.match(/vl-md-cell--theme-panel/g)).toHaveLength(3)
+    expect(result.html.match(/vl-md-cell--theme-default/g)).toHaveLength(1)
+  })
+})

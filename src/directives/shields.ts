@@ -66,8 +66,21 @@ function getRequiredStringAttributes(
   return out
 }
 
+// Shields splits a static badge path on single dashes after decoding it, so a
+// literal dash must use its own escape (`--`), not `%2D`.
 function encodeStaticPathPart(value: string): string {
-  return encodeURIComponent(value).replace(/-/g, '%2D')
+  return encodeURIComponent(value.replace(/-/g, '--'))
+}
+
+// A `path` is often copied from shields.io already percent-encoded
+// (`coverage-95%25-green`), or written raw (`coverage-95%-green`). Decode a
+// valid escape first so both forms encode once instead of `95%2525`.
+function decodePathPart(part: string): string {
+  try {
+    return decodeURIComponent(part)
+  } catch {
+    return part
+  }
 }
 
 function normalizePathValue(value: string): string | undefined {
@@ -76,8 +89,10 @@ function normalizePathValue(value: string): string | undefined {
   if (!trimmed) return undefined
   if (hasUnsafePathCharacter(trimmed)) return undefined
 
-  const parts = trimmed.split('/')
-  if (parts.some((part) => part === '.' || part === '..')) return undefined
+  // Safety checks run on the decoded segments, so `%2E%2E` and `%0A` are caught too.
+  const parts = trimmed.split('/').map(decodePathPart)
+  if (parts.some((part) => part === '.' || part === '..' || hasUnsafePathCharacter(part)))
+    return undefined
 
   return parts.map((part) => encodeURIComponent(part)).join('/')
 }

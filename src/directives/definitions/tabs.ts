@@ -3,7 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
-import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
+import { DIRECTIVE_BODY_CLASS, DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import {
   getTabLabel as getTabDirectiveLabel,
@@ -101,7 +101,9 @@ function makeTabTrigger(tab: TabModel, active: boolean): Element {
   const className = [
     'vl-md-tabs-trigger',
     active ? 'vl-md-tabs-trigger--active' : undefined,
-    'rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 transition-colors hover:text-foreground aria-selected:bg-white/10 aria-selected:text-foreground',
+    // Inactive labels stay at 75% of the text colour: enough for AA contrast in
+    // both colour schemes while still reading as secondary.
+    'rounded-lg px-3 py-2 text-sm font-medium text-current/75 transition-colors hover:bg-[color:color-mix(in_oklab,rgb(255_255_255/0.05)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.04))] hover:text-current aria-selected:bg-[color:color-mix(in_oklab,rgb(255_255_255/0.1)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.06))] aria-selected:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_oklab,rgb(255_255_255/0.25)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.2))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
   ].filter((value): value is string => Boolean(value))
 
   return {
@@ -143,7 +145,9 @@ function makeTabPanel(
         theme.hookClassName,
         theme.modifierClassName,
         theme.classes,
-        '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
+        DIRECTIVE_BODY_CLASS,
+        // A panel holding only a code block shows just the code block.
+        'has-[>pre:only-child]:border-0 has-[>pre:only-child]:bg-transparent has-[>pre:only-child]:p-0 has-[>pre:only-child]:shadow-none',
       ),
       dataTabPanel: '',
       dataTabValue: tab.value,
@@ -161,7 +165,7 @@ function makeTabList(tabs: TabModel[], activeValue: string): Element {
     type: 'element',
     children: tabs.map((tab) => makeTabTrigger(tab, tab.value === activeValue)),
     properties: {
-      className: [`vl-md-tabs-list flex flex-wrap gap-1 border-b ${DIRECTIVE_SURFACE_DIVIDER_CLASS} pb-2`],
+      className: [`not-prose vl-md-tabs-list flex flex-wrap gap-1 border-b ${DIRECTIVE_SURFACE_DIVIDER_CLASS} pb-2`],
       dataTabsList: '',
       role: 'tablist',
     },
@@ -211,7 +215,6 @@ export const tabsDirective: LayoutDirectiveDefinition = {
     node.properties.dataTheme = theme.name
     node.properties.dataDefault = activeTab?.value
     node.properties.className = mergeClassNames(
-      'not-prose',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,
@@ -223,7 +226,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
           type: 'element',
           children: [{ type: 'text', value: 'No tabs configured.' }],
           properties: {
-            className: ['text-sm text-muted-foreground'],
+            className: ['not-prose text-sm text-(--tw-prose-body)/80'],
           },
           tagName: 'p',
         },

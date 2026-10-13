@@ -17,6 +17,7 @@ export const cellDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
+      '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,
@@ -29,8 +30,10 @@ export const cellDirective: LayoutDirectiveDefinition = {
     snippet: ':::cell\n${Content}\n:::\n${}',
   },
   getMdastRenderProperties(node) {
+    // Leave an unthemed cell unset so its 2col/3col parent can apply cellTheme;
+    // applyHast falls back to the default theme.
     return {
-      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
+      dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : undefined,
     }
   },
   kind: 'cell',

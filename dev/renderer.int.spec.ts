@@ -56,7 +56,7 @@ describe('standalone badges', () => {
 
     expect(result.warnings).toEqual([])
     expect(result.html).toBe(
-      '<img alt="npm version" class="pmd-badge" data-directive="badge" src="https://img.shields.io/npm/v/x">',
+      '<img alt="npm version" class="not-prose pmd-badge" data-directive="badge" src="https://img.shields.io/npm/v/x">',
     )
   })
 })

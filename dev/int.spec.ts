@@ -31,6 +31,9 @@ import { DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../src/styles/directiveSurface'
 const countLayout = (html: string, layout: string): number =>
   (html.match(new RegExp(`data-vl-layout="${layout}"`, 'g')) ?? []).length
 
+// Rendered text with tags stripped, e.g. a highlighted code line split into spans.
+const textContent = (html: string): string => html.replace(/<[^>]+>/g, '')
+
 const countDirective = (html: string, directive: string): number =>
   (html.match(new RegExp(`data-directive="${directive}"`, 'g')) ?? []).length
 
@@ -71,9 +74,6 @@ const countSyntaxNodes = (markdown: string, name: string): number => {
 }
 
 
-// ```bash is not in DEFAULT_CODE_LANGS; the renderer reports the plain-text fallback (CORE-14).
-const BASH_NOT_LOADED_WARNING =
-  'Code block language "bash" is not loaded, so it is rendered as plain text. Add it to code.langs to highlight it.'
 
 describe('payloadMarkdown', () => {
   beforeEach(() => {
@@ -1114,6 +1114,34 @@ Check credentials.
     expect(result.html.match(/<svg/g)?.length).toBe(2)
   })
 
+  it('renders a comma-separated card icon list as one row of icons', async () => {
+    const result = await compileMarkdown(
+      ':::card[Linux]{eyebrow="amd64" icon="@fa-duotone/home, @brand/github"}\nBody.\n:::',
+      fixtureIconConfig,
+    )
+
+    expect(result.warnings).toEqual([])
+    expect(result.html).toMatch(/<div class="[^"]*pmd-card__icons[^"]* mt-4[^"]*">(<svg[^>]*pmd-card__icon[^>]*>[\s\S]*?<\/svg>){2}<\/div>/)
+    expect(result.html.indexOf('pmd-card__icons')).toBeLessThan(result.html.indexOf('data-directive-title'))
+  })
+
+  it('spaces card icons below the eyebrow only when the card has one', async () => {
+    const withEyebrow = await compileMarkdown(
+      ':::card[Linux]{eyebrow="amd64" icon="@fa-duotone/home"}\nBody.\n:::',
+      fixtureIconConfig,
+    )
+    const withoutEyebrow = await compileMarkdown(
+      ':::card[Linux]{icon="@fa-duotone/home"}\nBody.\n:::',
+      fixtureIconConfig,
+    )
+
+    expect(withEyebrow.warnings).toEqual([])
+    expect(withEyebrow.html).toMatch(/<div class="[^"]*pmd-card__icons[^"]* mt-4[^"]*"><svg[^>]*pmd-card__icon/)
+    expect(withoutEyebrow.warnings).toEqual([])
+    expect(withoutEyebrow.html).toContain('pmd-card__icons')
+    expect(withoutEyebrow.html).not.toMatch(/pmd-card__icons[^"]* mt-4/)
+  })
+
   it('emits diagnostics for malformed unknown and missing button icons without crashing', async () => {
     const malformed = await compileMarkdown('::button[Bad]{href="/bad" icon="fa/home"}', fixtureIconConfig)
     const unknownPack = await compileMarkdown('::button[Bad]{href="/bad" icon="@unknown/home"}', fixtureIconConfig)
@@ -1328,6 +1356,26 @@ Check credentials.
     expect(result.html).toContain('labelColor=111')
   })
 
+  it('encodes a Shields path once whether it is written raw or copied pre-encoded', async () => {
+    const raw = await compileMarkdown('::badge[coverage]{path="badge/coverage-95%-brightgreen"}')
+    const encoded = await compileMarkdown('::badge[coverage]{path="badge/coverage-95%25-brightgreen"}')
+    const spaced = await compileMarkdown('::badge[docs]{path="badge/read%20the-docs-blue"}')
+
+    expect(raw.warnings).toEqual([])
+    expect(encoded.warnings).toEqual([])
+    expect(raw.html).toContain('src="https://img.shields.io/badge/coverage-95%25-brightgreen"')
+    expect(encoded.html).toContain('src="https://img.shields.io/badge/coverage-95%25-brightgreen"')
+    expect(spaced.html).toContain('src="https://img.shields.io/badge/read%20the-docs-blue"')
+  })
+
+  it('rejects Shields paths that decode to traversal or control characters', async () => {
+    for (const path of ['badge/%2E%2E/x', 'badge/a%0Ab']) {
+      const result = await compileMarkdown(`::badge[x]{path="${path}"}`)
+
+      expect(result.html, path).not.toContain('img.shields.io')
+    }
+  })
+
   it('validates Shields src escape hatch host', async () => {
     const valid = await compileMarkdown(
       '::badge[custom]{src="https://img.shields.io/badge/custom-ok-blue"}',
@@ -1475,10 +1523,10 @@ Read the docs.
     expect(result.html).toContain('data-directive-eyebrow="card"')
     expect(result.html).toContain('data-link-scope="full"')
     expect(result.html).toContain('data-new-tab="false"')
-    expect(result.html).toContain(
-      '<a href="/docs" aria-label="Open Docs Mode" class="absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="card"></a>',
+    expect(result.html).toMatch(
+      /<a href="\/docs" aria-label="Open Docs Mode" class="not-prose absolute inset-0 z-10 rounded-\[inherit\] [^"]*focus-visible:ring-2[^"]*" data-directive-link="card"><\/a>/,
     )
-    expect(result.html).toContain('<h3 class="mb-3 text-lg font-semibold tracking-tight" data-directive-title="card">Docs Mode</h3>')
+    expect(result.html).toContain('<h3 class="not-prose mb-3 text-lg font-semibold tracking-tight text-(--tw-prose-headings)" data-directive-title="card">Docs Mode</h3>')
     expect(result.html).toContain('Read the docs.')
   })
 
@@ -1500,8 +1548,8 @@ Second body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('data-link-scope="section"')
     expect(result.html).toContain('data-new-tab="true"')
-    expect(result.html).toContain(
-      '<a href="/overview" rel="noopener noreferrer" target="_blank" aria-label="Open card section" class="absolute inset-0 z-10 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" data-directive-link="cards"></a>',
+    expect(result.html).toMatch(
+      /<a href="\/overview" rel="noopener noreferrer" target="_blank" aria-label="Open card section" class="not-prose absolute -inset-2 z-10 rounded-3xl [^"]*focus-visible:ring-2[^"]*" data-directive-link="cards"><\/a>/,
     )
     expect(result.html).not.toContain('data-directive-link="card"')
   })
@@ -1524,7 +1572,7 @@ Override body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('href="/docs" rel="noopener noreferrer" target="_blank"')
     expect(result.html).toContain('aria-label="Open Inherited"')
-    expect(result.html).toContain('<a href="/custom">Override</a>')
+    expect(result.html).toMatch(/<a href="\/custom" class="rounded-sm transition-colors [^"]*">Override<\/a>/)
     expect(result.html).not.toContain('href="/custom" rel="noopener noreferrer" target="_blank"')
   })
 
@@ -1540,7 +1588,7 @@ Title body.
 `)
 
     expect(result.warnings).toEqual([])
-    expect(result.html).toContain('<a href="/titles">Title Link</a>')
+    expect(result.html).toMatch(/<a href="\/titles" class="rounded-sm transition-colors [^"]*">Title Link<\/a>/)
     expect(result.html).not.toContain('data-directive-link="card"')
     expect(result.html).not.toContain('data-directive-link="cards"')
   })
@@ -1571,8 +1619,8 @@ External card body.
     expect(result.warnings).toEqual([])
     expect(result.html).toContain('data-link-scope="title"')
     expect(result.html).toContain('data-new-tab="true"')
-    expect(result.html).toContain(
-      '<a href="https://example.com" rel="noopener noreferrer" target="_blank">External</a>',
+    expect(result.html).toMatch(
+      /<a href="https:\/\/example\.com" rel="noopener noreferrer" target="_blank" class="rounded-sm transition-colors [^"]*">External<\/a>/,
     )
     expect(result.html).not.toContain('data-directive-link="card"')
   })
@@ -1988,11 +2036,11 @@ Nested card.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(result.html).toContain('vl-md-tabs--theme-glass')
     expect(result.html).toContain('vl-md-tab--theme-muted')
     expect(result.html).toContain('vl-md-tab--theme-glass')
-    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(textContent(result.html)).toContain('pnpm add @valkyrianlabs/payload-markdown')
     expect(result.html).toContain('md-code-enhanced')
     expect(countDirective(result.html, 'callout')).toBe(1)
     expect(countDirective(result.html, 'details')).toBe(1)
@@ -2110,13 +2158,13 @@ Add it to \`payload.config.ts\` with **markdown** enabled.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('<ol')
     expect(result.html).toContain('data-step="1"')
     expect(result.html).toContain('data-step="2"')
     expect(result.html).toContain('id="install-the-package"')
-    expect(result.html).toContain('pnpm add @valkyrianlabs/payload-markdown')
+    expect(textContent(result.html)).toContain('pnpm add @valkyrianlabs/payload-markdown')
     expect(result.html).toContain('<strong>markdown</strong>')
   })
 
@@ -2160,7 +2208,7 @@ Add it to \`payload.config.ts\`.
 :::
 `)
 
-    expect(result.warnings).toEqual([BASH_NOT_LOADED_WARNING])
+    expect(result.warnings).toEqual([])
     expect(countDirective(result.html, 'steps')).toBe(1)
     expect(result.html).toContain('data-variant="cards"')
     expect(result.html).toContain('data-layout="stack"')
@@ -2169,9 +2217,10 @@ Add it to \`payload.config.ts\`.
     expect(result.html).toContain('data-step-number="1"')
     expect(result.html).toContain('data-step-number="2"')
     expect(result.html).toContain('data-step="1"')
-    expect(result.html).toContain('flex list-none flex-col gap-4')
-    expect(result.html).not.toContain('md:grid-cols-2')
-    expect(result.html).toContain('pnpm install')
+    expect(result.html).toContain('m-0! list-none! gap-4 p-0!')
+    expect(result.html).toContain('flex flex-col')
+    expect(result.html).not.toContain('grid-cols-[repeat')
+    expect(textContent(result.html)).toContain('pnpm install')
     expect(result.html).toContain('<code>payload.config.ts</code>')
   })
 
@@ -2199,7 +2248,7 @@ Three.
     expect(result.html).toContain('data-layout="grid"')
     expect(result.html).toContain('data-columns="3"')
     expect(result.html).toContain('data-numbered="true"')
-    expect(result.html).toContain('md:grid-cols-3')
+    expect(result.html).toContain('calc((100%_-_2*2rem)/3)')
     expect(result.html).toContain('data-step-card')
     expect(result.html).toContain('data-step-number="3"')
     expect(result.html).toContain('vl-md-card--theme-glass')
@@ -2461,8 +2510,8 @@ Third
     expect(countLayout(result.html, '2col')).toBe(1)
     expect(countLayout(result.html, '3col')).toBe(1)
     expect(countLayout(result.html, 'cell')).toBe(5)
-    expect(result.html).toContain('md:grid-cols-2')
-    expect(result.html).toContain('md:grid-cols-3')
+    expect(result.html).toContain('max(12rem,calc((100%_-_2rem)/2))')
+    expect(result.html).toContain('max(12rem,calc((100%_-_2*2rem)/3))')
     expect(result.html).toContain('data-vl-cell-heading-depth="3"')
   })
 

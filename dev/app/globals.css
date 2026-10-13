@@ -4,17 +4,18 @@
 
 @source inline("flex inline-flex items-center gap-1 gap-2 gap-3 gap-4 flex-wrap");
 
-/* Base reset / polish */
-:root {
-    color-scheme: dark;
-}
+/*
+ * The dev app switches themes with a `dark` class on <html> (see
+ * components/ThemeScript), so `dark:` must follow that class rather than
+ * the OS preference. Consumer apps with a theme switcher declare the same.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
 
 html,
 body {
     height: 100%;
 }
 
-/* Optional: nicer defaults */
 body {
-    @apply bg-neutral-950 text-neutral-100;
+    @apply bg-white text-neutral-900 scheme-light dark:bg-neutral-950 dark:text-neutral-100 dark:scheme-dark;
 }

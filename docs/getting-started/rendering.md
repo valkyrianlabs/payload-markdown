@@ -48,6 +48,7 @@ Common props:
 - `wrapperClassName`: class names for the outer wrapper
 - `enableGutter`: adds horizontal wrapper padding
 - `mutedHeadings`: slightly reduces heading contrast
+- `colorScheme`: `auto` (follow the site's dark mode), `light`, or `dark`; see [Light And Dark](/configuration/styling#light-and-dark)
 - `emptyFallback`: returned for empty or whitespace-only Markdown
 - `errorFallback`: returned when compilation fails (the result has `errors`); warnings alone do not trigger it
 - `code`: local Shiki and code fence overrides

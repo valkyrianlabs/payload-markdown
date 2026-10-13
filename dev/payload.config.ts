@@ -78,7 +78,7 @@ const buildDevConfig = async () => {
           },
           posts: {
             config: {
-              className: '[&_li::marker]:!text-cyan-200/90',
+              className: '[&_li::marker]:!text-cyan-600 dark:[&_li::marker]:!text-cyan-200/90',
               options: {
                 langs: [...DEFAULT_CODE_LANGS, 'latex', 'r'],
                 lineNumbers: true,

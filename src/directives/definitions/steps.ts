@@ -3,7 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
-import { DIRECTIVE_SURFACE_NESTED_CODE_CLASS } from '../../styles/directiveSurface.js'
+import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { CARD_BODY_CLASS_NAMES } from './card.js'
 
@@ -54,6 +54,9 @@ function resolveCardStepNumbered(node: ContainerDirective): boolean {
   return numbered !== 'false'
 }
 
+const STEP_CARDS_LIST_CLASS_NAMES =
+  'm-0! list-none! gap-4 p-0! [&>li]:m-0! [&>li]:p-0! [&>li]:[font-size:inherit]'
+
 function isElement(node: ElementContent): node is Element {
   return node.type === 'element'
 }
@@ -65,12 +68,19 @@ function isStepHeading(node: ElementContent): node is Element {
 function makeStep(children: ElementContent[], index: number): Element {
   return {
     type: 'element',
-    children,
+    children: [
+      {
+        type: 'element',
+        children,
+        properties: {
+          className: [DIRECTIVE_BODY_CLASS],
+          dataDirectiveBody: 'step',
+        },
+        tagName: 'div',
+      },
+    ],
     properties: {
-      className: [
-        'relative pl-4 [&>:first-child]:mt-0 [&>:last-child]:mb-0',
-        DIRECTIVE_SURFACE_NESTED_CODE_CLASS,
-      ],
+      className: ['relative'],
       dataStep: String(index + 1),
     },
     tagName: 'li',
@@ -96,7 +106,7 @@ function makeCardStep(
                   children: [{ type: 'text' as const, value: String(index + 1) }],
                   properties: {
                     className: [
-                      'mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-current/25 bg-black/10 text-sm font-semibold dark:bg-white/10',
+                      'pmd-step-number not-prose mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-current/25 bg-[color:color-mix(in_oklab,rgb(255_255_255/0.1)_calc(var(--pmd-scheme-dark,1)*100%),rgb(0_0_0/0.05))] text-sm font-semibold',
                     ],
                     dataStepNumber: String(index + 1),
                   },
@@ -111,9 +121,12 @@ function makeCardStep(
             stepTheme.hookClassName,
             stepTheme.modifierClassName,
             stepTheme.classes,
+            'h-full',
             CARD_BODY_CLASS_NAMES,
-            DIRECTIVE_SURFACE_NESTED_CODE_CLASS,
+            // The step title sits right under its number badge.
+            '[&>.pmd-step-number+*]:mt-0',
           ],
+          dataDirectiveBody: 'step',
           dataStepCard: '',
           dataTheme: stepTheme.name,
         },
@@ -142,12 +155,13 @@ function groupStepChildren(
     variant === 'cards'
       ? (group: ElementContent[], index: number) => makeCardStep(group, index, numbered, stepTheme)
       : makeStep
+  // Same container-width columns as `:::cards` (see cardGridColumnClasses).
   const gridColumnsClassNames: Record<StepCardColumns, string> = {
     '1': 'grid-cols-1',
-    '2': 'grid-cols-1 md:grid-cols-2',
-    '3': 'grid-cols-1 md:grid-cols-3',
-    '4': 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4',
-    auto: 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]',
+    '2': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2rem)/2))),1fr))]',
+    '3': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_2*2rem)/3))),1fr))]',
+    '4': 'grid-cols-[repeat(auto-fill,minmax(min(100%,max(14rem,calc((100%_-_3*2rem)/4))),1fr))]',
+    auto: 'grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]',
   }
 
   for (const child of children) {
@@ -167,12 +181,16 @@ function groupStepChildren(
       type: 'element',
       children: groups.map(makeStepElement),
       properties: {
+        // Step lists are structure, not prose lists: the `!` resets win over
+        // Typography's list styles and the renderer's list spacing.
         className:
           variant === 'cards'
             ? layout === 'grid'
-              ? ['m-0 grid list-none gap-4 p-0', gridColumnsClassNames[columns]]
-              : ['m-0 flex list-none flex-col gap-4 p-0']
-            : ['m-0 list-decimal space-y-6 pl-6'],
+              ? [STEP_CARDS_LIST_CLASS_NAMES, 'grid', gridColumnsClassNames[columns]]
+              : [STEP_CARDS_LIST_CLASS_NAMES, 'flex flex-col']
+            : [
+                'm-0! list-decimal pl-6! [&>li]:my-0! [&>li]:pl-4! [&>li+li]:mt-6! [&>li]:[font-size:inherit] [&>li]:marker:font-semibold',
+              ],
       },
       tagName: 'ol',
     },
@@ -211,7 +229,6 @@ export const stepsDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.className = mergeClassNames(
-      'not-prose',
       theme.hookClassName,
       theme.modifierClassName,
       theme.classes,

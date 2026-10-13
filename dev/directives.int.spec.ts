@@ -95,8 +95,8 @@ describe('CORE-2: only source lines starting with a marker open directives', () 
     expect(result.warnings).toEqual([
       'Directive "toc" contains authored content; it is rendered after the generated table of contents. Close ":::toc" with ":::" on the next line.',
     ])
-    expect(result.html).toContain('<li><a href="#a">A</a></li>')
-    expect(result.html).toContain('<li><a href="#b">B</a></li>')
+    expect(result.html).toContain('<li data-toc-level="0"><a href="#a">A</a></li>')
+    expect(result.html).toContain('<li data-toc-level="1"><a href="#b">B</a></li>')
     expect(result.html).toContain('<p>Authored note.</p>')
     expect(result.html).toContain('<h2 id="b" data-heading-anchor="b">B</h2>')
   })
