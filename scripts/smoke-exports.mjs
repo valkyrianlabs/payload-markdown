@@ -108,7 +108,22 @@ try {
   const names = payloadMarkdownMcpTools().map((tool) => tool.name)
   const wrapped = withPayloadMarkdownMcp({ collections: {} })
 
-  if (names.length !== 5 || wrapped.mcp.tools.length !== 5 || typeof wrapped.overrideAuth !== 'function')
+  const expected = [
+    'markdownGuide',
+    'markdownValidate',
+    'markdownRead',
+    'markdownWrite',
+    'markdownPublish',
+    'markdownPalettes',
+    'markdownPaletteSave',
+    'markdownPaletteDelete',
+  ]
+
+  if (
+    names.join() !== expected.join() ||
+    wrapped.mcp.tools.length !== expected.length ||
+    typeof wrapped.overrideAuth !== 'function'
+  )
     fail(`./mcp tools unexpected: ${names.join(', ')}`)
   else ok(`./mcp tools: ${names.join(', ')}`)
 } catch (error) {

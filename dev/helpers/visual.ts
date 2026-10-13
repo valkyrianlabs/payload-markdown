@@ -84,3 +84,26 @@ export async function gridColumnCount(locator: Locator): Promise<number> {
     (element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length,
   )
 }
+
+/**
+ * The colour an SVG shape is actually filled with, as sRGB (computed `fill`
+ * resolved through `currentColor`, colour mixes and custom properties), plus
+ * its effective opacity. Normalized on a canvas, like `measureColors`.
+ */
+export async function shapePaint(locator: Locator): Promise<{ fill: [number, number, number]; opacity: number }> {
+  return locator.evaluate((element) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) throw new Error('No 2D canvas context')
+
+    const style = getComputedStyle(element)
+
+    context.fillStyle = style.fill
+    context.fillRect(0, 0, 1, 1)
+    const [r, g, b] = context.getImageData(0, 0, 1, 1).data
+
+    return { fill: [r, g, b] as [number, number, number], opacity: Number(style.opacity) }
+  })
+}
