@@ -13,7 +13,9 @@ import {
 } from '../../directives/definitions/button.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getSafeHref } from '../../directives/urls.js'
+import { parseIconEntries } from '../../icons/entries.js'
 import { normalizePayloadMarkdownIconRef } from '../../icons/refs.js'
+import { getUnknownPaletteWarning } from '../../palettes/diagnostics.js'
 
 export type MessageFile = {
   message: (reason: string) => unknown
@@ -34,7 +36,7 @@ function getBooleanAttribute(attributes: Record<string, boolean | string>, name:
   return value === 'true'
 }
 
-function makeIconPlaceholder(icon: string, iconPosition: 'left' | 'right') {
+function makeIconPlaceholder(icon: string, iconPosition: 'left' | 'right', palette?: string) {
   const normalized = normalizePayloadMarkdownIconRef(icon)
   const iconKey = normalized.icon?.key ?? icon
 
@@ -48,6 +50,7 @@ function makeIconPlaceholder(icon: string, iconPosition: 'left' | 'right') {
         `pmd-button__icon--${iconPosition}`,
       ],
       dataPmdIcon: iconKey,
+      ...(palette ? { dataPmdIconPalette: palette } : {}),
       dataPmdIconRef: icon,
       focusable: 'false',
     },
@@ -58,7 +61,7 @@ function makeIconPlaceholder(icon: string, iconPosition: 'left' | 'right') {
 export function makeButtonDirective(
   line: string,
   file: MessageFile,
-  _config: MarkdownRenderConfig,
+  config: MarkdownRenderConfig,
 ): LeafDirective | undefined {
   const parsed = parseButtonDirectiveLine(line)
   if (!parsed) return undefined
@@ -72,7 +75,12 @@ export function makeButtonDirective(
   const iconPosition = isButtonIconPosition(attributes.iconPosition)
     ? attributes.iconPosition
     : DEFAULT_BUTTON_ICON_POSITION
-  const icon = getAttribute(attributes, 'icon')
+  // A button shows one icon; it may carry its own palette (`@pack/name palette=x`).
+  const iconEntries = parseIconEntries(getAttribute(attributes, 'icon'))
+  const [iconEntry] = iconEntries.entries
+  const icon = iconEntry?.ref
+  const palette = getAttribute(attributes, 'palette')
+  const iconPalette = iconEntry?.palette ?? getAttribute(attributes, 'iconPalette') ?? palette
   const ariaLabel = getAttribute(attributes, 'ariaLabel')
   const newTab = getBooleanAttribute(attributes, 'newTab')
 
@@ -85,10 +93,17 @@ export function makeButtonDirective(
     if (normalized.warning) file.message(normalized.warning)
   }
 
+  for (const warning of iconEntries.warnings) file.message(warning)
+
+  for (const name of new Set([getAttribute(attributes, 'iconPalette'), iconPalette, palette])) {
+    const warning = name ? getUnknownPaletteWarning(name, 'button', config) : undefined
+    if (warning) file.message(warning)
+  }
+
   if (!label && !ariaLabel) file.message('Icon-only button requires an ariaLabel attribute.')
 
   const hChildren = [
-    ...(icon && iconPosition === 'left' ? [makeIconPlaceholder(icon, iconPosition)] : []),
+    ...(icon && iconPosition === 'left' ? [makeIconPlaceholder(icon, iconPosition, iconPalette)] : []),
     ...(label
       ? [
           {
@@ -97,7 +112,7 @@ export function makeButtonDirective(
           },
         ]
       : []),
-    ...(icon && iconPosition === 'right' ? [makeIconPlaceholder(icon, iconPosition)] : []),
+    ...(icon && iconPosition === 'right' ? [makeIconPlaceholder(icon, iconPosition, iconPalette)] : []),
   ]
 
   return {
@@ -116,11 +131,12 @@ export function makeButtonDirective(
           'pmd-button',
           `pmd-button--${variant}`,
           `pmd-button--${size}`,
-          ...(!label && icon ? ['pmd-button--icon-only'] : []),
         ],
         dataButton: '',
         dataDirective: 'button',
+        dataIconPalette: getAttribute(attributes, 'iconPalette'),
         dataIconPosition: icon ? iconPosition : undefined,
+        dataPalette: palette,
         dataSize: size,
         dataVariant: variant,
         href,

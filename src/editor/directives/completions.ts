@@ -6,6 +6,7 @@ import type { MarkdownEditorDirectiveConfig } from '../directiveConfig.js'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getDirectiveThemeNames } from '../../directives/themes.js'
+import { getEditorPaletteNames } from '../directiveConfig.js'
 
 export function getDirectiveCompletionOptions() {
   return layoutDirectiveRegistry.getPublicDefinitions().flatMap((definition) => {
@@ -59,6 +60,8 @@ export function getDirectiveThemeValueCompletionOptions(
   const groupName = definition?.themeAttributes?.[attribute]
   const detailPrefix = name === 'button' || name === 'badge' ? `::${name}` : `:::${name}`
 
+  if (attribute === 'palette' || attribute === 'iconPalette') return getPaletteCompletionOptions(config)
+
   if (attribute === 'icon')
     return (config.iconPacks ?? []).map((alias) => ({
       type: 'constant',
@@ -78,6 +81,13 @@ export function getDirectiveThemeValueCompletionOptions(
     detail: `${groupName} theme`,
     label: themeName,
   }))
+}
+
+/** Palette names: configured ones plus, once loaded, those managed in the admin. */
+export function getPaletteCompletionOptions(config: MarkdownEditorDirectiveConfig = {}): Completion[] {
+  const names = getEditorPaletteNames(config) ?? config.palettes ?? []
+
+  return names.map((name) => ({ type: 'constant', detail: 'palette', label: name }))
 }
 
 function attributeCompletionSource(
@@ -107,8 +117,18 @@ function attributeCompletionSource(
   if (!directiveMatch) return null
 
   const { name, attributesBeforeCursor } = directiveMatch
+
+  // `palette=` inside an icon entry: icon="@pack/a palette=|"
+  const iconPaletteMatch = attributesBeforeCursor.match(/(?:^|\s)icon=["'][^"']*\spalette=([\w-]*)$/)
+
+  if (iconPaletteMatch) {
+    const options = getPaletteCompletionOptions(config)
+
+    return options.length > 0 ? { from: context.pos - iconPaletteMatch[1].length, options } : null
+  }
+
   const valueMatch = attributesBeforeCursor.match(
-    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|icon|iconPosition|interval|linkScope|newTab|size|stack|stepTheme|style|tabTheme|target|type|variant|wrap)=["']?([^"'\s}]*)$/,
+    /(?:^|\s)(align|gap|theme|cardTheme|cellTheme|icon|iconPalette|iconPosition|interval|linkScope|newTab|palette|size|stack|stepTheme|style|tabTheme|target|type|variant|wrap)=["']?([^"'\s}]*)$/,
   )
 
   if (valueMatch) {
@@ -205,8 +225,8 @@ function directiveCompletionSource(
 }
 
 /**
- * Directive completions that know the field's configured themes and icon
- * packs (CORE-8). `config` comes from `field.admin.custom.payloadMarkdown`.
+ * Directive completions that know the field's configured themes, icon packs
+ * and palettes (CORE-8). `config` comes from `field.admin.custom.payloadMarkdown`.
  */
 export function createDirectiveCompletions(config: MarkdownEditorDirectiveConfig = {}) {
   return autocompletion({

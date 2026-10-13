@@ -8,9 +8,19 @@ import type { MarkdownEdit } from '../agent/documents.js'
 import { MARKDOWN_AGENT_ACCESS_CONTEXT_KEY, MarkdownAgentError } from '../agent/access.js'
 import { publishMarkdown, readMarkdownDocuments, writeMarkdown } from '../agent/documents.js'
 import { getMarkdownGuide } from '../agent/guide.js'
+import { deleteMarkdownPalette, listMarkdownPalettes, saveMarkdownPalette } from '../agent/palettes.js'
 import { validateMarkdown } from '../agent/validate.js'
+import { loadAppearancePalettes } from '../appearance/runtime.js'
 
-export type PayloadMarkdownMcpToolName = 'guide' | 'publish' | 'read' | 'validate' | 'write'
+export type PayloadMarkdownMcpToolName =
+  | 'deletePalette'
+  | 'guide'
+  | 'palettes'
+  | 'publish'
+  | 'read'
+  | 'savePalette'
+  | 'validate'
+  | 'write'
 
 export type PayloadMarkdownMcpOptions = {
   /**
@@ -21,7 +31,7 @@ export type PayloadMarkdownMcpOptions = {
   access?: MarkdownAgentAccessMode
   /** Register the `markdownEditDocument` prompt (default `true`). */
   prompts?: boolean
-  /** Tools to register (default: all). Drop `write` and `publish` for read-only connections. */
+  /** Tools to register (default: all). Drop `write`, `publish`, `savePalette` and `deletePalette` for read-only connections. */
   tools?: PayloadMarkdownMcpToolName[]
 }
 
@@ -99,6 +109,26 @@ const entityShape = {
   locale: z.string().optional().describe('Locale code for localized content. Defaults to the default locale.'),
 }
 
+const colorShape = {
+  accent: z.string().optional().describe('Links and hovered titles inside directives.'),
+  background: z.string().optional().describe('Surface of directives that use the palette.'),
+  border: z.string().optional().describe('Border of directives that use the palette.'),
+  color: z.string().optional().describe('Icon colour (duotone primary layer); button label colour.'),
+  secondaryColor: z.string().optional().describe('Duotone secondary layer (default: color).'),
+}
+
+const paletteShape = z
+  .object({
+    ...colorShape,
+    name: z.string().describe('Stable name markdown references: lowercase letters, digits and dashes, for example "debian".'),
+    dark: z.object(colorShape).optional().describe('Dark-scheme colours; unset ones keep the light value.'),
+    label: z.string().optional().describe('Display name.'),
+    secondaryOpacity: z.number().min(0).max(1).optional().describe('Opacity of the duotone secondary layer (default: the icon\'s own, 0.4 for Font Awesome).'),
+  })
+  .describe(
+    'Colours are hex (#e95420), rgb()/hsl()/oklch()/lab() with numeric arguments, a CSS colour name, currentColor, transparent, or var(--token).',
+  )
+
 function toEdit(raw: Record<string, unknown>, index: number): MarkdownEdit {
   const action = raw.action
 
@@ -123,15 +153,28 @@ function toEdit(raw: Record<string, unknown>, index: number): MarkdownEdit {
  */
 export function payloadMarkdownMcpTools(options: PayloadMarkdownMcpOptions = {}): PayloadMarkdownMcpTool[] {
   const access = options.access ?? 'mcpApiKey'
-  const enabled = new Set(options.tools ?? ['guide', 'validate', 'read', 'write', 'publish'])
+  const enabled = new Set(
+    options.tools ?? ['guide', 'validate', 'read', 'write', 'publish', 'palettes', 'savePalette', 'deletePalette'],
+  )
 
   const tools: Array<{ key: PayloadMarkdownMcpToolName } & PayloadMarkdownMcpTool> = [
     {
       name: 'markdownGuide',
       description:
-        'Start here. Returns the payload-markdown authoring guide for this site: the agent workflow, which collections and globals hold markdown, the configured directive themes, icons and code languages, and every directive with its attributes. Read it before writing markdown.',
-      handler: safely((args, req) => ({
-        content: [{ type: 'text', text: getMarkdownGuide({ access, collection: str(args.collection), payload: req.payload, req }) }],
+        'Start here. Returns the payload-markdown authoring guide for this site: the agent workflow, which collections and globals hold markdown, the configured directive themes, colour palettes, icons and code languages, and every directive with its attributes. Read it before writing markdown.',
+      handler: safely(async (args, req) => ({
+        content: [
+          {
+            type: 'text',
+            text: getMarkdownGuide({
+              access,
+              collection: str(args.collection),
+              payload: req.payload,
+              req,
+              runtimePalettes: await loadAppearancePalettes(req.payload),
+            }),
+          },
+        ],
       })),
       key: 'guide',
       parameters: {
@@ -252,6 +295,39 @@ export function payloadMarkdownMcpTools(options: PayloadMarkdownMcpOptions = {})
         ...entityShape,
         allowWarnings: z.boolean().optional().describe('Publish despite validation warnings in the draft. Errors always block.'),
         overrideLock: z.boolean().optional().describe('Publish even if someone has the document open. Ask the user first.'),
+      },
+    },
+    {
+      name: 'markdownPalettes',
+      description:
+        'Lists the colour palettes markdown can use (built-in, configured in code, and managed in the admin), with their colours, plus the syntax to apply them. Palettes colour icons individually and recolour directives without CSS or code changes.',
+      handler: safely(async (args, req) => json(await listMarkdownPalettes({ access, collection: str(args.collection), req }))),
+      key: 'palettes',
+      parameters: {
+        collection: z.string().optional().describe('Include the palettes configured for this collection.'),
+      },
+    },
+    {
+      name: 'markdownPaletteSave',
+      description:
+        'Creates or updates a colour palette in the "Markdown Appearance" global (by name), so markdown can use it right away without code changes or a rebuild. Colours are validated; contrast notes are advisory. Pass previousName to rename. Requires update permission on that global.',
+      handler: safely(async (args, req) =>
+        json(await saveMarkdownPalette({ access, palette: args.palette, previousName: str(args.previousName), req })),
+      ),
+      key: 'savePalette',
+      parameters: {
+        palette: paletteShape,
+        previousName: z.string().optional().describe('Rename: the palette\'s current name. Markdown using the old name then reports an unknown palette.'),
+      },
+    },
+    {
+      name: 'markdownPaletteDelete',
+      description:
+        'Deletes a palette from the "Markdown Appearance" global. Markdown that still uses it renders without it and reports an unknown palette. Requires update permission on that global.',
+      handler: safely(async (args, req) => json(await deleteMarkdownPalette({ name: text(args.name), access, req }))),
+      key: 'deletePalette',
+      parameters: {
+        name: z.string().describe('Name of the admin-managed palette to delete.'),
       },
     },
   ]

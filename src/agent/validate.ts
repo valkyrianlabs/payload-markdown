@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import type { RenderDiagnostic } from '../core/diagnostics.js'
 import type { MarkdownRenderConfig } from '../types/core.js'
 
+import { loadAppearancePalettes } from '../appearance/runtime.js'
 import { renderMarkdown } from '../render/renderMarkdown.js'
 
 export type MarkdownValidationOptions = {
@@ -11,7 +12,7 @@ export type MarkdownValidationOptions = {
   /** Per-block `md-params` overrides (markdown blocks only). */
   overrides?: MarkdownRenderConfig
   /** Payload instance whose config carries the plugin settings. */
-  payload?: Pick<Payload, 'config'>
+  payload?: Partial<Pick<Payload, 'findGlobal'>> & Pick<Payload, 'config'>
   /** `blocks` for markdown blocks, `field` for markdown fields (default). */
   scope?: 'blocks' | 'field'
 }
@@ -38,6 +39,8 @@ export async function validateMarkdown(
 ): Promise<MarkdownValidationResult> {
   const result = await renderMarkdown(markdown, {
     collectionSlug: options.collection,
+    // Palettes managed in the admin, so agents validate against what the site renders.
+    runtimePalettes: await loadAppearancePalettes(options.payload),
     ...(options.overrides ? { overrides: options.overrides } : {}),
     scope: options.scope ?? 'field',
     ...(options.payload ? { settings: options.payload } : {}),

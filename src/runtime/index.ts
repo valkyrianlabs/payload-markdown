@@ -4,19 +4,24 @@ import type {
   PayloadMarkdownCollectionConfig,
   PayloadMarkdownConfig,
 } from '../types.js'
-import type { MarkdownCodeConfig, MarkdownConfig, MarkdownRenderConfig } from '../types/core.js'
+import type { MarkdownCodeConfig, MarkdownConfig, MarkdownPalette, MarkdownRenderConfig } from '../types/core.js'
 
+import { resolveAppearanceOptions } from '../appearance/options.js'
 import { mergeCodeConfigFromRenderConfigs } from '../core/codeConfig.js'
 import { mergeMarkdownDirectiveThemes } from '../directives/themes.js'
+import { mergeMarkdownPalettes } from '../palettes/index.js'
 import { PAYLOAD_MARKDOWN_VERSION } from '../version.js'
 
 export type PayloadMarkdownResolvedSettings = {
+  /** Slug of the "Markdown Appearance" global when `appearance` is enabled. */
+  appearanceSlug?: string
   code?: MarkdownCodeConfig
   /** Render-relevant collection settings (`code`, `config`, `themes`), or `true`. */
   collections: Partial<Record<string, PayloadMarkdownCollectionConfig | true>>
   config?: ConfigOptions
   enabled: boolean
   icons?: MarkdownRenderConfig['icons']
+  palettes?: MarkdownRenderConfig['palettes']
   themes?: MarkdownRenderConfig['themes']
   /** Version of the package copy that created these settings. */
   version?: string
@@ -34,6 +39,11 @@ export const PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY = 'payloadMarkdown'
  */
 export const PAYLOAD_MARKDOWN_SETTINGS_REGISTRY_KEY = Symbol.for(
   '@valkyrianlabs/payload-markdown/settings',
+)
+
+/** Process-wide key of the appearance (runtime palettes) cache; shared by every copy like the settings key. */
+export const PAYLOAD_MARKDOWN_APPEARANCE_RUNTIME_KEY = Symbol.for(
+  '@valkyrianlabs/payload-markdown/appearance',
 )
 
 type SettingsRegistry = {
@@ -120,6 +130,7 @@ function pickCollectionRenderSettings(
         : {
             ...(entry.code !== undefined ? { code: entry.code } : {}),
             ...(entry.config !== undefined ? { config: entry.config } : {}),
+            ...(entry.palettes !== undefined ? { palettes: entry.palettes } : {}),
             ...(entry.themes !== undefined ? { themes: entry.themes } : {}),
           }
   }
@@ -136,11 +147,13 @@ export function createPayloadMarkdownSettings(
   pluginOptions: PayloadMarkdownConfig = {},
 ): PayloadMarkdownResolvedSettings {
   return freezeCopy({
+    appearanceSlug: resolveAppearanceOptions(pluginOptions.appearance)?.slug,
     code: pluginOptions.code,
     collections: pickCollectionRenderSettings(pluginOptions.collections),
     config: pluginOptions.config,
     enabled: pluginOptions.enabled !== false,
     icons: pluginOptions.icons,
+    palettes: pluginOptions.palettes,
     themes: pluginOptions.themes,
     version: PAYLOAD_MARKDOWN_VERSION,
   })
@@ -315,16 +328,18 @@ export function mergeMarkdownRenderConfigs(
   const code = mergeCodeConfigFromRenderConfigs(...configs)
   let icons: MarkdownRenderConfig['icons']
   const themes = mergeMarkdownDirectiveThemes(...configs.map((config) => config?.themes))
+  const palettes = mergeMarkdownPalettes(...configs.map((config) => config?.palettes))
 
   for (const config of configs)
     if (config?.icons !== undefined) icons = config.icons
 
-  if (!merged && !code && !icons && !themes) return undefined
+  if (!merged && !code && !icons && !themes && !palettes) return undefined
 
   return {
     ...(merged ?? {}),
     ...(code ? { code } : {}),
     ...(icons ? { icons } : {}),
+    ...(palettes ? { palettes } : {}),
     ...(themes ? { themes } : {}),
   }
 }
@@ -339,6 +354,7 @@ export function resolveGlobalMarkdownConfigs(
   const shared: MarkdownRenderConfig = {
     code: current.code,
     icons: current.icons,
+    palettes: current.palettes,
     themes: current.themes,
   }
 
@@ -368,6 +384,7 @@ export function resolveCollectionMarkdownConfigs(
   const collectionResolved = resolveConfigOptions(collectionEntry.config)
   const shared: MarkdownRenderConfig = {
     code: collectionEntry.code,
+    palettes: collectionEntry.palettes,
     themes: collectionEntry.themes,
   }
 
@@ -431,6 +448,9 @@ export function applyMarkdownOverrides(
   const themes = mergeMarkdownDirectiveThemes(base?.themes, overrides.themes)
   if (themes) next.themes = themes
 
+  const palettes = mergeMarkdownPalettes(base?.palettes, overrides.palettes)
+  if (palettes) next.palettes = palettes
+
   return next
 }
 
@@ -438,6 +458,12 @@ export type ResolveMarkdownRenderConfigOptions = {
   collectionSlug?: string
   /** Highest-precedence layer (see `applyMarkdownOverrides`). */
   overrides?: MarkdownRenderConfig
+  /**
+   * Palettes managed at runtime (the "Markdown Appearance" global). They
+   * override the plugin and collection palettes by name; palettes passed to
+   * the render itself still win.
+   */
+  runtimePalettes?: MarkdownPalette[]
   scope?: 'blocks' | 'field'
   /** Explicit settings source; wins over the process registry. `false` ignores plugin settings. */
   settings?: false | null | PayloadMarkdownSettingsSource
@@ -457,7 +483,11 @@ export function resolveMarkdownRenderConfig<T extends ResolveMarkdownRenderConfi
       ? resolveMarkdownBlockDefaults(options.collectionSlug, settings)
       : resolveMarkdownFieldDefaults(options.collectionSlug, settings)
 
-  const merged = mergeMarkdownRenderConfigs(defaults, options) ?? options
+  const runtime: MarkdownRenderConfig | undefined =
+    options.runtimePalettes && options.runtimePalettes.length > 0
+      ? { palettes: options.runtimePalettes }
+      : undefined
+  const merged = mergeMarkdownRenderConfigs(defaults, runtime, options) ?? options
 
   return applyMarkdownOverrides(merged, options.overrides) ?? merged
 }

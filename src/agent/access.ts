@@ -18,8 +18,10 @@ export type MarkdownAgentErrorCode =
   | 'conflict'
   | 'forbidden'
   | 'invalid_edit'
+  | 'invalid_palette'
   | 'locked'
   | 'no_drafts'
+  | 'not_enabled'
   | 'not_found'
   | 'validation_failed'
 

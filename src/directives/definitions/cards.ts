@@ -3,6 +3,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { applyDirectivePalette, getPaletteRenderProperties } from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { getSafeHref, getUnsafeHrefWarnings } from '../urls.js'
 import { DEFAULT_CARD_LINK_SCOPE } from './card.js'
@@ -115,7 +116,7 @@ export function resolveCardGridColumns(node: ContainerDirective): CardGridColumn
 
 export const cardsDirective: LayoutDirectiveDefinition = {
   name: 'cards',
-  allowedAttributes: ['cardTheme', 'columns', 'href', 'linkScope', 'newTab', 'theme'],
+  allowedAttributes: ['cardTheme', 'columns', 'href', 'iconPalette', 'linkScope', 'newTab', 'palette', 'theme'],
   applyHast(node, config, { mergeClassNames }) {
     const columns =
       typeof node.properties.dataColumns === 'string'
@@ -144,6 +145,16 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       if (typeof child.properties.dataTheme !== 'string' && cardTheme)
         child.properties.dataTheme = cardTheme
 
+      // Cards without a palette of their own paint their icons with the
+      // grid's iconPalette (or palette); the grid's surface tokens are inherited.
+      const iconPaletteDefault = node.properties.dataIconPalette ?? node.properties.dataPalette
+      if (
+        typeof iconPaletteDefault === 'string' &&
+        typeof child.properties.dataPalette !== 'string' &&
+        typeof child.properties.dataIconPalette !== 'string'
+      )
+        child.properties.dataIconPalette = iconPaletteDefault
+
       if (href && linkScope === 'section') {
         delete child.properties.dataHref
         delete child.properties.dataLinkScope
@@ -165,6 +176,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
       node.properties.dataLinkScope = linkScope
       node.properties.dataNewTab = newTab ? 'true' : 'false'
     }
+    applyDirectivePalette(node, config)
     node.properties.className = mergeClassNames(
       // Spacing lives in the theme; the base only sets what every grid needs.
       'grid [&>article]:my-0',
@@ -200,6 +212,7 @@ export const cardsDirective: LayoutDirectiveDefinition = {
     const href = getSafeHref(getAttribute(node, 'href'))
 
     return {
+      ...getPaletteRenderProperties(node),
       dataCardTheme: typeof node.attributes?.cardTheme === 'string' ? node.attributes.cardTheme : undefined,
       dataColumns: resolveCardGridColumns(node),
       dataDirective: 'cards',

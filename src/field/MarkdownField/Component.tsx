@@ -7,9 +7,10 @@ import {
   FieldError,
   FieldLabel,
   RenderCustomComponent,
+  useConfig,
   useField,
 } from '@payloadcms/ui'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { readEditorDirectiveConfig } from '../../editor/directiveConfig.js'
 import { MarkdownCodeMirror } from '../../editor/MarkdownCodeMirror/Component.js'
@@ -55,9 +56,50 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
   // Configured themes and icon packs, injected by the plugin (CORE-8). Keyed
   // by content so a new-but-equal config object does not rebuild the editor.
   const directiveConfigKey = JSON.stringify(admin?.custom ?? null)
-  const directiveConfig = useMemo(
+  const staticDirectiveConfig = useMemo(
     () => readEditorDirectiveConfig(JSON.parse(directiveConfigKey)),
     [directiveConfigKey],
+  )
+
+  // Palettes managed in the admin are data, not config: load their names so
+  // completions and lint know palettes created after the app was built. The
+  // editor reads them through a getter, so their arrival does not rebuild it.
+  const {
+    config: { routes, serverURL },
+  } = useConfig()
+  const paletteNamesRef = useRef<readonly string[] | undefined>(undefined)
+  const appearanceSlug = staticDirectiveConfig?.appearanceSlug
+  const staticPalettes = staticDirectiveConfig?.palettes
+
+  useEffect(() => {
+    if (!appearanceSlug) return
+
+    const controller = new AbortController()
+
+    fetch(`${serverURL ?? ''}${routes.api}/globals/${encodeURIComponent(appearanceSlug)}?depth=0`, {
+      credentials: 'include',
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((doc: { palettes?: Array<{ name?: unknown }> } | undefined) => {
+        // Without read access the names stay unknown and no palette is linted.
+        if (!doc) return
+
+        const names = (doc.palettes ?? []).flatMap((row) => (typeof row?.name === 'string' ? [row.name] : []))
+        paletteNamesRef.current = [...new Set([...(staticPalettes ?? []), ...names])]
+      })
+      .catch(() => undefined)
+
+    return () => controller.abort()
+  }, [appearanceSlug, routes.api, serverURL, staticPalettes])
+
+  const directiveConfig = useMemo(
+    () =>
+      staticDirectiveConfig && {
+        ...staticDirectiveConfig,
+        getPaletteNames: () => paletteNamesRef.current,
+      },
+    [staticDirectiveConfig],
   )
 
   // Sync in external value changes only when they actually differ.

@@ -2,8 +2,15 @@ import type { Block, CollectionConfig, Config, Field, Plugin } from 'payload'
 
 import type { MarkdownEditorDirectiveConfig } from './editor/directiveConfig.js'
 import type { PayloadMarkdownResolvedSettings } from './runtime/index.js'
-import type { MarkdownFieldOptions, PayloadMarkdownCollectionConfig, PayloadMarkdownConfig } from './types.js'
+import type {
+  MarkdownFieldOptions,
+  PayloadMarkdownAppearanceOptions,
+  PayloadMarkdownCollectionConfig,
+  PayloadMarkdownConfig,
+} from './types.js'
 
+import { createAppearanceGlobal, resolveAppearanceOptions } from './appearance/config.js'
+import { attachAppearancePayload, clearAppearance } from './appearance/runtime.js'
 import { createMarkdownBlock, MarkdownBlock } from './blocks/MarkdownBlock/config.js'
 import { resolveEffectiveMarkdownBlockParams } from './blocks/MarkdownBlock/params.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
@@ -25,6 +32,7 @@ import {
   PAYLOAD_MARKDOWN_ADMIN_CUSTOM_KEY,
 } from './editor/directiveConfig.js'
 import { DEFAULT_MARKDOWN_MAX_LENGTH, markdownField } from './field/MarkdownField/config.js'
+import { DEFAULT_PALETTES } from './palettes/index.js'
 import {
   clearPayloadMarkdownSettings,
   PAYLOAD_MARKDOWN_CONFIG_CUSTOM_KEY,
@@ -189,7 +197,7 @@ function createMarkdownBlockForScope(
   const blockDefaults = resolveMarkdownBlockDefaults(collectionSlug, settings)
 
   return createMarkdownBlock(
-    createEditorDirectiveConfig(blockDefaults),
+    createEditorDirectiveConfig(blockDefaults, settings.appearanceSlug),
     resolveEffectiveMarkdownBlockParams(blockDefaults),
   )
 }
@@ -203,7 +211,28 @@ export const payloadMarkdown =
       // A disabled plugin must not leave a previous configuration's render
       // defaults active (CORE-18).
       clearPayloadMarkdownSettings()
+      clearAppearance()
       return config
+    }
+
+    // Opt-in runtime palettes: the "Markdown Appearance" global, readable by
+    // renders through the Payload instance captured at init.
+    const appearance = resolveAppearanceOptions(pluginOptions.appearance)
+
+    if (appearance) {
+      const globals = config.globals ?? []
+
+      if (!globals.some((global) => global.slug === appearance.slug))
+        config.globals = [...globals, createAppearanceGlobal(appearance)]
+
+      const incomingOnInit = config.onInit
+
+      config.onInit = async (payload) => {
+        attachAppearancePayload(payload)
+        await incomingOnInit?.(payload)
+      }
+    } else {
+      clearAppearance()
     }
 
     // The settings are owned by the config being built: a frozen snapshot on
@@ -247,7 +276,10 @@ export const payloadMarkdown =
           resolved.fieldName,
           withEditorConfig(
             resolved.fieldOptions,
-            createEditorDirectiveConfig(resolveMarkdownFieldDefaults(collection.slug, settings)),
+            createEditorDirectiveConfig(
+              resolveMarkdownFieldDefaults(collection.slug, settings),
+              settings.appearanceSlug,
+            ),
           ),
         )
 
@@ -266,6 +298,7 @@ export {
   DEFAULT_COLUMNS_THEMES,
   DEFAULT_DETAILS_THEMES,
   DEFAULT_MARKDOWN_MAX_LENGTH,
+  DEFAULT_PALETTES,
   DEFAULT_SECTION_THEMES,
   DEFAULT_STEPS_THEMES,
   DEFAULT_TAB_THEMES,
@@ -274,13 +307,16 @@ export {
   MarkdownBlock,
   markdownField,
 }
-export type { MarkdownFieldOptions, PayloadMarkdownConfig }
+export type { MarkdownFieldOptions, PayloadMarkdownAppearanceOptions, PayloadMarkdownConfig }
 export type {
   MarkdownCodeConfig,
   MarkdownColorScheme,
   MarkdownDirectiveTheme,
   MarkdownDirectiveThemeGroup,
   MarkdownDirectiveThemes,
+  MarkdownPalette,
+  MarkdownPaletteColors,
+  MarkdownPalettes,
   PayloadMarkdownIconPack,
   PayloadMarkdownIconsConfig,
 } from './types/core.js'

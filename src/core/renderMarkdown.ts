@@ -35,6 +35,7 @@ import { remarkDirectiveLines } from './plugins/remarkDirectiveLines.js'
 import { remarkHeadingAnchorsAndToc } from './plugins/remarkHeadingAnchorsAndToc.js'
 import { remarkLayoutDirectives } from './plugins/remarkLayoutDirectives.js'
 import { remarkValidateDirectiveThemes } from './plugins/remarkValidateDirectiveThemes.js'
+import { remarkValidatePalettes } from './plugins/remarkValidatePalettes.js'
 import { getRenderData } from './renderData.js'
 
 function extractCodeLanguage(
@@ -157,6 +158,8 @@ const sanitizeSchema: Schema = {
       'className',
       'dataButton',
       'dataDirective',
+      'dataIconPalette',
+      'dataPalette',
       'dataDirectiveLink',
       'dataIconPosition',
       'dataSize',
@@ -171,6 +174,8 @@ const sanitizeSchema: Schema = {
       ...getAttributeDefinitions(defaultSchema.attributes?.article ?? []),
       'className',
       'dataDirective',
+      'dataIconPalette',
+      'dataPalette',
       'dataEyebrow',
       'dataHref',
       'dataIcon',
@@ -204,6 +209,8 @@ const sanitizeSchema: Schema = {
     details: [
       ...getAttributeDefinitions(defaultSchema.attributes?.details ?? []),
       'dataDirective',
+      'dataIconPalette',
+      'dataPalette',
       'dataTheme',
       'dataTitle',
       'dataVlLayout',
@@ -213,6 +220,8 @@ const sanitizeSchema: Schema = {
       ...getAttributeDefinitions(defaultSchema.attributes?.div ?? []),
       'dataAlign',
       'dataDirective',
+      'dataIconPalette',
+      'dataPalette',
       'dataDirectiveBody',
       'dataDirectiveTitle',
       'dataEyebrow',
@@ -294,6 +303,8 @@ const sanitizeSchema: Schema = {
       'dataDefault',
       'dataDisabled',
       'dataDirective',
+      'dataIconPalette',
+      'dataPalette',
       'dataHref',
       'dataLabel',
       'dataLinkScope',
@@ -315,6 +326,7 @@ const sanitizeSchema: Schema = {
       ...getAttributeDefinitions(defaultSchema.attributes?.span ?? []),
       'className',
       'dataPmdIcon',
+      'dataPmdIconPalette',
       'dataPmdIconRef',
       'dataStepNumber',
       'focusable',
@@ -381,6 +393,7 @@ export async function renderMarkdownDocument(
       .use(remarkCompileLayouts)
       .use(remarkLayoutDirectives)
       .use(remarkValidateDirectiveThemes, config)
+      .use(remarkValidatePalettes, config)
       .use(remarkCollectRenderData)
       .use(remarkHeadingAnchorsAndToc)
       .use(remarkRehype, { allowDangerousHtml: true })

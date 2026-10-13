@@ -5,15 +5,20 @@ import { linter } from '@codemirror/lint'
 import type { MarkdownEditorDirectiveConfig } from '../directiveConfig.js'
 
 import { lintMarkdownDirectives } from '../../directives/diagnostics.js'
+import { getEditorPaletteNames } from '../directiveConfig.js'
 
 /**
- * Directive lint source that knows the field's configured themes and icon
- * packs (CORE-8), so custom themes are not reported as unknown.
+ * Directive lint source that knows the field's configured themes, icon packs
+ * and palettes (CORE-8), so custom ones are not reported as unknown.
  */
 export const createDirectiveDiagnostics = (config: MarkdownEditorDirectiveConfig = {}) =>
   linter((view): Diagnostic[] => {
   try {
-    return lintMarkdownDirectives(view.state.doc.toString(), config).map((diagnostic) => ({
+    // Palettes managed in the admin load after the editor mounts; until then
+    // no palette is reported as unknown.
+    const options = { ...config, palettes: getEditorPaletteNames(config) }
+
+    return lintMarkdownDirectives(view.state.doc.toString(), options).map((diagnostic) => ({
       from: diagnostic.from,
       message: diagnostic.message,
       severity: diagnostic.severity,

@@ -9,7 +9,7 @@ import {
   hasUnsafeIconPathSegments,
   normalizePayloadMarkdownIconRef,
 } from './refs.js'
-import { instantiateSanitizedSvg, parseAndSanitizeSvg } from './sanitizeSvg.js'
+import { instantiateSanitizedSvg, parseAndSanitizeSvg, type SvgPaint } from './sanitizeSvg.js'
 
 export type PayloadMarkdownIconResolution = {
   iconKey?: string
@@ -93,6 +93,7 @@ export function resolvePayloadMarkdownIcon(
   ref: string | undefined,
   config: PayloadMarkdownIconsConfig | undefined,
   className: string,
+  paint?: SvgPaint,
 ): PayloadMarkdownIconResolution {
   if (!ref) return { nodes: [], warnings: [] }
 
@@ -139,7 +140,7 @@ export function resolvePayloadMarkdownIcon(
 
   return {
     iconKey: normalized.icon.key,
-    nodes: [instantiateSanitizedSvg(svg, className)],
+    nodes: [instantiateSanitizedSvg(svg, className, paint)],
     warnings: [],
   }
 }

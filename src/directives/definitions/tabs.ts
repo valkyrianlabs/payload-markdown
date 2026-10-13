@@ -4,6 +4,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { DIRECTIVE_BODY_CLASS, DIRECTIVE_SURFACE_DIVIDER_CLASS } from '../../styles/directiveSurface.js'
+import { applyDirectivePalette, getPaletteRenderProperties } from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import {
   getTabLabel as getTabDirectiveLabel,
@@ -200,7 +201,7 @@ function getDirectTabDirectives(node: ContainerDirective): ContainerDirective[] 
 
 export const tabsDirective: LayoutDirectiveDefinition = {
   name: 'tabs',
-  allowedAttributes: ['default', 'tabTheme', 'theme'],
+  allowedAttributes: ['default', 'palette', 'tabTheme', 'theme'],
   applyHast(node, config, { mergeClassNames, reserveIds }) {
     const tabs = collectTabs(node, reserveIds)
     const activeTab = findActiveTab(tabs, getRequestedDefault(node))
@@ -214,6 +215,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
 
     node.properties.dataTheme = theme.name
     node.properties.dataDefault = activeTab?.value
+    applyDirectivePalette(node, config)
     node.properties.className = mergeClassNames(
       theme.hookClassName,
       theme.modifierClassName,
@@ -253,6 +255,7 @@ export const tabsDirective: LayoutDirectiveDefinition = {
       typeof node.attributes?.default === 'string' ? node.attributes.default : undefined
 
     return {
+      ...getPaletteRenderProperties(node),
       dataDefault: requestedDefault
         ? (resolveTabsDefault(requestedDefault, getTabsDefaultCandidates(node)) ?? requestedDefault)
         : undefined,

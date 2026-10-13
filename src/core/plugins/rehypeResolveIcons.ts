@@ -9,6 +9,7 @@ import {
   resolvePayloadMarkdownIcon,
   validatePayloadMarkdownIconsConfig,
 } from '../../icons/resolve.js'
+import { getPaletteRegistry, iconPaint } from '../../palettes/index.js'
 import { reportDiagnostic } from '../diagnostics.js'
 
 function isElement(node: unknown): node is Element {
@@ -30,6 +31,8 @@ export const rehypeResolveIcons: Plugin<[MarkdownRenderConfig?], Root> = (
     for (const warning of validatePayloadMarkdownIconsConfig(config.icons))
       reportDiagnostic(file, warning, { code: 'icon-config', source: 'icon' })
 
+    const palettes = getPaletteRegistry(config.palettes)
+
     visit(tree, 'element', (node, index, parent) => {
       if (!isElement(node)) return
       if (node.tagName !== 'span') return
@@ -42,7 +45,16 @@ export const rehypeResolveIcons: Plugin<[MarkdownRenderConfig?], Root> = (
         : typeof node.properties.className === 'string'
           ? node.properties.className
           : 'pmd-icon'
-      const resolved = resolvePayloadMarkdownIcon(iconRef, config.icons, className)
+      // Unknown palette names were reported when the directive was validated;
+      // the icon then renders unpainted.
+      const paletteName = getStringProperty(node, 'dataPmdIconPalette')
+      const palette = paletteName ? palettes.get(paletteName) : undefined
+      const resolved = resolvePayloadMarkdownIcon(
+        iconRef,
+        config.icons,
+        className,
+        palette ? { name: palette.name, ...iconPaint(palette) } : undefined,
+      )
 
       const start = node.position?.start
       const place = start ? { column: start.column, line: start.line } : undefined

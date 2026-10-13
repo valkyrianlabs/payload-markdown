@@ -1,6 +1,11 @@
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
 
-export function makeDirectiveIconPlaceholder(icon: string, className: string[]) {
+/**
+ * A placeholder that rehypeResolveIcons replaces with the sanitized SVG.
+ * `palette` (optional) paints that icon; without it the icon renders exactly
+ * as before palettes existed.
+ */
+export function makeDirectiveIconPlaceholder(icon: string, className: string[], palette?: string) {
   const normalized = normalizePayloadMarkdownIconRef(icon)
   const iconKey = normalized.icon?.key ?? icon
 
@@ -11,6 +16,7 @@ export function makeDirectiveIconPlaceholder(icon: string, className: string[]) 
       ariaHidden: 'true',
       className,
       dataPmdIcon: iconKey,
+      ...(palette ? { dataPmdIconPalette: palette } : {}),
       dataPmdIconRef: icon,
       focusable: 'false',
     },

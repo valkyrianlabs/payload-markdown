@@ -4,6 +4,7 @@ import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
+import { applyDirectivePalette, getPaletteRenderProperties } from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 const DEFAULT_DETAILS_TITLE = 'Details'
@@ -16,7 +17,7 @@ function getTitle(node: ContainerDirective): string {
 
 export const detailsDirective: LayoutDirectiveDefinition = {
   name: 'details',
-  allowedAttributes: ['open', 'theme', 'title'],
+  allowedAttributes: ['open', 'palette', 'theme', 'title'],
   applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : DEFAULT_DETAILS_TITLE
     const theme = resolveDirectiveTheme(
@@ -27,6 +28,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
     const children = node.children
 
     node.properties.dataTheme = theme.name
+    applyDirectivePalette(node, config)
     node.properties.className = mergeClassNames(
       theme.hookClassName,
       theme.modifierClassName,
@@ -66,6 +68,7 @@ export const detailsDirective: LayoutDirectiveDefinition = {
   },
   getMdastRenderProperties(node) {
     return {
+      ...getPaletteRenderProperties(node),
       dataDirective: 'details',
       dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
       dataTitle: getTitle(node),

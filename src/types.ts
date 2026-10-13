@@ -1,9 +1,10 @@
-import type { CollectionSlug, TextField } from 'payload'
+import type { CollectionSlug, GlobalConfig, Payload, TextField } from 'payload'
 
 import type {
   MarkdownCodeConfig,
   MarkdownConfig,
   MarkdownDirectiveThemes,
+  MarkdownPalettes,
   PayloadMarkdownIconsConfig,
 } from './types/core.js'
 
@@ -13,6 +14,32 @@ export type DualMarkdownFieldConfig = {
 }
 
 export type ConfigOptions = DualMarkdownFieldConfig | MarkdownConfig
+
+/** Options for the "Markdown Appearance" global (`appearance` plugin option). */
+export type PayloadMarkdownAppearanceOptions = {
+  /**
+   * Access control for the global. Default: any authenticated user may read
+   * and update it. Rendering reads it on the server regardless.
+   */
+  access?: GlobalConfig['access']
+  /** Admin options for the global (for example `group`). */
+  admin?: GlobalConfig['admin']
+  /**
+   * How long, in milliseconds, a server process reuses the palettes it loaded
+   * (default 30000). Saving the global clears the cache of the process that
+   * saved it at once; other processes pick the change up within this time.
+   */
+  cacheTtl?: number
+  /**
+   * What happens after palettes change, so statically rendered pages pick
+   * them up. `true` (default): revalidate every Next.js route
+   * (`revalidatePath('/', 'layout')`). `false`: nothing. A function: runs
+   * instead (for example to revalidate specific paths or tags).
+   */
+  revalidate?: ((args: { payload: Payload }) => Promise<void> | void) | boolean
+  /** Global slug (default `markdown-appearance`). */
+  slug?: string
+}
 
 export type MarkdownFieldOptions = {
   admin?: Partial<TextField['admin']>
@@ -72,12 +99,24 @@ export type PayloadMarkdownCollectionConfig = {
   installIntoBlocks?: boolean
 
   /**
+   * Colour palettes for markdown in this collection (added to the plugin's).
+   */
+  palettes?: MarkdownPalettes
+
+  /**
    * Directive theme registry extensions for markdown in this collection.
    */
   themes?: MarkdownDirectiveThemes
 }
 
 export interface PayloadMarkdownConfig {
+  /**
+   * Adds the "Markdown Appearance" global, where admins and MCP agents manage
+   * colour palettes at runtime, without code changes or a rebuild. Off by
+   * default: enabling it adds a global (and, on SQL databases, a migration).
+   */
+  appearance?: boolean | PayloadMarkdownAppearanceOptions
+
   /**
    * Code fence / Shiki rendering options.
    */
@@ -104,6 +143,14 @@ export interface PayloadMarkdownConfig {
    * Local SVG icon pack configuration for markdown directives.
    */
   icons?: PayloadMarkdownIconsConfig
+
+  /**
+   * Named colour palettes, referenced from markdown with `palette="name"` on a
+   * directive or `@pack/icon palette=name` on an icon. Added to the built-in
+   * hue palettes (`{ extendDefaults: false, items }` drops those). Palettes
+   * managed in the admin (see `appearance`) override these by name.
+   */
+  palettes?: MarkdownPalettes
 
   /**
    * Directive theme registry extensions.

@@ -8,6 +8,7 @@ import type {
   MarkdownVariant,
 } from '../../types/core.js'
 
+import { loadAppearancePalettes } from '../../appearance/runtime.js'
 import { resolveFullBleedCode } from '../../core/codeConfig.js'
 import { renderMarkdownDocument } from '../../core/renderMarkdown.js'
 import { resolveMarkdownRenderConfig } from '../../runtime/index.js'
@@ -214,7 +215,9 @@ export async function MarkdownRenderer(rawProps: MarkdownRendererProps) {
 
   // Plugin defaults come from the explicit `settings` source when given,
   // otherwise from the process-wide settings registry.
-  const resolvedProps = resolveMarkdownRenderConfig({ ...rawProps, collectionSlug, scope })
+  // Palettes managed in the admin ("Markdown Appearance"), cached per process.
+  const runtimePalettes = await loadAppearancePalettes(rawProps.settings)
+  const resolvedProps = resolveMarkdownRenderConfig({ ...rawProps, collectionSlug, runtimePalettes, scope })
 
   const {
     className,

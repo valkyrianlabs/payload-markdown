@@ -4,6 +4,7 @@ import type { ContainerDirective } from 'mdast-util-directive'
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
+import { applyDirectivePalette, getPaletteRenderProperties } from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { CARD_BODY_CLASS_NAMES } from './card.js'
 
@@ -199,7 +200,7 @@ function groupStepChildren(
 
 export const stepsDirective: LayoutDirectiveDefinition = {
   name: 'steps',
-  allowedAttributes: ['columns', 'layout', 'numbered', 'stepTheme', 'theme', 'variant'],
+  allowedAttributes: ['columns', 'layout', 'numbered', 'palette', 'stepTheme', 'theme', 'variant'],
   applyHast(node, config, { mergeClassNames }) {
     const variant =
       typeof node.properties.dataVariant === 'string' && isStepVariant(node.properties.dataVariant)
@@ -228,6 +229,7 @@ export const stepsDirective: LayoutDirectiveDefinition = {
     )
 
     node.properties.dataTheme = theme.name
+    applyDirectivePalette(node, config)
     node.properties.className = mergeClassNames(
       theme.hookClassName,
       theme.modifierClassName,
@@ -268,6 +270,7 @@ export const stepsDirective: LayoutDirectiveDefinition = {
     const columns = resolveCardStepColumns(node)
 
     return {
+      ...getPaletteRenderProperties(node),
       dataColumns: variant === 'cards' && layout === 'grid' ? columns : undefined,
       dataDirective: 'steps',
       dataLayout: variant === 'cards' ? layout : undefined,

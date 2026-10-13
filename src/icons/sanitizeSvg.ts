@@ -438,14 +438,87 @@ function toClassList(value: Properties[string]): string[] {
   return []
 }
 
+/** How a palette paints an icon (all values are validated CSS colours). */
+export type SvgPaint = {
+  /** Palette name, emitted as `data-pmd-palette`. */
+  name: string
+  primary?: string
+  secondary?: string
+  secondaryOpacity?: number
+}
+
+/** Classes that mark a duotone icon's secondary layer (Font Awesome and our own). */
+const SECONDARY_LAYER_CLASSES = ['fa-secondary', 'pmd-icon-secondary']
+
+/** Paint values a palette may replace: real colours, not `none`, `currentColor` or `url(#…)` refs. */
+function isRecolorablePaint(value: unknown): boolean {
+  if (typeof value !== 'string') return false
+
+  const paint = value.trim().toLowerCase()
+
+  return Boolean(paint) && !['currentcolor', 'inherit', 'none', 'transparent'].includes(paint) && !paint.startsWith('url(')
+}
+
+function recolorStyle(value: Properties[string], replacement: string | undefined): string | undefined {
+  if (typeof value !== 'string') return undefined
+
+  const declarations = value
+    .split(';')
+    .map((declaration) => declaration.trim())
+    .filter(Boolean)
+    .flatMap((declaration) => {
+      const separator = declaration.indexOf(':')
+      const property = declaration.slice(0, separator).trim().toLowerCase()
+
+      if ((property === 'fill' || property === 'stroke') && isRecolorablePaint(declaration.slice(separator + 1)))
+        return replacement ? [`${property}:${replacement}`] : []
+
+      return [declaration]
+    })
+
+  return declarations.length > 0 ? declarations.join(';') : undefined
+}
+
+/**
+ * Recolours a palette-painted icon in place. Explicit fill/stroke colours
+ * become `currentColor` (the palette colour); the duotone secondary layer is
+ * painted with `--pmd-icon-secondary` and its own subtree inherits from it.
+ */
+function applyPaint(node: Element, paint: SvgPaint, inSecondary: boolean): void {
+  const layerRoot = !inSecondary && toClassList(node.properties.className).some((name) => SECONDARY_LAYER_CLASSES.includes(name))
+  const secondary = inSecondary || layerRoot
+
+  for (const property of ['fill', 'stroke'] as const)
+    if (isRecolorablePaint(node.properties[property])) {
+      // Inside the secondary layer, colours inherit from the layer root.
+      if (secondary) delete node.properties[property]
+      else node.properties[property] = 'currentColor'
+    }
+
+  let style = recolorStyle(node.properties.style, secondary ? undefined : 'currentColor')
+
+  if (layerRoot) {
+    if (node.properties.fill !== 'none')
+      style = [style, 'fill:var(--pmd-icon-secondary, currentColor)'].filter(Boolean).join(';')
+    if (paint.secondaryOpacity !== undefined) node.properties.opacity = String(paint.secondaryOpacity)
+  }
+
+  if (style) node.properties.style = style
+  else delete node.properties.style
+
+  for (const child of node.children) if (child.type === 'element') applyPaint(child, paint, secondary)
+}
+
 /**
  * Returns a deep copy of a sanitized icon with the runtime class names and
- * accessibility attributes the renderer adds to every inline icon.
+ * accessibility attributes the renderer adds to every inline icon. With a
+ * `paint`, the copy is recoloured with its palette (see `applyPaint`); without
+ * one it is left exactly as the icon file draws it.
  */
-export function instantiateSanitizedSvg(svg: Element, className: string): Element {
+export function instantiateSanitizedSvg(svg: Element, className: string, paint?: SvgPaint): Element {
   const copy = structuredClone(svg)
   const properties: Properties = {}
-  const runtimeClasses = className.split(/\s+/).filter(Boolean)
+  const runtimeClasses = [...className.split(/\s+/).filter(Boolean), ...(paint ? ['pmd-icon--palette'] : [])]
   let hasClass = false
 
   for (const [name, value] of Object.entries(copy.properties)) {
@@ -465,6 +538,25 @@ export function instantiateSanitizedSvg(svg: Element, className: string): Elemen
   properties.ariaHidden = 'true'
   properties.focusable = 'false'
   copy.properties = properties
+
+  if (paint) {
+    for (const child of copy.children) if (child.type === 'element') applyPaint(child, paint, false)
+
+    // Icons that set no fill (Font Awesome brands, for one) would paint black.
+    if (properties.fill === undefined) properties.fill = 'currentColor'
+    else if (isRecolorablePaint(properties.fill)) properties.fill = 'currentColor'
+    if (isRecolorablePaint(properties.stroke)) properties.stroke = 'currentColor'
+
+    const declarations = [
+      recolorStyle(properties.style, 'currentColor'),
+      paint.primary ? `color:${paint.primary}` : undefined,
+      paint.secondary ? `--pmd-icon-secondary:${paint.secondary}` : undefined,
+    ].filter(Boolean)
+
+    if (declarations.length > 0) properties.style = declarations.join(';')
+    else delete properties.style
+    properties.dataPmdPalette = paint.name
+  }
 
   return copy
 }
