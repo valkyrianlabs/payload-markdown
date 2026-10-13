@@ -138,7 +138,7 @@ Hidden.
 2. Install dependencies.
 3. Run:
 
-```text
+```bash
 pnpm install
 pnpm build
 ```

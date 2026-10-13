@@ -266,7 +266,7 @@ export function Post({ post }: { post: { content: string } }) {
 
 `bash` is not in the default Shiki language set, so shell commands use a plain `text` fence here.
 
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 pnpm dev
 ```

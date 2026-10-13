@@ -9,25 +9,25 @@ Tabs in every container theme (`default`, `muted`, `glass`, `underline`, `pills`
 :::tabs
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -39,25 +39,25 @@ bun add @valkyrianlabs/payload-markdown
 :::tabs{default="npm"}
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -106,25 +106,25 @@ No `value` attribute: the renderer derives `derived-value`.
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -139,25 +139,25 @@ bun add @valkyrianlabs/payload-markdown
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -172,25 +172,25 @@ bun add @valkyrianlabs/payload-markdown
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -205,25 +205,25 @@ bun add @valkyrianlabs/payload-markdown
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::
@@ -238,25 +238,25 @@ bun add @valkyrianlabs/payload-markdown
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown
 ```
 :::

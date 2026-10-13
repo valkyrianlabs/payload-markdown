@@ -48,7 +48,7 @@ Render Markdown with the server component.
 
 Install the plugin with your package manager. This paragraph is long enough to wrap so the alignment of wrapped lines with the step heading can be checked against the list marker.
 
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 
@@ -850,7 +850,7 @@ Render Markdown with the server component.
 
 ### Install
 
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown
 ```
 
@@ -897,13 +897,13 @@ A rendered post with highlighted code and themed directives.
 
 ### Long command
 
-```text
+```bash
 pnpm dlx some-long-cli-name --with-a-flag --and-another-flag=value --and-yet-another-flag=another-value
 ```
 
 ### Short command
 
-```text
+```bash
 pnpm dev
 ```
 

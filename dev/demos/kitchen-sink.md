@@ -108,25 +108,25 @@ There are no breaking changes. Update the package, restart the dev server, and e
 }
 
 :::tab[pnpm]{value="pnpm"}
-```text
+```bash
 pnpm add @valkyrianlabs/payload-markdown@latest
 ```
 :::
 
 :::tab[npm]{value="npm"}
-```text
+```bash
 npm install @valkyrianlabs/payload-markdown@latest
 ```
 :::
 
 :::tab[yarn]{value="yarn"}
-```text
+```bash
 yarn add @valkyrianlabs/payload-markdown@latest
 ```
 :::
 
 :::tab[bun]{value="bun"}
-```text
+```bash
 bun add @valkyrianlabs/payload-markdown@latest
 ```
 :::
