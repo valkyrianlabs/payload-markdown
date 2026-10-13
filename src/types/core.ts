@@ -192,6 +192,16 @@ export type MarkdownConfig = {
   className?: string
 
   /**
+   * Colour scheme for the typography and directive defaults.
+   *
+   * - `'auto'` (default) follows the host's Tailwind `dark:` variant, so it
+   *   tracks a class- or attribute-based theme switcher when the host declares
+   *   one with `@custom-variant dark`, and the OS preference otherwise.
+   * - `'light'` / `'dark'` pin the palette, e.g. for a site that is always dark.
+   */
+  colorScheme?: MarkdownColorScheme
+
+  /**
    * Additional classes applied to column elements within the rendered markdown, if applicable.
    *
    * @deprecated Use directive themes instead.
@@ -219,16 +229,6 @@ export type MarkdownConfig = {
    * Optional content rendered above the markdown body.
    */
   lead?: ReactNode
-
-  /**
-   * Colour scheme for the typography and directive defaults.
-   *
-   * - `'auto'` (default) follows the host's Tailwind `dark:` variant, so it
-   *   tracks a class- or attribute-based theme switcher when the host declares
-   *   one with `@custom-variant dark`, and the OS preference otherwise.
-   * - `'light'` / `'dark'` pin the palette, e.g. for a site that is always dark.
-   */
-  colorScheme?: MarkdownColorScheme
 
   /**
    * Whether heading colors should be slightly muted.
