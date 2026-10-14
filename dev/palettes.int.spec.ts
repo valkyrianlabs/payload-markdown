@@ -1,12 +1,15 @@
 import type { Element } from 'hast'
+import type { Config } from 'payload'
 
 import { fromHtml } from 'hast-util-from-html'
 import { describe, expect, it } from 'vitest'
 
+import { getAppearanceSlug } from '../src/appearance/runtime'
 import { compileMarkdown } from '../src/core/renderMarkdown'
 import { lintMarkdownDirectives } from '../src/directives/diagnostics'
 import { parseIconEntries } from '../src/icons/entries'
 import { instantiateSanitizedSvg, parseAndSanitizeSvg } from '../src/icons/sanitizeSvg'
+import { payloadMarkdown } from '../src/index'
 import { normalizePaletteColor } from '../src/palettes/colors'
 import { describePaletteContrast } from '../src/palettes/contrast'
 import {
@@ -220,6 +223,32 @@ describe('painting icons', () => {
     expect(primary.properties.style).toBeUndefined()
   })
 
+  it('paints a stroke-drawn secondary layer with the secondary colour', () => {
+    const outlined = parseAndSanitizeSvg(
+      '<svg viewBox="0 0 16 16"><g class="pmd-icon-secondary" fill="none" stroke="#999"><path d="M1 1h14"/><path d="M1 3h14" stroke="#777"/></g><path d="M1 9h14v6H1z"/></svg>',
+    )!
+    const icon = instantiateSanitizedSvg(outlined, '', { name: 'aurora', primary: '#0284c7', secondary: '#7c3aed' })
+    const [layer] = icon.children as Element[]
+    const [, inner] = layer.children as Element[]
+
+    expect(layer.properties).toMatchObject({ fill: 'none', style: 'stroke:var(--pmd-icon-secondary, currentColor)' })
+    expect(layer.properties.stroke).toBeUndefined()
+    expect(inner.properties).toMatchObject({ style: 'stroke:var(--pmd-icon-secondary, currentColor)' })
+  })
+
+  it('leaves masks, clip paths and gradients untouched', () => {
+    const masked = parseAndSanitizeSvg(
+      '<svg viewBox="0 0 16 16"><defs><mask id="m"><rect width="16" height="16" fill="white"/></mask><linearGradient id="g"><stop stop-color="#f00"/></linearGradient></defs><path d="M0 0h16v16H0z" fill="#123456" mask="url(#m)"/></svg>',
+    )!
+    const icon = instantiateSanitizedSvg(masked, '', { name: 'orange', primary: '#ea580c' })
+    const [defs, path] = icon.children as Element[]
+    const [mask, gradient] = defs.children as Element[]
+
+    expect((mask.children[0] as Element).properties.fill).toBe('white')
+    expect((gradient.children[0] as Element).properties.stopColor).toBe('#f00')
+    expect(path.properties.fill).toBe('currentColor')
+  })
+
   it('recolours explicit fills and strokes but keeps none and gradient references', () => {
     const icon = instantiateSanitizedSvg(explicit, '', { name: 'red', primary: '#dc2626' })
     const [solid, styled, none, gradient] = icon.children as Element[]
@@ -315,6 +344,15 @@ describe('rendering palettes', () => {
     expect(result.html).not.toMatch(/pmd-icon--palette|data-pmd-palette|data-palette|style="/)
   })
 
+  it('reports extra icons on directives that show one', async () => {
+    const result = await renderMarkdown(':::callout[A]{icon="@brand/github, @brand/swirl"}\nx\n:::', { icons, settings: false })
+
+    expect(result.warnings).toEqual(['"callout" shows one icon; "@brand/swirl" is ignored. Only cards show a list of icons.'])
+    expect(
+      lintMarkdownDirectives('::button[B]{href="/b" icon="@a/b, @a/c, @a/d"}', {}).map((diagnostic) => diagnostic.message),
+    ).toEqual(['"button" shows one icon; "@a/c", "@a/d" are ignored. Only cards show a list of icons.'])
+  })
+
   it('paints button icons and keeps the icon-only class', async () => {
     const result = await compileMarkdown('::button{href="/x" icon="@brand/github palette=ubuntu" ariaLabel="GitHub"}', {
       icons,
@@ -341,5 +379,15 @@ describe('editor lint', () => {
 
   it('stays quiet about palettes when their names are not known yet', () => {
     expect(lintMarkdownDirectives(':::card[A]{palette="from-admin"}\nx\n:::', {})).toEqual([])
+  })
+})
+
+describe('appearance option', () => {
+  it('registers runtime palettes even when the app defines the global itself', () => {
+    const existing = { slug: 'markdown-appearance', fields: [{ name: 'palettes', type: 'array' as const, fields: [] }] }
+    const config = payloadMarkdown({ appearance: true })({ collections: [], globals: [existing] } as unknown as Config) as Config
+
+    expect(config.globals).toEqual([existing])
+    expect(getAppearanceSlug()).toBe('markdown-appearance')
   })
 })

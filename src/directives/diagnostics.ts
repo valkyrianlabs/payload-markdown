@@ -4,9 +4,9 @@ import type { MarkdownDirectiveThemes } from '../types/core.js'
 import type { TabsDefaultCandidate } from './definitions/tab.js'
 import type { ScannedDirectiveLine, SourceIndex } from './lineScanner.js'
 
-import { parseIconEntries } from '../icons/entries.js'
+import { getExtraIconWarnings, parseIconEntries } from '../icons/entries.js'
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
-import { formatUnknownPaletteMessage } from '../palettes/diagnostics.js'
+import { collectPaletteNames, formatUnknownPaletteMessage } from '../palettes/diagnostics.js'
 import { parseButtonDirectiveLine } from './buttonSyntax.js'
 import { getTabRawValue, resolveTabsDefault, slugTabValue } from './definitions/tab.js'
 import { getLeafDirectiveName, getLeafDirectiveProblem, parseLeafDirectiveLine } from './leafSyntax.js'
@@ -66,12 +66,12 @@ export type LintMarkdownDirectivesOptions = {
   themes?: MarkdownDirectiveThemes
 }
 
-/** Icon-entry option problems, then unknown icon packs (one per entry). */
-function getIconDiagnostics(icon: unknown, options: LintMarkdownDirectivesOptions): string[] {
+/** Icon-entry option problems, extra icons, then unknown icon packs (one per entry). */
+function getIconDiagnostics(directive: string, icon: unknown, options: LintMarkdownDirectivesOptions): string[] {
   if (typeof icon !== 'string') return []
 
   const { entries, warnings } = parseIconEntries(icon)
-  const diagnostics = [...warnings]
+  const diagnostics = [...warnings, ...getExtraIconWarnings(directive, entries)]
 
   if (options.iconPacks)
     for (const entry of entries) {
@@ -89,20 +89,11 @@ function getPaletteDiagnostics(
   options: LintMarkdownDirectivesOptions,
 ): string[] {
   const known = options.palettes
+  if (!known) return []
+
   const allowed = layoutDirectiveRegistry.get(directive)?.allowedAttributes ?? []
-  if (!known || !attributes) return []
 
-  const names = new Set<string>()
-
-  for (const attribute of ['palette', 'iconPalette']) {
-    const value = attributes[attribute]
-    if (allowed.includes(attribute) && typeof value === 'string' && value.trim()) names.add(value.trim())
-  }
-
-  if (allowed.includes('icon') && typeof attributes.icon === 'string')
-    for (const entry of parseIconEntries(attributes.icon).entries) if (entry.palette) names.add(entry.palette)
-
-  return [...names]
+  return collectPaletteNames(allowed, attributes)
     .filter((name) => !known.includes(name))
     .map((name) => formatUnknownPaletteMessage(name, directive, known))
 }
@@ -324,7 +315,7 @@ function getThemeDiagnostics(text: string, options: LintMarkdownDirectivesOption
 
   const definition = layoutDirectiveRegistry.get(token.name)
   const diagnostics: string[] = [
-    ...getIconDiagnostics(token.attributes?.icon, options),
+    ...getIconDiagnostics(token.name, token.attributes?.icon, options),
     ...getPaletteDiagnostics(token.name, token.attributes, options),
   ]
 
@@ -368,7 +359,7 @@ function getButtonDiagnostics(text: string, options: LintMarkdownDirectivesOptio
 
   return [
     ...diagnostics,
-    ...getIconDiagnostics(icon, options),
+    ...getIconDiagnostics('button', icon, options),
     ...getPaletteDiagnostics('button', parsed.attributes, options),
   ]
 }

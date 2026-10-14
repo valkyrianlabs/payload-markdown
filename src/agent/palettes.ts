@@ -48,12 +48,17 @@ function requireAppearance(req: PayloadRequest): string {
   return slug
 }
 
-async function readRows(req: PayloadRequest, slug: string): Promise<Array<Record<string, unknown>>> {
+type PaletteRows = { rows: Array<Record<string, unknown>>; updatedAt?: unknown }
+
+async function readRows(req: PayloadRequest, slug: string): Promise<PaletteRows> {
   try {
     const doc = await localApi(req.payload).findGlobal({ slug, depth: 0, overrideAccess: false, req })
     const rows = (doc as { palettes?: unknown }).palettes
 
-    return Array.isArray(rows) ? (rows as Array<Record<string, unknown>>) : []
+    return {
+      rows: Array.isArray(rows) ? (rows as Array<Record<string, unknown>>) : [],
+      updatedAt: (doc as { updatedAt?: unknown }).updatedAt,
+    }
   } catch (error) {
     if ((error as { status?: number }).status === 403)
       throw new MarkdownAgentError('forbidden', `Not allowed to read global "${slug}".`)
@@ -77,10 +82,11 @@ export async function listMarkdownPalettes(
   if (slug)
     try {
       assertAgentAccess(req, slug, 'find', access)
-      adminPalettes = readAppearancePalettes({ palettes: await readRows(req, slug) })
+      adminPalettes = readAppearancePalettes({ palettes: (await readRows(req, slug)).rows })
       readable = true
-    } catch (error) {
-      if (!(error instanceof MarkdownAgentError) || error.code !== 'forbidden') throw error
+    } catch {
+      // Not readable by this user, or not readable at all yet (for example
+      // before its migration ran): still list the built-in and configured ones.
     }
 
   const config = resolveMarkdownRenderConfig({
@@ -138,14 +144,37 @@ function toRow(palette: MarkdownPalette, id?: unknown): Record<string, unknown> 
   }
 }
 
-async function writeRows(req: PayloadRequest, slug: string, rows: Array<Record<string, unknown>>) {
-  try {
-    await localApi(req.payload).updateGlobal({ slug, data: { palettes: rows }, depth: 0, overrideAccess: false, req })
-  } catch (error) {
-    if ((error as { status?: number }).status === 403)
-      throw new MarkdownAgentError('forbidden', `Not allowed to update global "${slug}".`)
-    throw error
+const WRITE_ATTEMPTS = 3
+
+/**
+ * Applies `change` to the current palette rows and saves them. The global is
+ * re-read just before writing; if it changed meanwhile (an editor or another
+ * agent saved a palette), the change is applied again to the latest rows so
+ * a concurrent save is not overwritten.
+ */
+async function updateRows<T>(
+  req: PayloadRequest,
+  slug: string,
+  change: (rows: Array<Record<string, unknown>>) => { result: T; rows: Array<Record<string, unknown>> },
+): Promise<T> {
+  for (let attempt = 0; attempt < WRITE_ATTEMPTS; ++attempt) {
+    const current = await readRows(req, slug)
+    const { result, rows } = change(current.rows)
+
+    if ((await readRows(req, slug)).updatedAt !== current.updatedAt) continue
+
+    try {
+      await localApi(req.payload).updateGlobal({ slug, data: { palettes: rows }, depth: 0, overrideAccess: false, req })
+    } catch (error) {
+      if ((error as { status?: number }).status === 403)
+        throw new MarkdownAgentError('forbidden', `Not allowed to update global "${slug}".`)
+      throw error
+    }
+
+    return result
   }
+
+  throw new MarkdownAgentError('conflict', `The palettes in "${slug}" kept changing while saving. Try again.`)
 }
 
 export type SavePaletteResult = {
@@ -172,26 +201,27 @@ export async function saveMarkdownPalette(
 
   assertAgentAccess(req, slug, 'update', access)
 
-  const rows = await readRows(req, slug)
   const target = options.previousName?.trim() || palette.name
-  const index = rows.findIndex((row) => row.name === target)
-
-  if (options.previousName && index < 0)
-    throw new MarkdownAgentError('not_found', `No palette named "${target}" in "${slug}" to rename.`)
-  if (target !== palette.name && rows.some((row) => row.name === palette.name))
-    throw new MarkdownAgentError('conflict', `A palette named "${palette.name}" already exists.`)
-
   const described = describePalette(palette)
-  const next = [...rows]
+  const created = await updateRows(req, slug, (rows) => {
+    const index = rows.findIndex((row) => row.name === target)
 
-  if (index >= 0) next[index] = toRow(described, rows[index].id)
-  else next.push(toRow(described))
+    if (options.previousName && index < 0)
+      throw new MarkdownAgentError('not_found', `No palette named "${target}" in "${slug}" to rename.`)
+    if (target !== palette.name && rows.some((row) => row.name === palette.name))
+      throw new MarkdownAgentError('conflict', `A palette named "${palette.name}" already exists.`)
 
-  await writeRows(req, slug, next)
+    const next = [...rows]
+
+    if (index >= 0) next[index] = toRow(described, rows[index].id)
+    else next.push(toRow(described))
+
+    return { result: index < 0, rows: next }
+  })
 
   return {
     contrast: describePaletteContrast(palette),
-    created: index < 0,
+    created,
     palette: described,
     usage: PALETTE_USAGE.map((line) => line.replaceAll('"name"', `"${palette.name}"`).replaceAll('=name', `=${palette.name}`)),
   }
@@ -206,13 +236,17 @@ export async function deleteMarkdownPalette(
 
   assertAgentAccess(req, slug, 'update', access)
 
-  const rows = await readRows(req, slug)
-  const next = rows.filter((row) => row.name !== options.name)
+  await updateRows(req, slug, (rows) => {
+    const next = rows.filter((row) => row.name !== options.name)
 
-  if (next.length === rows.length)
-    throw new MarkdownAgentError('not_found', `No palette named "${options.name}" in "${slug}". Built-in and configured palettes cannot be deleted here.`)
+    if (next.length === rows.length)
+      throw new MarkdownAgentError(
+        'not_found',
+        `No palette named "${options.name}" in "${slug}". Built-in and configured palettes cannot be deleted here.`,
+      )
 
-  await writeRows(req, slug, next)
+    return { result: undefined, rows: next }
+  })
 
   return { deleted: options.name }
 }

@@ -1,5 +1,6 @@
 import type { MarkdownRenderConfig } from '../types/core.js'
 
+import { parseIconEntries } from '../icons/entries.js'
 import { getPaletteRegistry } from './index.js'
 
 const LISTED_PALETTES = 12
@@ -24,4 +25,29 @@ export function getUnknownPaletteWarning(
   const registry = getPaletteRegistry(config.palettes)
 
   return registry.get(name) ? undefined : formatUnknownPaletteMessage(name, directive, registry.names())
+}
+
+/**
+ * Palette names a directive references: its `palette` / `iconPalette` and the
+ * `palette=` of its icon entries, limited to the attributes it accepts.
+ */
+export function collectPaletteNames(
+  allowedAttributes: readonly string[],
+  attributes: null | Record<string, unknown> | undefined,
+): string[] {
+  const names = new Set<string>()
+  const read = (name: string) => {
+    const value = attributes?.[name]
+
+    return allowedAttributes.includes(name) && typeof value === 'string' && value.trim() ? value.trim() : undefined
+  }
+
+  for (const attribute of ['palette', 'iconPalette']) {
+    const value = read(attribute)
+    if (value) names.add(value)
+  }
+
+  for (const entry of parseIconEntries(read('icon')).entries) if (entry.palette) names.add(entry.palette)
+
+  return [...names]
 }

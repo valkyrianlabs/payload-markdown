@@ -29,7 +29,7 @@ The palette travels with the icon: reordering the list never swaps colours, and 
 
 ### Manage palettes without code changes
 
-`payloadMarkdown({ palettes: [...] })` (and per collection, or per render) defines palettes in code. Set `appearance: true` to add the **Markdown Appearance** global, where editors create and edit palettes in the admin, with colour swatches, and markdown picks them up live: no CSS, config change or rebuild. Rendering reads the global at most once per `cacheTtl` (30 s) per server process, never per icon; a save clears that process's cache and revalidates statically rendered Next.js pages.
+`payloadMarkdown({ palettes: [...] })` (and per collection, or per render) defines palettes in code. Set `appearance: true` to add the **Markdown Appearance** global, where editors create and edit palettes in the admin, with colour swatches, and markdown picks them up live: no CSS, config change or rebuild. Rendering reads the global at most once per `cacheTtl` (30 s) per server process, never per icon; a save refreshes that process's cache and revalidates statically rendered Next.js pages. If the global cannot be read, renders keep the last palettes loaded and retry shortly. Concurrent palette saves from MCP re-read the global so they do not overwrite each other.
 
 Enabling `appearance` adds a global: regenerate the import map, and on a SQL database create and run a migration. Until then renders use the configured palettes and log one warning.
 
@@ -38,9 +38,10 @@ Enabling `appearance` adds a global: regenerate the import map, and on a SQL dat
 - New MCP tools `markdownPalettes`, `markdownPaletteSave` and `markdownPaletteDelete`. Writes need the API key's `Update` permission on the global (expose it with `globals: { 'markdown-appearance': { enabled: true } }` in `withPayloadMarkdownMcp`) and pass Payload access control. Saves validate every colour and return advisory contrast notes.
 - `markdownGuide` lists every palette with its colours, and `markdownValidate` reports unknown palettes.
 - The markdown editor completes palette names (after `palette=`, `iconPalette=` and inside icon lists) and warns about unknown palettes and icon options, including palettes created in the admin after the app was built.
-- `loadMarkdownPalettes(payload)` returns the admin palettes (cached) for custom renderers using `renderMarkdown`.
+- `renderMarkdown(markdown, { settings: payload })` includes admin palettes too, and `loadMarkdownPalettes(payload)` returns them (cached) for other uses.
 
 ### Fixes
 
 - Icon-only buttons now get the `pmd-button--icon-only` class, so they render square as intended in 1.8.0 (the class was dropped while rendering).
 - The table of contents has a little more space below its list.
+- A callout or button `icon` list with more than one entry now reports that only the first icon is shown, instead of dropping the rest silently.

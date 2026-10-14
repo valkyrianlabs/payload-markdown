@@ -53,3 +53,17 @@ export function parseIconEntries(value: string | undefined): ParsedIconEntries {
 
   return { entries, warnings }
 }
+
+/** Directives that show a single icon: extra entries of an `icon` list are reported. */
+const SINGLE_ICON_DIRECTIVES = new Set(['button', 'callout'])
+
+export function getExtraIconWarnings(directive: string, entries: IconEntry[]): string[] {
+  if (!SINGLE_ICON_DIRECTIVES.has(directive) || entries.length < 2) return []
+
+  return [
+    `"${directive}" shows one icon; ${entries
+      .slice(1)
+      .map((entry) => `"${entry.ref}"`)
+      .join(', ')} ${entries.length > 2 ? 'are' : 'is'} ignored. Only cards show a list of icons.`,
+  ]
+}

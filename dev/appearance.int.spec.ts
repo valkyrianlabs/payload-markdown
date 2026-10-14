@@ -1,6 +1,5 @@
-import type { ReactElement } from 'react'
-
 import type { Payload, PayloadRequest } from 'payload'
+import type { ReactElement } from 'react'
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
@@ -10,10 +9,11 @@ import { buildConfig, createLocalReq, createPayloadRequest, getPayload } from 'p
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { deleteMarkdownPalette, listMarkdownPalettes, saveMarkdownPalette } from '../src/agent/palettes'
-import { invalidateAppearancePalettes, loadAppearancePalettes } from '../src/appearance/runtime'
+import { invalidateAppearancePalettes, loadAppearancePalettes, primeAppearancePalettes } from '../src/appearance/runtime'
 import { MarkdownRenderer } from '../src/components/MarkdownRenderer/Component'
 import { MarkdownAgentError, validateMarkdown, withPayloadMarkdownMcp } from '../src/exports/mcp'
 import { payloadMarkdown } from '../src/index'
+import { renderMarkdown } from '../src/render/renderMarkdown'
 
 const EDITOR_KEY = 'payload-markdown-appearance-editor-key-0123456789'
 const READER_KEY = 'payload-markdown-appearance-reader-key-0123456789'
@@ -139,14 +139,34 @@ describe('runtime palettes', () => {
     expect((await validateMarkdown(markdown, { payload })).diagnostics.map((d) => d.code)).not.toContain('unknown-palette')
   })
 
-  it('fall back to configured palettes when the global cannot be read', async () => {
+  it('keep serving the last palettes loaded through a read error', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    // The last good load survives an invalidation and is served while the database errors.
+    primeAppearancePalettes([{ name: 'kept', color: '#123456' }])
+    invalidateAppearancePalettes()
+    expect(await loadAppearancePalettes({ findGlobal: () => Promise.reject(new Error('connection reset')) })).toEqual([
+      { name: 'kept', color: '#123456' },
+    ])
+    warn.mockRestore()
+    invalidateAppearancePalettes()
+  })
+
+  it('load admin palettes in headless renderMarkdown when settings is the Payload instance', async () => {
+    await saveMarkdownPalette({ palette: { name: 'headless', color: '#0f766e' }, req })
+    const result = await renderMarkdown(':::card[A]{icon="@x/y palette=headless"}\nx\n:::', { settings: payload })
+
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain('unknown-palette')
+  })
+
+  it('warn once while the global cannot be read, without throwing', async () => {
     invalidateAppearancePalettes()
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const broken = { findGlobal: () => Promise.reject(new Error('no such table')) }
+    const first = await loadAppearancePalettes(broken)
 
-    expect(await loadAppearancePalettes(broken)).toEqual([])
     invalidateAppearancePalettes()
-    expect(await loadAppearancePalettes(broken)).toEqual([])
+    expect(await loadAppearancePalettes(broken)).toEqual(first)
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
     invalidateAppearancePalettes()
@@ -162,6 +182,18 @@ describe('agent palette operations', () => {
     expect(listing.appearance).toEqual({ slug: SLUG, enabled: true, readable: true })
     expect([source('ubuntu'), source('brand'), source('red')]).toEqual(['admin', 'config', 'built-in'])
     expect(listing.usage.join(' ')).toContain('palette=')
+  })
+
+  it('list built-in and configured palettes when the global cannot be read', async () => {
+    const failing = Object.create(req) as PayloadRequest
+    failing.payload = Object.create(payload, {
+      findGlobal: { value: () => Promise.reject(new Error('no such table')) },
+    }) as Payload
+
+    const listing = await listMarkdownPalettes({ req: failing })
+
+    expect(listing.appearance).toMatchObject({ enabled: true, readable: false })
+    expect(listing.palettes.map((palette) => palette.name)).toEqual(expect.arrayContaining(['brand', 'red']))
   })
 
   it('reject invalid palettes before saving anything', async () => {

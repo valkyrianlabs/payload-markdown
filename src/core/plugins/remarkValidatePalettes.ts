@@ -7,8 +7,8 @@ import { visit } from 'unist-util-visit'
 import type { MarkdownRenderConfig } from '../../types/core.js'
 
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
-import { parseIconEntries } from '../../icons/entries.js'
-import { getUnknownPaletteWarning } from '../../palettes/diagnostics.js'
+import { getExtraIconWarnings, parseIconEntries } from '../../icons/entries.js'
+import { collectPaletteNames, getUnknownPaletteWarning } from '../../palettes/diagnostics.js'
 import { getPaletteRegistry } from '../../palettes/index.js'
 import { type DiagnosticFile, reportDiagnostic } from '../diagnostics.js'
 
@@ -21,33 +21,21 @@ function isContainerDirective(node: unknown): node is ContainerDirective {
   )
 }
 
-function getAttribute(node: ContainerDirective, name: string): string | undefined {
-  const value = node.attributes?.[name]
-
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined
-}
-
 function validateDirective(node: ContainerDirective, file: DiagnosticFile, config: MarkdownRenderConfig) {
   const allowed = layoutDirectiveRegistry.get(node.name)?.allowedAttributes
   if (!allowed) return
 
   const place = node.data?.vlPlace
-  const names = new Set<string>()
-
-  for (const attribute of ['palette', 'iconPalette'])
-    if (allowed.includes(attribute)) {
-      const name = getAttribute(node, attribute)
-      if (name) names.add(name)
-    }
 
   if (allowed.includes('icon')) {
-    const { entries, warnings } = parseIconEntries(getAttribute(node, 'icon'))
+    const icon = node.attributes?.icon
+    const { entries, warnings } = parseIconEntries(typeof icon === 'string' ? icon : undefined)
 
-    for (const warning of warnings) reportDiagnostic(file, warning, { code: 'icon-option', place, source: 'icon' })
-    for (const entry of entries) if (entry.palette) names.add(entry.palette)
+    for (const warning of [...warnings, ...getExtraIconWarnings(node.name, entries)])
+      reportDiagnostic(file, warning, { code: 'icon-option', place, source: 'icon' })
   }
 
-  for (const name of names) {
+  for (const name of collectPaletteNames(allowed, node.attributes)) {
     const warning = getUnknownPaletteWarning(name, node.name, config)
     if (warning) reportDiagnostic(file, warning, { code: 'unknown-palette', place, source: 'theme' })
   }

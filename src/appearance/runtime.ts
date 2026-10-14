@@ -14,6 +14,8 @@ import { PAYLOAD_MARKDOWN_APPEARANCE_RUNTIME_KEY } from '../runtime/index.js'
  */
 type AppearanceRuntime = {
   cache?: { expires: number; palettes: MarkdownPalette[] }
+  /** Last palettes loaded successfully: served while the global cannot be read. */
+  lastGood?: MarkdownPalette[]
   /** Set at `onInit`; renders without their own Payload instance use it. */
   payload?: Payload
   pending?: Promise<MarkdownPalette[]>
@@ -44,7 +46,10 @@ function getRuntime(): AppearanceRuntime {
 export function registerAppearance({ slug, ttl }: { slug: string; ttl: number }) {
   const runtime = getRuntime()
 
-  if (runtime.slug !== slug) runtime.cache = undefined
+  if (runtime.slug !== slug) {
+    runtime.cache = undefined
+    runtime.lastGood = undefined
+  }
   runtime.slug = slug
   runtime.ttl = ttl
 }
@@ -60,6 +65,7 @@ export function clearAppearance() {
 
   runtime.slug = undefined
   runtime.cache = undefined
+  runtime.lastGood = undefined
   runtime.pending = undefined
 }
 
@@ -69,6 +75,20 @@ export function invalidateAppearancePalettes() {
   runtime.cache = undefined
   runtime.pending = undefined
 }
+
+/** Replaces the cached palettes with ones just saved (see the global's afterChange hook). */
+export function primeAppearancePalettes(palettes: MarkdownPalette[]) {
+  const runtime = getRuntime()
+
+  runtime.pending = undefined
+  runtime.lastGood = palettes
+  runtime.cache = { expires: Date.now() + runtime.ttl, palettes }
+  // A save went through, so the next read error is a new outage worth logging.
+  runtime.warned = false
+}
+
+/** After a failed load, how long to wait before trying the database again. */
+const RETRY_AFTER_ERROR_MS = 5_000
 
 /** Slug of the appearance global, or `undefined` when it is not enabled. */
 export function getAppearanceSlug(): string | undefined {
@@ -126,22 +146,35 @@ export async function loadAppearancePalettes(source?: unknown): Promise<Markdown
 
   const pending = payload
     .findGlobal({ slug: slug as never, depth: 0, overrideAccess: true })
-    .then((doc) => readAppearancePalettes(doc))
+    .then((doc) => {
+      const palettes = readAppearancePalettes(doc)
+
+      runtime.warned = false
+
+      if (runtime.pending === pending) {
+        runtime.lastGood = palettes
+        runtime.cache = { expires: Date.now() + runtime.ttl, palettes }
+        runtime.pending = undefined
+      }
+
+      return palettes
+    })
     .catch((error: unknown) => {
       if (!runtime.warned) {
         runtime.warned = true
         // eslint-disable-next-line no-console
         console.warn(
-          `[payload-markdown] Could not load palettes from the "${slug}" global; rendering with configured palettes only. ` +
+          `[payload-markdown] Could not load palettes from the "${slug}" global; rendering with the last palettes loaded (or the configured ones). ` +
             `If you just enabled appearance on a SQL database, create and run a migration. (${error instanceof Error ? error.message : String(error)})`,
         )
       }
 
-      return []
-    })
-    .then((palettes) => {
+      // A transient error must not strip palettes for a whole cache lifetime:
+      // keep serving the last good ones and retry soon.
+      const palettes = runtime.lastGood ?? []
+
       if (runtime.pending === pending) {
-        runtime.cache = { expires: Date.now() + runtime.ttl, palettes }
+        runtime.cache = { expires: Date.now() + Math.min(runtime.ttl, RETRY_AFTER_ERROR_MS), palettes }
         runtime.pending = undefined
       }
 

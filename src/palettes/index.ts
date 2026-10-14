@@ -147,18 +147,21 @@ export type PaletteRegistry = {
   warnings: string[]
 }
 
-const registryCache = new WeakMap<object, PaletteRegistry>()
+let defaultPalettes: ResolvedPalette[] | undefined
+
+/** The built-in palettes, validated once per process. */
+function getDefaultPalettes(): ResolvedPalette[] {
+  defaultPalettes ??= DEFAULT_PALETTES.flatMap((palette) => validatePalette(palette).palette ?? [])
+
+  return defaultPalettes
+}
 
 function buildRegistry(palettes: MarkdownPalettes | undefined): PaletteRegistry {
   const group = normalizeGroup(palettes)
   const resolved = new Map<string, ResolvedPalette>()
   const warnings: string[] = []
 
-  if (group.extendDefaults)
-    for (const palette of DEFAULT_PALETTES) {
-      const { palette: valid } = validatePalette(palette)
-      if (valid) resolved.set(valid.name, valid)
-    }
+  if (group.extendDefaults) for (const palette of getDefaultPalettes()) resolved.set(palette.name, palette)
 
   for (const item of group.items) {
     const { errors, palette } = validatePalette(item)
@@ -175,25 +178,25 @@ function buildRegistry(palettes: MarkdownPalettes | undefined): PaletteRegistry 
   }
 }
 
-/** The palettes a render can reference, by name. Cached per config object. */
-export function getPaletteRegistry(palettes: MarkdownPalettes | undefined): PaletteRegistry {
-  if (!palettes) return getDefaultPaletteRegistry()
+/**
+ * Registries by content: every render builds a fresh merged config object,
+ * so caching by identity would never hit. Bounded, oldest entries first out.
+ */
+const registryCache = new Map<string, PaletteRegistry>()
+const MAX_CACHED_REGISTRIES = 64
 
-  const cached = registryCache.get(palettes)
+/** The palettes a render can reference, by name. Cached by content. */
+export function getPaletteRegistry(palettes: MarkdownPalettes | undefined): PaletteRegistry {
+  const key = palettes ? JSON.stringify(palettes) : ''
+  const cached = registryCache.get(key)
   if (cached) return cached
 
   const registry = buildRegistry(palettes)
-  registryCache.set(palettes, registry)
+
+  if (registryCache.size >= MAX_CACHED_REGISTRIES) registryCache.delete(registryCache.keys().next().value!)
+  registryCache.set(key, registry)
 
   return registry
-}
-
-let defaultRegistry: PaletteRegistry | undefined
-
-function getDefaultPaletteRegistry(): PaletteRegistry {
-  defaultRegistry ??= buildRegistry(undefined)
-
-  return defaultRegistry
 }
 
 /**

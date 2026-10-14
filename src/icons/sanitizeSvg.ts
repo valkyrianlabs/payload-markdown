@@ -484,26 +484,55 @@ function recolorStyle(value: Properties[string], replacement: string | undefined
  * become `currentColor` (the palette colour); the duotone secondary layer is
  * painted with `--pmd-icon-secondary` and its own subtree inherits from it.
  */
+/**
+ * Elements whose colours define coverage or a paint server rather than what
+ * the icon looks like (a white mask rect means "fully visible"). Painting
+ * never touches their subtrees.
+ */
+const UNPAINTED_TAG_NAMES = new Set(['clipPath', 'filter', 'linearGradient', 'mask', 'pattern', 'radialGradient'])
+
+const SECONDARY_PAINT = 'var(--pmd-icon-secondary, currentColor)'
+
+/**
+ * Recolours a palette-painted icon in place. Explicit fill/stroke colours
+ * become `currentColor` (the palette colour); inside the duotone secondary
+ * layer they become the secondary colour, and the layer itself is filled
+ * with it unless it draws with `fill="none"`.
+ */
 function applyPaint(node: Element, paint: SvgPaint, inSecondary: boolean): void {
+  if (UNPAINTED_TAG_NAMES.has(node.tagName)) return
+
   const layerRoot = !inSecondary && toClassList(node.properties.className).some((name) => SECONDARY_LAYER_CLASSES.includes(name))
   const secondary = inSecondary || layerRoot
+  const replacement = secondary ? SECONDARY_PAINT : 'currentColor'
+  // Attributes cannot hold var(), so secondary colours go into the style.
+  const declarations: string[] = []
 
   for (const property of ['fill', 'stroke'] as const)
     if (isRecolorablePaint(node.properties[property])) {
-      // Inside the secondary layer, colours inherit from the layer root.
-      if (secondary) delete node.properties[property]
-      else node.properties[property] = 'currentColor'
+      if (secondary) {
+        delete node.properties[property]
+        declarations.push(`${property}:${SECONDARY_PAINT}`)
+      } else {
+        node.properties[property] = 'currentColor'
+      }
     }
 
-  let style = recolorStyle(node.properties.style, secondary ? undefined : 'currentColor')
+  const style = recolorStyle(node.properties.style, replacement)
 
-  if (layerRoot) {
-    if (node.properties.fill !== 'none')
-      style = [style, 'fill:var(--pmd-icon-secondary, currentColor)'].filter(Boolean).join(';')
-    if (paint.secondaryOpacity !== undefined) node.properties.opacity = String(paint.secondaryOpacity)
-  }
+  if (
+    layerRoot &&
+    node.properties.fill !== 'none' &&
+    !declarations.some((declaration) => declaration.startsWith('fill:')) &&
+    !/(?:^|;)\s*fill\s*:/.test(style ?? '')
+  )
+    declarations.push(`fill:${SECONDARY_PAINT}`)
 
-  if (style) node.properties.style = style
+  if (layerRoot && paint.secondaryOpacity !== undefined) node.properties.opacity = String(paint.secondaryOpacity)
+
+  const combined = [style, ...declarations].filter(Boolean).join(';')
+
+  if (combined) node.properties.style = combined
   else delete node.properties.style
 
   for (const child of node.children) if (child.type === 'element') applyPaint(child, paint, secondary)

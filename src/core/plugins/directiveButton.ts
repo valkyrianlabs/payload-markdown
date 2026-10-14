@@ -4,6 +4,7 @@ import type { MarkdownRenderConfig } from '../../types/core.js'
 
 import { parseButtonDirectiveLine } from '../../directives/buttonSyntax.js'
 import {
+  BUTTON_ALLOWED_ATTRIBUTES,
   DEFAULT_BUTTON_ICON_POSITION,
   DEFAULT_BUTTON_SIZE,
   DEFAULT_BUTTON_VARIANT,
@@ -13,9 +14,9 @@ import {
 } from '../../directives/definitions/button.js'
 import { layoutDirectiveRegistry } from '../../directives/registry.js'
 import { getSafeHref } from '../../directives/urls.js'
-import { parseIconEntries } from '../../icons/entries.js'
+import { getExtraIconWarnings, parseIconEntries } from '../../icons/entries.js'
 import { normalizePayloadMarkdownIconRef } from '../../icons/refs.js'
-import { getUnknownPaletteWarning } from '../../palettes/diagnostics.js'
+import { collectPaletteNames, getUnknownPaletteWarning } from '../../palettes/diagnostics.js'
 
 export type MessageFile = {
   message: (reason: string) => unknown
@@ -93,10 +94,11 @@ export function makeButtonDirective(
     if (normalized.warning) file.message(normalized.warning)
   }
 
-  for (const warning of iconEntries.warnings) file.message(warning)
+  for (const warning of [...iconEntries.warnings, ...getExtraIconWarnings('button', iconEntries.entries)])
+    file.message(warning)
 
-  for (const name of new Set([getAttribute(attributes, 'iconPalette'), iconPalette, palette])) {
-    const warning = name ? getUnknownPaletteWarning(name, 'button', config) : undefined
+  for (const name of collectPaletteNames(BUTTON_ALLOWED_ATTRIBUTES, attributes)) {
+    const warning = getUnknownPaletteWarning(name, 'button', config)
     if (warning) file.message(warning)
   }
 

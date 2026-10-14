@@ -126,19 +126,15 @@ A palette in the global replaces a built-in or configured palette with the same 
 
 ### Rendering Elsewhere
 
-`MarkdownRenderer` loads admin palettes itself. To render with them through `renderMarkdown`, load them and pass them on:
+`MarkdownRenderer` loads admin palettes itself, and so does `renderMarkdown` when `settings` is the Payload instance:
 
 ```ts
-import { loadMarkdownPalettes } from 'payload-markdown'
 import { renderMarkdown } from 'payload-markdown/render'
 
-const result = await renderMarkdown(markdown, {
-  runtimePalettes: await loadMarkdownPalettes(payload),
-  settings: payload,
-})
+const result = await renderMarkdown(markdown, { settings: payload })
 ```
 
-Without Payload, `renderMarkdown` uses the built-in and configured palettes only.
+`loadMarkdownPalettes(payload)` (from the main entry) returns the cached admin palettes for other uses; pass them as `runtimePalettes`. Without Payload, `renderMarkdown` uses the built-in and configured palettes only.
 
 ### Over MCP
 

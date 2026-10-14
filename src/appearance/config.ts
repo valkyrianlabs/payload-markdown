@@ -6,7 +6,7 @@ import { PAYLOAD_MARKDOWN_PACKAGE } from '../package.js'
 import { normalizePaletteColor, PALETTE_COLOR_FORMATS } from '../palettes/colors.js'
 import { PALETTE_NAME_PATTERN } from '../palettes/index.js'
 import { APPEARANCE_PALETTES_FIELD, type ResolvedAppearanceOptions } from './options.js'
-import { invalidateAppearancePalettes, registerAppearance } from './runtime.js'
+import { primeAppearancePalettes, readAppearancePalettes } from './runtime.js'
 
 export { DEFAULT_APPEARANCE_SLUG, resolveAppearanceOptions } from './options.js'
 
@@ -142,11 +142,9 @@ async function revalidateAfterChange(options: PayloadMarkdownAppearanceOptions, 
 
 /**
  * The "Markdown Appearance" global: palettes editors and MCP agents manage at
- * runtime. Saving clears this process's palette cache and revalidates pages.
+ * runtime. Saving refreshes this process's palette cache and revalidates pages.
  */
 export function createAppearanceGlobal(resolved: ResolvedAppearanceOptions): GlobalConfig {
-  registerAppearance({ slug: resolved.slug, ttl: resolved.cacheTtl })
-
   return {
     slug: resolved.slug,
     access: {
@@ -162,8 +160,11 @@ export function createAppearanceGlobal(resolved: ResolvedAppearanceOptions): Glo
     fields: [palettesField()],
     hooks: {
       afterChange: [
-        async ({ req }) => {
-          invalidateAppearancePalettes()
+        async ({ doc, req }) => {
+          // afterChange runs before the transaction commits, so a reload here
+          // could read (and cache) the previous rows. The saved document is
+          // the new state: cache it directly.
+          primeAppearancePalettes(readAppearancePalettes(doc))
           await revalidateAfterChange(resolved.options, req.payload)
         },
       ],

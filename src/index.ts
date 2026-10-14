@@ -10,7 +10,7 @@ import type {
 } from './types.js'
 
 import { createAppearanceGlobal, resolveAppearanceOptions } from './appearance/config.js'
-import { attachAppearancePayload, clearAppearance } from './appearance/runtime.js'
+import { attachAppearancePayload, clearAppearance, registerAppearance } from './appearance/runtime.js'
 import { createMarkdownBlock, MarkdownBlock } from './blocks/MarkdownBlock/config.js'
 import { resolveEffectiveMarkdownBlockParams } from './blocks/MarkdownBlock/params.js'
 import { DEFAULT_CODE_LANGS } from './core/codeToHtml.js'
@@ -220,6 +220,9 @@ export const payloadMarkdown =
     const appearance = resolveAppearanceOptions(pluginOptions.appearance)
 
     if (appearance) {
+      // Registered even when the app defines the global itself.
+      registerAppearance({ slug: appearance.slug, ttl: appearance.cacheTtl })
+
       const globals = config.globals ?? []
 
       if (!globals.some((global) => global.slug === appearance.slug))

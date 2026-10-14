@@ -16,6 +16,27 @@ import { readEditorDirectiveConfig } from '../../editor/directiveConfig.js'
 import { MarkdownCodeMirror } from '../../editor/MarkdownCodeMirror/Component.js'
 
 const SAVE_DEBOUNCE_MS = 800
+
+/** How long the admin reuses palette names it loaded (every markdown field on a page shares one request). */
+const PALETTE_NAMES_TTL_MS = 30_000
+const paletteNameRequests = new Map<string, { expires: number; names: Promise<string[] | undefined> }>()
+
+/** Names of the palettes in the appearance global, or `undefined` when they cannot be read. */
+function loadAdminPaletteNames(url: string): Promise<string[] | undefined> {
+  const cached = paletteNameRequests.get(url)
+  if (cached && cached.expires > Date.now()) return cached.names
+
+  const names = fetch(url, { credentials: 'include' })
+    .then((response) => (response.ok ? response.json() : undefined))
+    .then((doc: { palettes?: Array<{ name?: unknown }> } | undefined) =>
+      doc ? (doc.palettes ?? []).flatMap((row) => (typeof row?.name === 'string' ? [row.name] : [])) : undefined,
+    )
+    .catch(() => undefined)
+
+  paletteNameRequests.set(url, { expires: Date.now() + PALETTE_NAMES_TTL_MS, names })
+
+  return names
+}
 const fieldBaseClass = 'field-type'
 
 export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
@@ -74,23 +95,17 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
   useEffect(() => {
     if (!appearanceSlug) return
 
-    const controller = new AbortController()
+    let active = true
+    const url = `${serverURL ?? ''}${routes.api}/globals/${encodeURIComponent(appearanceSlug)}?depth=0`
 
-    fetch(`${serverURL ?? ''}${routes.api}/globals/${encodeURIComponent(appearanceSlug)}?depth=0`, {
-      credentials: 'include',
-      signal: controller.signal,
+    void loadAdminPaletteNames(url).then((names) => {
+      // Without read access the names stay unknown and no palette is linted.
+      if (active && names) paletteNamesRef.current = [...new Set([...(staticPalettes ?? []), ...names])]
     })
-      .then((response) => (response.ok ? response.json() : undefined))
-      .then((doc: { palettes?: Array<{ name?: unknown }> } | undefined) => {
-        // Without read access the names stay unknown and no palette is linted.
-        if (!doc) return
 
-        const names = (doc.palettes ?? []).flatMap((row) => (typeof row?.name === 'string' ? [row.name] : []))
-        paletteNamesRef.current = [...new Set([...(staticPalettes ?? []), ...names])]
-      })
-      .catch(() => undefined)
-
-    return () => controller.abort()
+    return () => {
+      active = false
+    }
   }, [appearanceSlug, routes.api, serverURL, staticPalettes])
 
   const directiveConfig = useMemo(
