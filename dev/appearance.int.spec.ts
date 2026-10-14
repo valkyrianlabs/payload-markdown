@@ -41,6 +41,9 @@ beforeAll(async () => {
     ],
     secret: 'payload-markdown-appearance-test-secret',
     telemetry: false,
+    // Payload spawns `generate:types` on init outside production; with this in-memory
+    // config it cannot find a config file and never exits.
+    typescript: { autoGenerate: false },
   })
 
   payload = await getPayload({ config, importMap: {} })
