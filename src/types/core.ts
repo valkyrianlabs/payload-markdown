@@ -129,6 +129,52 @@ export type MarkdownDirectiveThemes = {
   toc?: MarkdownDirectiveThemeGroup
 }
 
+/**
+ * Colours a palette sets. Each value is a CSS colour: hex, a colour function
+ * with numeric arguments (`rgb()`, `hsl()`, `oklch()`, …), a named colour,
+ * `currentColor`, `transparent`, or a `var(--token)` reference to a host
+ * design token. Anything else is rejected.
+ */
+export type MarkdownPaletteColors = {
+  /** Links, hovered titles and focus rings inside a directive (`--pmd-accent`). */
+  accent?: string
+  /** Surface of a directive that uses the palette (`--pmd-surface`). */
+  background?: string
+  /** Border of a directive that uses the palette (`--pmd-border`). */
+  border?: string
+  /** Icon colour (and duotone primary layer); the label colour of a button. */
+  color?: string
+  /** Duotone secondary layer; defaults to `color`. */
+  secondaryColor?: string
+}
+
+/**
+ * A named colour theme, referenced from Markdown with `palette="name"` on a
+ * directive or `@pack/icon palette=name` on an icon. Palettes only set
+ * colours: they compose with the structural directive `theme`.
+ */
+export type MarkdownPalette = {
+  /** Dark-scheme overrides; unset colours keep the light value. */
+  dark?: MarkdownPaletteColors
+  /** Display name for editors and agents. */
+  label?: string
+  /** Stable identifier used in Markdown: lowercase letters, digits and dashes. */
+  name: string
+  /** Opacity of the duotone secondary layer, 0–1 (default: the icon's own, 0.4 for Font Awesome). */
+  secondaryOpacity?: number
+} & MarkdownPaletteColors
+
+/**
+ * Palettes for a scope. An array adds to (and overrides by name) the built-in
+ * palettes; `extendDefaults: false` drops the built-ins.
+ */
+export type MarkdownPalettes =
+  | {
+      extendDefaults?: boolean
+      items?: MarkdownPalette[]
+    }
+  | MarkdownPalette[]
+
 export type PayloadMarkdownIconPack = {
   alias: string
   path: string
@@ -274,6 +320,8 @@ export type MarkdownConfig = {
 export type MarkdownRenderConfig = {
   code?: MarkdownCodeConfig
   icons?: PayloadMarkdownIconsConfig
+  /** Named colour palettes for `palette` / `iconPalette` and icon entries. */
+  palettes?: MarkdownPalettes
   themes?: MarkdownDirectiveThemes
 } & MarkdownConfig
 

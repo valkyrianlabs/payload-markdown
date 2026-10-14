@@ -4,7 +4,9 @@ import type { MarkdownDirectiveThemes } from '../types/core.js'
 import type { TabsDefaultCandidate } from './definitions/tab.js'
 import type { ScannedDirectiveLine, SourceIndex } from './lineScanner.js'
 
+import { getExtraIconWarnings, parseIconEntries } from '../icons/entries.js'
 import { normalizePayloadMarkdownIconRef } from '../icons/refs.js'
+import { collectPaletteNames, formatUnknownPaletteMessage } from '../palettes/diagnostics.js'
 import { parseButtonDirectiveLine } from './buttonSyntax.js'
 import { getTabRawValue, resolveTabsDefault, slugTabValue } from './definitions/tab.js'
 import { getLeafDirectiveName, getLeafDirectiveProblem, parseLeafDirectiveLine } from './leafSyntax.js'
@@ -55,17 +57,45 @@ export type LintMarkdownDirectivesOptions = {
    * reported exactly like the renderer does ("Unknown icon pack").
    */
   iconPacks?: readonly string[]
+  /**
+   * Known palette names. When provided, unknown `palette` / `iconPalette`
+   * values and icon-entry palettes are reported like the renderer does.
+   */
+  palettes?: readonly string[]
   /** Configured directive themes (names are what matters). */
   themes?: MarkdownDirectiveThemes
 }
 
-function getIconPackDiagnostics(icon: unknown, options: LintMarkdownDirectivesOptions): string[] {
-  if (typeof icon !== 'string' || !options.iconPacks) return []
+/** Icon-entry option problems, extra icons, then unknown icon packs (one per entry). */
+function getIconDiagnostics(directive: string, icon: unknown, options: LintMarkdownDirectivesOptions): string[] {
+  if (typeof icon !== 'string') return []
 
-  const normalized = normalizePayloadMarkdownIconRef(icon)
-  if (!normalized.icon || options.iconPacks.includes(normalized.icon.packAlias)) return []
+  const { entries, warnings } = parseIconEntries(icon)
+  const diagnostics = [...warnings, ...getExtraIconWarnings(directive, entries)]
 
-  return [`Unknown icon pack "${normalized.icon.packAlias}".`]
+  if (options.iconPacks)
+    for (const entry of entries) {
+      const normalized = normalizePayloadMarkdownIconRef(entry.ref)
+      if (normalized.icon && !options.iconPacks.includes(normalized.icon.packAlias))
+        diagnostics.push(`Unknown icon pack "${normalized.icon.packAlias}".`)
+    }
+
+  return diagnostics
+}
+
+function getPaletteDiagnostics(
+  directive: string,
+  attributes: Record<string, unknown> | undefined,
+  options: LintMarkdownDirectivesOptions,
+): string[] {
+  const known = options.palettes
+  if (!known) return []
+
+  const allowed = layoutDirectiveRegistry.get(directive)?.allowedAttributes ?? []
+
+  return collectPaletteNames(allowed, attributes)
+    .filter((name) => !known.includes(name))
+    .map((name) => formatUnknownPaletteMessage(name, directive, known))
 }
 
 function findNearestFrameIndex(stack: OpenFrame[], predicate: (frame: OpenFrame) => boolean) {
@@ -284,7 +314,10 @@ function getThemeDiagnostics(text: string, options: LintMarkdownDirectivesOption
   if (!token || token.action !== 'open') return []
 
   const definition = layoutDirectiveRegistry.get(token.name)
-  const diagnostics: string[] = [...getIconPackDiagnostics(token.attributes?.icon, options)]
+  const diagnostics: string[] = [
+    ...getIconDiagnostics(token.name, token.attributes?.icon, options),
+    ...getPaletteDiagnostics(token.name, token.attributes, options),
+  ]
 
   if (!definition?.themeAttributes) return diagnostics
 
@@ -314,16 +347,21 @@ function getButtonDiagnostics(text: string, options: LintMarkdownDirectivesOptio
     ...(definition?.validateAttributes?.({ name: 'button', attributes: parsed.attributes }) ?? []),
   ]
   const icon = parsed.attributes.icon
+  const [iconEntry] = typeof icon === 'string' ? parseIconEntries(icon).entries : []
 
-  if (typeof icon === 'string') {
-    const normalized = normalizePayloadMarkdownIconRef(icon)
+  if (iconEntry) {
+    const normalized = normalizePayloadMarkdownIconRef(iconEntry.ref)
     if (normalized.warning) diagnostics.push(normalized.warning)
   }
 
   if (!parsed.label.trim() && typeof parsed.attributes.ariaLabel !== 'string')
     diagnostics.push('Icon-only button requires an ariaLabel attribute.')
 
-  return [...diagnostics, ...getIconPackDiagnostics(icon, options)]
+  return [
+    ...diagnostics,
+    ...getIconDiagnostics('button', icon, options),
+    ...getPaletteDiagnostics('button', parsed.attributes, options),
+  ]
 }
 
 function getBadgeDiagnostics(text: string): string[] {

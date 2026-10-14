@@ -25,6 +25,7 @@ import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f
 import { MarkdownBlockParamsEnableField as MarkdownBlockParamsEnableField_1979c58d51b79af2f94b485a60a7f365 } from '@valkyrianlabs/payload-markdown/client'
 import { PayloadMarkdownField as PayloadMarkdownField_192075c28305aaf2a6d83acda5157143 } from '@valkyrianlabs/payload-markdown/server'
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
+import { MarkdownPaletteRowLabel as MarkdownPaletteRowLabel_1979c58d51b79af2f94b485a60a7f365 } from '@valkyrianlabs/payload-markdown/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -56,5 +57,6 @@ export const importMap = {
   "@valkyrianlabs/payload-markdown/client#MarkdownBlockParamsEnableField": MarkdownBlockParamsEnableField_1979c58d51b79af2f94b485a60a7f365,
   "@valkyrianlabs/payload-markdown/server#PayloadMarkdownField": PayloadMarkdownField_192075c28305aaf2a6d83acda5157143,
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
+  "@valkyrianlabs/payload-markdown/client#MarkdownPaletteRowLabel": MarkdownPaletteRowLabel_1979c58d51b79af2f94b485a60a7f365,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

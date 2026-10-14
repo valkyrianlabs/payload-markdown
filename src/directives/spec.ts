@@ -23,8 +23,12 @@ export type DirectiveAttributeType = 'boolean' | 'enum' | 'number' | 'string' | 
 
 export type DirectiveSpecAttribute = {
   default?: string
-  /** Value format hint for `string` attributes (`icon`: an `@pack/name` icon ref). */
-  format?: 'icon'
+  /**
+   * Value format hint for `string` attributes. `icon`: one `@pack/name` icon
+   * ref, or a comma-separated list where each entry may add `palette=<name>`.
+   * `palette`: a palette name (built-in, configured, or managed in the admin).
+   */
+  format?: 'icon' | 'palette'
   max?: number
   min?: number
   name: string
@@ -105,6 +109,7 @@ function describeAttribute(
   if (NUMBER_ATTRIBUTES[name]) return { ...base, ...NUMBER_ATTRIBUTES[name], type: 'number' }
   if (values) return { ...base, type: 'enum', values: [...values] }
   if (name === 'icon') return { ...base, type: 'string', format: 'icon' }
+  if (name === 'palette' || name === 'iconPalette') return { ...base, type: 'string', format: 'palette' }
 
   return { ...base, type: 'string' }
 }

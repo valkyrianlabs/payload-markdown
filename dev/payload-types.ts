@@ -99,8 +99,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'markdown-appearance': MarkdownAppearance;
+  };
+  globalsSelect: {
+    'markdown-appearance': MarkdownAppearanceSelect<false> | MarkdownAppearanceSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -458,9 +462,19 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  markdownAppearance?: {
+    /**
+     * Allow clients to find markdown-appearance global.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update markdown-appearance global.
+     */
+    update?: boolean | null;
+  };
   'payload-mcp-tool'?: {
     /**
-     * Start here. Returns the payload-markdown authoring guide for this site: the agent workflow, which collections and globals hold markdown, the configured directive themes, icons and code languages, and every directive with its attributes. Read it before writing markdown.
+     * Start here. Returns the payload-markdown authoring guide for this site: the agent workflow, which collections and globals hold markdown, the configured directive themes, colour palettes, icons and code languages, and every directive with its attributes. Read it before writing markdown.
      */
     markdownGuide?: boolean | null;
     /**
@@ -479,6 +493,18 @@ export interface PayloadMcpApiKey {
      * Publishes the latest draft of a document or global after validating all of its markdown. Use only when the user asked to publish.
      */
     markdownPublish?: boolean | null;
+    /**
+     * Lists the colour palettes markdown can use (built-in, configured in code, and managed in the admin), with their colours, plus the syntax to apply them. Palettes colour icons individually and recolour directives without CSS or code changes.
+     */
+    markdownPalettes?: boolean | null;
+    /**
+     * Creates or updates a colour palette in the "Markdown Appearance" global (by name), so markdown can use it right away without code changes or a rebuild. Colours are validated; contrast notes are advisory. Pass previousName to rename. Requires update permission on that global.
+     */
+    markdownPaletteSave?: boolean | null;
+    /**
+     * Deletes a palette from the "Markdown Appearance" global. Markdown that still uses it renders without it and reports an unknown palette. Requires update permission on that global.
+     */
+    markdownPaletteDelete?: boolean | null;
   };
   'payload-mcp-prompt'?: {
     /**
@@ -826,6 +852,12 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         update?: T;
         delete?: T;
       };
+  markdownAppearance?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
   'payload-mcp-tool'?:
     | T
     | {
@@ -834,6 +866,9 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         markdownRead?: T;
         markdownWrite?: T;
         markdownPublish?: T;
+        markdownPalettes?: T;
+        markdownPaletteSave?: T;
+        markdownPaletteDelete?: T;
       };
   'payload-mcp-prompt'?:
     | T
@@ -917,6 +952,113 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Colour palettes for payload-markdown content.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "markdown-appearance".
+ */
+export interface MarkdownAppearance {
+  id: number;
+  /**
+   * Named colour themes for markdown. Use one with palette="name" on a directive or "@pack/icon palette=name" on an icon. A palette here replaces a built-in or configured one with the same name.
+   */
+  palettes?:
+    | {
+        /**
+         * Referenced from markdown, for example "debian".
+         */
+        name: string;
+        /**
+         * Optional display name.
+         */
+        label?: string | null;
+        /**
+         * Icon colour and duotone primary layer.
+         */
+        color?: string | null;
+        /**
+         * Duotone secondary layer (empty: the colour).
+         */
+        secondaryColor?: string | null;
+        /**
+         * Links and hovered titles inside directives.
+         */
+        accent?: string | null;
+        /**
+         * Surface of directives that use the palette.
+         */
+        background?: string | null;
+        /**
+         * Border of directives that use the palette.
+         */
+        border?: string | null;
+        /**
+         * Opacity of the duotone secondary layer, 0–1 (empty: the icon’s own, 0.4 for Font Awesome).
+         */
+        secondaryOpacity?: number | null;
+        /**
+         * Optional dark-scheme colours.
+         */
+        dark?: {
+          /**
+           * Icon colour and duotone primary layer in the dark scheme (empty: the light value).
+           */
+          color?: string | null;
+          /**
+           * Duotone secondary layer in the dark scheme (empty: the light value) (empty: the colour).
+           */
+          secondaryColor?: string | null;
+          /**
+           * Links and hovered titles inside directives in the dark scheme (empty: the light value).
+           */
+          accent?: string | null;
+          /**
+           * Surface of directives that use the palette in the dark scheme (empty: the light value).
+           */
+          background?: string | null;
+          /**
+           * Border of directives that use the palette in the dark scheme (empty: the light value).
+           */
+          border?: string | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "markdown-appearance_select".
+ */
+export interface MarkdownAppearanceSelect<T extends boolean = true> {
+  palettes?:
+    | T
+    | {
+        name?: T;
+        label?: T;
+        color?: T;
+        secondaryColor?: T;
+        accent?: T;
+        background?: T;
+        border?: T;
+        secondaryOpacity?: T;
+        dark?:
+          | T
+          | {
+              color?: T;
+              secondaryColor?: T;
+              accent?: T;
+              background?: T;
+              border?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -3,9 +3,16 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { type IconEntry, parseIconEntries } from '../../icons/entries.js'
 import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
+import {
+  applyDirectivePalette,
+  getPaletteRenderProperties,
+  PALETTE_ATTRIBUTES,
+  resolveIconPaletteName,
+} from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 import { getSafeHref, getUnsafeHrefWarnings } from '../urls.js'
 
@@ -101,16 +108,19 @@ function makeFullCardLink(href: string, title: string | undefined, newTab: boole
   }
 }
 
-/** `icon` takes one icon ref or a comma-separated list (`@fa/debian, @fa/ubuntu`). */
-export function parseCardIcons(value: string | undefined): string[] {
-  return value?.split(',').map((icon) => icon.trim()).filter(Boolean) ?? []
-}
-
-function makeIcons(icons: string[], hasEyebrow: boolean): Element {
+/**
+ * `icon` takes one icon or a comma-separated list; each entry may carry its
+ * own palette (`@fa-brands/debian palette=debian`, see icons/entries.ts).
+ */
+function makeIcons(card: Element, icons: IconEntry[], hasEyebrow: boolean): Element {
   return {
     type: 'element',
     children: icons.map((icon) =>
-      makeDirectiveIconPlaceholder(icon, ['pmd-card__icon inline-flex size-5 text-current']),
+      makeDirectiveIconPlaceholder(
+        icon.ref,
+        ['pmd-card__icon inline-flex size-5 text-current'],
+        resolveIconPaletteName(card, icon),
+      ),
     ),
     properties: {
       className: [
@@ -139,7 +149,7 @@ function makeEyebrow(eyebrow: string): Element {
 
 export const cardDirective: LayoutDirectiveDefinition = {
   name: 'card',
-  allowedAttributes: ['eyebrow', 'href', 'icon', 'linkScope', 'newTab', 'theme', 'title'],
+  allowedAttributes: ['eyebrow', 'href', 'icon', 'linkScope', 'newTab', ...PALETTE_ATTRIBUTES, 'theme', 'title'],
   applyHast(node, config, { mergeClassNames }) {
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
     // Re-validate at the hast stage: this is where the live <a href> is built.
@@ -152,7 +162,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
     const newTab = node.properties.dataNewTab === 'true'
     const eyebrow =
       typeof node.properties.dataEyebrow === 'string' ? node.properties.dataEyebrow : undefined
-    const icons = parseCardIcons(
+    const { entries: icons } = parseIconEntries(
       typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined,
     )
     const theme = resolveDirectiveTheme(
@@ -176,10 +186,12 @@ export const cardDirective: LayoutDirectiveDefinition = {
       theme.modifierClassName,
       theme.classes,
     )
+    applyDirectivePalette(node, config)
+
     node.children = [
       ...(href && linkScope === 'full' ? [makeFullCardLink(href, title, newTab)] : []),
       ...(eyebrow ? [makeEyebrow(eyebrow)] : []),
-      ...(icons.length > 0 ? [makeIcons(icons, Boolean(eyebrow))] : []),
+      ...(icons.length > 0 ? [makeIcons(node, icons, Boolean(eyebrow))] : []),
       ...(title ? [makeTitle(title, href && linkScope === 'title' ? href : undefined, newTab)] : []),
       {
         type: 'element',
@@ -212,6 +224,7 @@ export const cardDirective: LayoutDirectiveDefinition = {
       dataEyebrow: getAttribute(node, 'eyebrow'),
       dataHref: getSafeHref(getAttribute(node, 'href')),
       dataIcon: getAttribute(node, 'icon'),
+      ...getPaletteRenderProperties(node),
       dataLinkScope: getLinkScope(node),
       dataNewTab: 'newTab' in (node.attributes ?? {})
         ? getBooleanAttribute(node, 'newTab') ? 'true' : 'false'

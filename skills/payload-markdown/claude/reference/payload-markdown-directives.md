@@ -43,6 +43,24 @@ Install, configure, ship.
 - `:::3col`
 - `:::cell`
 
+## Colour Palettes
+
+Palettes are named colour themes. Use them to colour icons and recolour directives; never write CSS or Tailwind classes for colour.
+
+- One icon: `icon="@pack/name palette=ubuntu"`. In a list, each entry carries its own palette, so order never swaps colours: `icon="@fa-brands/debian palette=debian, @fa-brands/ubuntu palette=ubuntu"`.
+- `iconPalette="name"`: default for a directive's icons without their own (`card`, `cards`, `callout`, `button`).
+- `palette="name"`: surface, border and link accent of `card`, `cards`, `callout`, `button`, `details`, `section`, `steps` or `tabs`, and the default for their icons. It combines with `theme`.
+- Built-in palettes: every Tailwind hue (`red`, `orange`, `amber`, `emerald`, `teal`, `sky`, `violet`, `slate`, …). Sites can add more in code or in the Markdown Appearance global; `markdownGuide` and `markdownPalettes` list the real names.
+
+```md
+:::card[Linux]{
+  icon="@fa-brands/debian palette=debian, @fa-brands/ubuntu palette=ubuntu"
+  theme="glass"
+}
+Debian and Ubuntu support.
+:::
+```
+
 ## Callouts
 
 Use callouts for information that changes how the reader should interpret or execute a task.
@@ -51,7 +69,8 @@ Attributes:
 
 - `variant`: `note`, `info`, `tip`, `warning`, `danger`, or `success`
 - `theme`: `soft`, `solid`, `glass`, or a configured theme
-- `icon`: local icon reference
+- `icon`: local icon reference, optionally `palette=<name>` after it
+- `palette`, `iconPalette`: colour palettes (see Colour Palettes)
 - `[Label]` or legacy `title`
 
 ```md
@@ -173,8 +192,9 @@ Use button links for clear actions. Do not use snippet-only names such as `::but
 - `href`: required
 - `variant`: `primary`, `secondary`, `outline`, `ghost`, or `link`
 - `size`: `sm`, `md`, or `lg`
-- `icon`: local icon reference
+- `icon`: local icon reference, optionally `palette=<name>` after it
 - `iconPosition`: `left` or `right`
+- `palette`: button fill, label and border colours; `iconPalette` for the icon
 - `newTab`
 - `ariaLabel` for icon-only buttons
 

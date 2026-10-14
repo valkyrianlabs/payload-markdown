@@ -3,7 +3,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { expect, test } from '@playwright/test'
 
 import { devUser } from './helpers/credentials'
-import { gridColumnCount, measureColors } from './helpers/visual'
+import { gridColumnCount, measureColors, shapePaint } from './helpers/visual'
 
 // The tests share one dev user and a cold Turbopack dev server; running them in
 // parallel made logins and first compiles race each other.
@@ -496,5 +496,120 @@ test('demo pages do not scroll sideways on a phone', async ({ page }) => {
 
       expect(overflow, `${demo} (${theme})`).toBe(0)
     }
+  }
+})
+
+// Final acceptance for palettes: an MCP agent creates a palette, applies it to
+// one icon of a multi-icon card, and the live page paints that icon's SVG with
+// it; editing the palette changes the page with no CSS, config or rebuild.
+test('an MCP agent creates a palette and paints one icon of a multi-icon card, live', async ({ baseURL, page, request }) => {
+  // Several page loads and MCP round trips; on a cold dev server each compiles first.
+  test.setTimeout(300_000)
+
+  const login = await request.post('/api/users/login', { data: devUser })
+  const { token } = (await login.json()) as { token: string }
+  const headers = { Authorization: `JWT ${token}` }
+  const stamp = Date.now()
+  const slug = `palette-agent-${stamp}`
+  const palette = `agent-red-${stamp}`
+
+  const created = await request.post('/api/pages', {
+    data: {
+      slug,
+      _status: 'published',
+      layout: [{ blockName: 'Platforms', blockType: 'vlMdBlock', content: '## Platforms' }],
+      title: `Palette agent ${slug}`,
+    },
+    headers,
+  })
+  expect(created.status()).toBe(201)
+  const { doc } = (await created.json()) as { doc: { id: number | string } }
+
+  const apiKey = `e2e-palettes-${stamp}-${Math.random().toString(36).slice(2)}`
+  const key = await request.post('/api/payload-mcp-api-keys', {
+    data: {
+      apiKey,
+      enableAPIKey: true,
+      label: 'e2e palette agent',
+      markdownAppearance: { find: true, update: true },
+      pages: { find: true, update: true },
+    },
+    headers,
+  })
+  expect(key.status()).toBe(201)
+
+  const client = new Client({ name: 'payload-markdown-e2e-palettes', version: '1.0.0' })
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL('/api/mcp', baseURL), {
+      requestInit: { headers: { Authorization: `Bearer ${apiKey}` } },
+    }),
+  )
+
+  const call = async (name: string, args: Record<string, unknown>) => {
+    const result = (await client.callTool({ name, arguments: args })) as { content: Array<{ text: string }>; isError?: boolean }
+    expect(result.isError ?? false, result.content[0].text).toBe(false)
+    return result.content[0].text
+  }
+
+  const iconPaint = async (name: string, scheme: 'dark' | 'light') => {
+    await page.goto(`/${slug}?theme=${scheme}`)
+    const icon = page.locator(`svg[data-pmd-palette="${name}"]`).first()
+
+    await expect(icon).toBeVisible()
+    return (await shapePaint(icon.locator('path').first())).fill
+  }
+
+  try {
+    await call('markdownPaletteSave', { palette: { name: palette, color: '#c70036', dark: { color: '#ff6b8b' }, label: 'Agent red' } })
+
+    const { docs } = JSON.parse(await call('markdownRead', { id: doc.id, collection: 'pages' })) as {
+      docs: Array<{ targets: Array<{ ref: string }>; updatedAt: string }>
+    }
+    const markdown = [
+      '## Platforms',
+      '',
+      `:::card[Linux]{icon="@fixture-brand/swirl palette=${palette}, @fixture-brand/friends palette=ubuntu" theme="glass"}`,
+      'Debian and Ubuntu support.',
+      ':::',
+      '',
+      `:::card[Reordered]{icon="@fixture-brand/friends palette=ubuntu, @fixture-brand/swirl palette=${palette}"}`,
+      'Same icons, other order.',
+      ':::',
+      '',
+      ':::card[Duotone]{icon="@fixture-duotone/duotone-styled palette=aurora"}',
+      'Two layers.',
+      ':::',
+    ].join('\n')
+
+    expect(JSON.parse(await call('markdownValidate', { collection: 'pages', markdown, scope: 'blocks' })).ok).toBe(true)
+    await call('markdownWrite', {
+      id: doc.id,
+      collection: 'pages',
+      edits: [{ action: 'replace', markdown, target: docs[0].targets[0].ref }],
+      ifUpdatedAt: docs[0].updatedAt,
+      publish: true,
+    })
+
+    // The agent's palette paints only its icon, in both schemes and in both orders.
+    expect(await iconPaint(palette, 'dark')).toEqual([255, 107, 139])
+    expect(await iconPaint('ubuntu', 'dark')).toEqual([233, 84, 32])
+    expect(await page.locator(`svg[data-pmd-palette="${palette}"]`).count()).toBe(2)
+    expect(await iconPaint(palette, 'light')).toEqual([199, 0, 54])
+
+    // Duotone: distinct primary and secondary layers, with the palette's opacity.
+    await page.goto(`/${slug}?theme=dark`)
+    const duotone = page.locator('svg[data-pmd-palette="aurora"]')
+    const secondary = await shapePaint(duotone.locator('.fa-secondary'))
+    const primary = await shapePaint(duotone.locator('.fa-primary'))
+
+    expect(primary).toEqual({ fill: [56, 189, 248], opacity: 1 })
+    expect(secondary).toEqual({ fill: [196, 181, 253], opacity: 0.7 })
+
+    // Editing the palette changes the live page: no CSS, config or rebuild.
+    await call('markdownPaletteSave', { palette: { name: palette, color: '#0a7d33', dark: { color: '#4ade80' } } })
+    expect(await iconPaint(palette, 'dark')).toEqual([74, 222, 128])
+  } finally {
+    await call('markdownPaletteDelete', { name: palette }).catch(() => undefined)
+    await client.close()
   }
 })

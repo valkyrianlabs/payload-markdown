@@ -1,6 +1,7 @@
 import type { LayoutDirectiveDefinition } from '../types.js'
 
 import { getUnknownAttributeWarnings } from '../attributeDiagnostics.js'
+import { applyDirectivePalette } from '../palette.js'
 import { getUnsafeHrefWarnings } from '../urls.js'
 
 export const BUTTON_VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link'] as const
@@ -10,8 +11,10 @@ export const BUTTON_ALLOWED_ATTRIBUTES = [
   'ariaLabel',
   'href',
   'icon',
+  'iconPalette',
   'iconPosition',
   'newTab',
+  'palette',
   'size',
   'variant',
 ] as const
@@ -39,11 +42,16 @@ export function isButtonIconPosition(value: unknown): value is ButtonIconPositio
 export const buttonDirective: LayoutDirectiveDefinition = {
   name: 'button',
   allowedAttributes: BUTTON_ALLOWED_ATTRIBUTES,
-  applyHast(node, _config, { mergeClassNames }) {
+  applyHast(node, config, { mergeClassNames }) {
     const variant = isButtonVariant(node.properties.dataVariant)
       ? node.properties.dataVariant
       : DEFAULT_BUTTON_VARIANT
     const size = isButtonSize(node.properties.dataSize) ? node.properties.dataSize : DEFAULT_BUTTON_SIZE
+    // The sanitizer strips classes on links, so icon-only is read from the
+    // content: no label text, only the icon.
+    const iconOnly =
+      node.children.length > 0 &&
+      node.children.every((child) => child.type === 'element' || (child.type === 'text' && !child.value.trim()))
 
     node.properties.dataVariant = variant
     node.properties.dataSize = size
@@ -51,7 +59,9 @@ export const buttonDirective: LayoutDirectiveDefinition = {
       'pmd-button',
       `pmd-button--${variant}`,
       `pmd-button--${size}`,
+      iconOnly ? 'pmd-button--icon-only' : undefined,
     )
+    applyDirectivePalette(node, config, 'button')
   },
   attributeValues: {
     iconPosition: BUTTON_ICON_POSITIONS,

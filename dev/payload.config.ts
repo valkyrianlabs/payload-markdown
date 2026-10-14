@@ -86,10 +86,17 @@ const buildDevConfig = async () => {
             },
           },
         },
+        // Runtime palettes: the "Markdown Appearance" global (seeded in seed.ts).
+        appearance: true,
         icons: {
-          baseDir: './public/icons',
+          // public/icons is local (gitignored); the fixture packs are committed
+          // so the e2e suite has icons to paint in CI.
+          baseDir: '.',
           packs: [
-            { alias: 'fa-duotone', path: 'fa/duotone' }
+            { alias: 'fa-duotone', path: 'public/icons/fa/duotone' },
+            { alias: 'fa-brands', path: 'public/icons/fa/brands' },
+            { alias: 'fixture-brand', path: 'tests/fixtures/icons/brand' },
+            { alias: 'fixture-duotone', path: 'tests/fixtures/icons/fa-duotone' },
           ]
         },
       }),
@@ -100,6 +107,10 @@ const buildDevConfig = async () => {
           collections: {
             pages: { description: 'Site pages built from layout blocks, including markdown blocks.', enabled: true },
             posts: { description: 'Blog posts with a markdown content field.', enabled: true },
+          },
+          // Exposes the palettes global so API keys get find/update checkboxes for it.
+          globals: {
+            'markdown-appearance': { description: 'Colour palettes for markdown.', enabled: true },
           },
         }),
       ),

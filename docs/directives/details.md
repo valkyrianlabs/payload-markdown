@@ -28,6 +28,7 @@ These steps are only needed when running from source.
 - `title`: summary text retained for existing Markdown
 - `open`: use `open="true"` to render initially open
 - `theme`: details theme name
+- `palette`: colour palette for the surface, border and links (see [Palettes](/configuration/palettes))
 
 Defaults:
 

@@ -529,7 +529,7 @@ A neighbour with a long eyebrow.
 
 :::cards{columns="2"}
 
-:::card[Linux]{eyebrow="amd64 · Debian & Ubuntu" icon="@fa-duotone/debian, @fa-duotone/ubuntu" href="/docs/linux"}
+:::card[Linux]{eyebrow="amd64 · Debian & Ubuntu" icon="@fa-brands/debian palette=debian, @fa-brands/ubuntu palette=ubuntu" href="/docs/linux"}
 The production platform: a signed APT repository, systemd services and a native FUSE mount at `/mnt/vaulthalla`.
 :::
 

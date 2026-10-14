@@ -12,6 +12,7 @@ import {
 } from '../src/editor/directiveConfig'
 import { getDirectiveThemeValueCompletionOptions } from '../src/editor/directives/completions'
 import { payloadMarkdown } from '../src/index.ts'
+import { DEFAULT_PALETTES } from '../src/palettes/index'
 import { clearPayloadMarkdownSettings } from '../src/runtime'
 
 const renderConfig: MarkdownRenderConfig = {
@@ -40,6 +41,7 @@ describe('CORE-8: the editor receives configured themes and icon packs', () => {
   it('serializes theme names (not classes) and icon pack aliases', () => {
     expect(createEditorDirectiveConfig(renderConfig)).toEqual({
       iconPacks: ['brand'],
+      palettes: DEFAULT_PALETTES.map((palette) => palette.name).sort(),
       themes: {
         callout: [{ name: 'brand', classes: '' }],
         card: { extendDefaults: false, items: [{ name: 'promo', classes: '' }] },

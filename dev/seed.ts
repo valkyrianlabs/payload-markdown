@@ -52,6 +52,35 @@ async function seedDemoPosts(payload: Payload) {
   }
 }
 
+/**
+ * Example palettes for the "Markdown Appearance" global, seeded once while it
+ * is empty: brand colours for platform icons and a duotone pair.
+ */
+const DEMO_PALETTES = [
+  { name: 'debian', color: '#a80030', dark: { color: '#ff5277' }, label: 'Debian' },
+  { name: 'ubuntu', color: '#e95420', label: 'Ubuntu' },
+  { name: 'apple', color: '#555555', dark: { color: '#d4d4d8' }, label: 'Apple' },
+  {
+    name: 'aurora',
+    color: '#0284c7',
+    dark: { color: '#38bdf8', secondaryColor: '#c4b5fd' },
+    label: 'Aurora (duotone)',
+    secondaryColor: '#7c3aed',
+    secondaryOpacity: 0.7,
+  },
+]
+
+async function seedDemoPalettes(payload: Payload) {
+  const appearance = await payload.findGlobal({ slug: 'markdown-appearance', depth: 0 })
+  if ((appearance.palettes ?? []).length > 0) return
+
+  await payload.updateGlobal({
+    slug: 'markdown-appearance',
+    context: { disableRevalidate: true },
+    data: { palettes: DEMO_PALETTES },
+  })
+}
+
 export const seed = async (payload: Payload) => {
   const { totalDocs } = await payload.count({
     collection: 'users',
@@ -69,5 +98,6 @@ export const seed = async (payload: Payload) => {
     })
   }
 
+  await seedDemoPalettes(payload)
   await seedDemoPosts(payload)
 }

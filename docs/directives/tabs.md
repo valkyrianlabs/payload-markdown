@@ -40,6 +40,7 @@ Attributes:
 
 - `default`: selected tab value on first render
 - `theme`: tabs container theme
+- `palette`: colour palette for the surface, border and links (see [Palettes](/configuration/palettes))
 - `tabTheme`: default child tab panel theme
 
 When `default` is missing or does not match a child tab value, the first tab is selected.

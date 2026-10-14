@@ -7,14 +7,36 @@ import {
   FieldError,
   FieldLabel,
   RenderCustomComponent,
+  useConfig,
   useField,
 } from '@payloadcms/ui'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { readEditorDirectiveConfig } from '../../editor/directiveConfig.js'
 import { MarkdownCodeMirror } from '../../editor/MarkdownCodeMirror/Component.js'
 
 const SAVE_DEBOUNCE_MS = 800
+
+/** How long the admin reuses palette names it loaded (every markdown field on a page shares one request). */
+const PALETTE_NAMES_TTL_MS = 30_000
+const paletteNameRequests = new Map<string, { expires: number; names: Promise<string[] | undefined> }>()
+
+/** Names of the palettes in the appearance global, or `undefined` when they cannot be read. */
+function loadAdminPaletteNames(url: string): Promise<string[] | undefined> {
+  const cached = paletteNameRequests.get(url)
+  if (cached && cached.expires > Date.now()) return cached.names
+
+  const names = fetch(url, { credentials: 'include' })
+    .then((response) => (response.ok ? response.json() : undefined))
+    .then((doc: { palettes?: Array<{ name?: unknown }> } | undefined) =>
+      doc ? (doc.palettes ?? []).flatMap((row) => (typeof row?.name === 'string' ? [row.name] : [])) : undefined,
+    )
+    .catch(() => undefined)
+
+  paletteNameRequests.set(url, { expires: Date.now() + PALETTE_NAMES_TTL_MS, names })
+
+  return names
+}
 const fieldBaseClass = 'field-type'
 
 export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
@@ -55,9 +77,44 @@ export const PayloadMarkdownField: TextFieldClientComponent = (props) => {
   // Configured themes and icon packs, injected by the plugin (CORE-8). Keyed
   // by content so a new-but-equal config object does not rebuild the editor.
   const directiveConfigKey = JSON.stringify(admin?.custom ?? null)
-  const directiveConfig = useMemo(
+  const staticDirectiveConfig = useMemo(
     () => readEditorDirectiveConfig(JSON.parse(directiveConfigKey)),
     [directiveConfigKey],
+  )
+
+  // Palettes managed in the admin are data, not config: load their names so
+  // completions and lint know palettes created after the app was built. The
+  // editor reads them through a getter, so their arrival does not rebuild it.
+  const {
+    config: { routes, serverURL },
+  } = useConfig()
+  const paletteNamesRef = useRef<readonly string[] | undefined>(undefined)
+  const appearanceSlug = staticDirectiveConfig?.appearanceSlug
+  const staticPalettes = staticDirectiveConfig?.palettes
+
+  useEffect(() => {
+    if (!appearanceSlug) return
+
+    let active = true
+    const url = `${serverURL ?? ''}${routes.api}/globals/${encodeURIComponent(appearanceSlug)}?depth=0`
+
+    void loadAdminPaletteNames(url).then((names) => {
+      // Without read access the names stay unknown and no palette is linted.
+      if (active && names) paletteNamesRef.current = [...new Set([...(staticPalettes ?? []), ...names])]
+    })
+
+    return () => {
+      active = false
+    }
+  }, [appearanceSlug, routes.api, serverURL, staticPalettes])
+
+  const directiveConfig = useMemo(
+    () =>
+      staticDirectiveConfig && {
+        ...staticDirectiveConfig,
+        getPaletteNames: () => paletteNamesRef.current,
+      },
+    [staticDirectiveConfig],
   )
 
   // Sync in external value changes only when they actually differ.

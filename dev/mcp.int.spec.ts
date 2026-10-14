@@ -86,7 +86,8 @@ beforeAll(async () => {
             pages: { enabled: { find: true, update: true } },
             posts: { enabled: { find: true, update: true } },
           },
-          globals: { footer: { enabled: { find: true, update: true } } },
+          // A test-only global: the dev app's generated types only know its own globals.
+          globals: { footer: { enabled: { find: true, update: true } } } as never,
         }),
       ),
     ],

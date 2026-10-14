@@ -2,9 +2,16 @@ import type { ContainerDirective } from 'mdast-util-directive'
 
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { parseIconEntries } from '../../icons/entries.js'
 import { DIRECTIVE_BODY_CLASS } from '../../styles/directiveSurface.js'
 import { makeDirectiveIconPlaceholder } from '../iconPlaceholder.js'
 import { getDirectiveLabelOrAttribute } from '../labels.js'
+import {
+  applyDirectivePalette,
+  getPaletteRenderProperties,
+  PALETTE_ATTRIBUTES,
+  resolveIconPaletteName,
+} from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 export const CALLOUT_VARIANTS = [
@@ -53,11 +60,15 @@ function getTitle(node: ContainerDirective): string | undefined {
 
 export const calloutDirective: LayoutDirectiveDefinition = {
   name: 'callout',
-  allowedAttributes: ['icon', 'theme', 'title', 'variant'],
+  allowedAttributes: ['icon', ...PALETTE_ATTRIBUTES, 'theme', 'title', 'variant'],
   applyHast(node, config, { mergeClassNames }) {
     const variant = typeof node.properties.dataVariant === 'string' ? node.properties.dataVariant : 'note'
     const title = typeof node.properties.dataTitle === 'string' ? node.properties.dataTitle : undefined
-    const icon = typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined
+    // A callout shows one icon; it may carry its own palette (`@pack/name palette=x`).
+    const [iconEntry] = parseIconEntries(
+      typeof node.properties.dataIcon === 'string' ? node.properties.dataIcon : undefined,
+    ).entries
+    const icon = iconEntry?.ref
     const theme = resolveDirectiveTheme(
       'callout',
       typeof node.properties.dataTheme === 'string' ? node.properties.dataTheme : 'soft',
@@ -76,6 +87,8 @@ export const calloutDirective: LayoutDirectiveDefinition = {
       calloutVariantClasses[isCalloutVariant(variant) ? variant : 'note'],
     )
 
+    applyDirectivePalette(node, config)
+
     node.children = [
       ...(title || icon
         ? [
@@ -84,10 +97,14 @@ export const calloutDirective: LayoutDirectiveDefinition = {
               children: [
                 ...(icon
                   ? [
-                      makeDirectiveIconPlaceholder(icon, [
-                        'pmd-callout__icon inline-flex size-4 shrink-0 text-current',
-                        iconBesideBody ? 'mt-1.5' : 'mt-0.5',
-                      ]),
+                      makeDirectiveIconPlaceholder(
+                        icon,
+                        [
+                          'pmd-callout__icon inline-flex size-4 shrink-0 text-current',
+                          iconBesideBody ? 'mt-1.5' : 'mt-0.5',
+                        ],
+                        resolveIconPaletteName(node, iconEntry),
+                      ),
                     ]
                   : []),
                 ...(title ? [{ type: 'text' as const, value: title }] : []),
@@ -128,6 +145,7 @@ export const calloutDirective: LayoutDirectiveDefinition = {
     return {
       dataDirective: 'callout',
       dataIcon: typeof node.attributes?.icon === 'string' ? node.attributes.icon : undefined,
+      ...getPaletteRenderProperties(node),
       dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'soft',
       dataTitle: getTitle(node),
       dataVariant: resolveCalloutVariant(node),

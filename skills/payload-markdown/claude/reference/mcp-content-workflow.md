@@ -22,6 +22,12 @@ Other clients use the same URL with an `Authorization: Bearer <key>` header. Ask
 6. Report what changed and share `adminUrl` / `previewUrl`.
 7. `markdownPublish` (or `publish: true`) only when the user explicitly asked for the change to go live.
 
+## Palettes
+
+- Use palette names from `markdownGuide` or `markdownPalettes` (built-in hues, configured ones, and ones managed in the Markdown Appearance global).
+- When the user wants a colour no palette provides (a brand colour, say) and `markdownPaletteSave` is available, create a palette instead of writing CSS: `{ "palette": { "name": "debian", "label": "Debian", "color": "#a80030", "dark": { "color": "#ff5277" } } }`. Give it a `dark.color` when `contrast` notes say the light colour is too dark for dark mode. Then reference it: `icon="@fa-brands/debian palette=debian"`.
+- Saving a palette changes every page that uses it, live. Edit or delete an existing palette only when the user asked for that.
+
 ## Edits
 
 - `{ "action": "replace", "target": "<ref>", "markdown": "…" }` replaces a markdown field or block.
@@ -37,6 +43,7 @@ Each markdown block renders on its own: a directive opened in one block must clo
 - `locked`: someone has it open. Ask the user before retrying with `overrideLock: true`.
 - `forbidden`: the API key or user lacks access. Tell the user which collection needs `Find` or `Update` on the key.
 - `no_drafts`: the collection has no drafts, so writes are already live. Tell the user before writing.
+- `invalid_palette`: a colour or name was rejected; `details.errors` says which. `not_enabled`: the site has no runtime palettes (the developer must add `appearance: true`).
 
 ## Rules
 

@@ -31,6 +31,7 @@ Short intro text here.
 `:::section` supports:
 
 - `theme`
+- `palette`: colour palette for the section surface, border and links (see [Palettes](/configuration/palettes))
 
 Close a section with `:::` or `:::endsection`.
 

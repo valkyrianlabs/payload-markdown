@@ -1,10 +1,11 @@
 import type { LayoutDirectiveDefinition } from '../types.js'
 
+import { applyDirectivePalette, getPaletteRenderProperties } from '../palette.js'
 import { resolveDirectiveTheme } from '../themes.js'
 
 export const sectionDirective: LayoutDirectiveDefinition = {
   name: 'section',
-  allowedAttributes: ['theme'],
+  allowedAttributes: ['palette', 'theme'],
   applyHast(node, config, { mergeClassNames }) {
     const theme = resolveDirectiveTheme(
       'section',
@@ -13,6 +14,7 @@ export const sectionDirective: LayoutDirectiveDefinition = {
     )
 
     node.properties.dataTheme = theme.name
+    applyDirectivePalette(node, config)
     node.properties.className = mergeClassNames(
       '[&>:first-child]:mt-0 [&>:last-child]:mb-0',
       theme.hookClassName,
@@ -28,6 +30,7 @@ export const sectionDirective: LayoutDirectiveDefinition = {
   },
   getMdastRenderProperties(node) {
     return {
+      ...getPaletteRenderProperties(node),
       dataTheme: typeof node.attributes?.theme === 'string' ? node.attributes.theme : 'default',
     }
   },

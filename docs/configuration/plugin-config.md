@@ -87,6 +87,8 @@ payloadMarkdown({
 - `collections`: map of collection slugs to `true`, an options object, or a falsey value to skip
 - `code`: Shiki and fenced code rendering defaults
 - `icons`: local SVG icon packs available to Markdown directives
+- `palettes`: named colour palettes for icons and directives (see [Palettes](/configuration/palettes))
+- `appearance`: `true` adds the Markdown Appearance global, where editors and MCP agents manage palettes at runtime (see [Palettes](/configuration/palettes))
 - `themes`: directive theme registry extensions
 - `config`: Markdown wrapper and typography defaults
 
@@ -188,6 +190,7 @@ Collection object options:
 - `installIntoBlocks`: explicitly add or skip `MarkdownBlock` inside collection `blocks` fields
 - `code`: collection-scoped code rendering overrides
 - `themes`: collection-scoped directive themes
+- `palettes`: collection-scoped colour palettes
 - `config`: collection-scoped wrapper and typography config
 
 ## Field Options
