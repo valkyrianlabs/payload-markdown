@@ -4,6 +4,8 @@ import type { Config } from 'payload'
 import { fromHtml } from 'hast-util-from-html'
 import { describe, expect, it } from 'vitest'
 
+import type { MarkdownRenderConfig } from '../src/types/core'
+
 import { getAppearanceSlug } from '../src/appearance/runtime'
 import { compileMarkdown } from '../src/core/renderMarkdown'
 import { lintMarkdownDirectives } from '../src/directives/diagnostics'
@@ -45,7 +47,7 @@ function elements(html: string, test: (element: Element) => boolean): Element[] 
     for (const child of node.children ?? []) walk(child as Element)
   }
 
-  walk(fromHtml(html, { fragment: true }))
+  walk(fromHtml(html, { fragment: true }) as unknown as Element)
 
   return found
 }
@@ -143,12 +145,15 @@ describe('palette layers', () => {
       enabled: true,
       palettes: [{ name: 'brand', color: '#000001' }],
     }
-    const viaRuntime = resolveMarkdownRenderConfig({ runtimePalettes: [{ name: 'brand', color: '#000002' }], settings })
+    const viaRuntime = resolveMarkdownRenderConfig({
+      runtimePalettes: [{ name: 'brand', color: '#000002' }],
+      settings,
+    }) as MarkdownRenderConfig
     const viaRenderer = resolveMarkdownRenderConfig({
       palettes: [{ name: 'brand', color: '#000003' }],
       runtimePalettes: [{ name: 'brand', color: '#000002' }],
       settings,
-    })
+    }) as MarkdownRenderConfig
 
     expect(getPaletteRegistry(viaRuntime.palettes).get('brand')?.light.color).toBe('#000002')
     expect(getPaletteRegistry(viaRenderer.palettes).get('brand')?.light.color).toBe('#000003')
