@@ -9,6 +9,7 @@ Default layout:
 ```text
 docs/
   index.md
+  stack.toml        # optional project metadata, see reference/stack-toml.md
   getting-started/
     installation.md
 skills/
@@ -30,6 +31,8 @@ Rules:
   custom static fallback assets.
 - Asset files are served raw and are not parsed as docs pages.
 - Asset files do not need docs frontmatter.
+- `docs/stack.toml` is project metadata (title, description, technology stack)
+  sent as the manifest `project`, never a docs page.
 - `index.md` routes to the docs set route base.
 - Nested docs paths route below the docs set route base.
 - A frontmatter `slug` only overrides the final route segment.

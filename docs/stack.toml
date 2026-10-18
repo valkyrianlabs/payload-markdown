@@ -1,0 +1,58 @@
+# Project metadata for the payload-markdown docs set: synced by pmdocs, shown on preview
+# cards and in the public projects API. Maintained alongside the code (see the
+# payload-markdown-docs agent skill, reference/stack-toml.md).
+
+[project]
+title = "Payload Markdown"
+description = "Structured Markdown editing and rendering for Payload CMS with CodeMirror, Shiki, directives, themes, and server-first output."
+
+[[stack.languages]]
+name = "TypeScript"
+
+[[stack.frameworks]]
+name = "Payload CMS"
+
+[[stack.frameworks]]
+name = "Next.js"
+
+[[stack.frameworks]]
+name = "React"
+
+[[stack.libraries]]
+name = "CodeMirror"
+
+[[stack.libraries]]
+name = "Shiki"
+
+[[stack.libraries]]
+name = "unified"
+
+[[stack.libraries]]
+name = "remark"
+
+[[stack.libraries]]
+name = "rehype"
+
+[[stack.libraries]]
+name = "Zod"
+
+[[stack.protocols]]
+name = "Model Context Protocol"
+
+[[stack.tooling]]
+name = "pnpm"
+
+[[stack.tooling]]
+name = "SWC"
+
+[[stack.tooling]]
+name = "Vitest"
+
+[[stack.tooling]]
+name = "Playwright"
+
+[[stack.distribution]]
+name = "npm"
+
+[[stack.distribution]]
+name = "GitHub Actions"

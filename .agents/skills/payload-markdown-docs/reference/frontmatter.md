@@ -12,7 +12,7 @@ status: published
 tags:
   - getting-started
 dependencies:
-  - "@valkyrianlabs/payload-markdown"
+  - "payload-markdown"
 redirectFrom:
   - /docs/install
 ---

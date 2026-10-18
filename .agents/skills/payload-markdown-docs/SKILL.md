@@ -1,12 +1,13 @@
 ---
 name: payload-markdown-docs
-description: Use this skill when maintaining Git-backed documentation for a project that uses `@valkyrianlabs/payload-markdown-docs`.
+description: Use this skill when maintaining Git-backed documentation for a project that uses `payload-markdown-docs` (also published as `payload-markdown-docs`).
 ---
 
 # Payload Markdown Docs Skill
 
 Use this skill in Codex when maintaining Git-backed documentation for a project
-that uses `@valkyrianlabs/payload-markdown-docs`.
+that uses `payload-markdown-docs` (also published as
+`payload-markdown-docs`; same package, either name).
 
 Edit repo-local source files first. Treat generated Payload docs records and
 synced raw assets as server-owned output, not as source of truth.
@@ -17,17 +18,45 @@ native `pmdocs` CLI or served from the package
 
 This skill owns the docs package structure, plugin sync workflow, routing,
 frontmatter, and plugin-specific safety rules. It intentionally does not define
-Payload Markdown directive syntax or renderer formatting details. Use the
-sibling `payload-markdown` skill for those:
+Payload Markdown directive syntax, styling, layout, themes, palettes, or the
+Payload Markdown MCP content workflow. Doc bodies are payload-markdown, so read
+the sibling `payload-markdown` skill for all of that:
 
 - `../payload-markdown/SKILL.md`
 - `../payload-markdown/reference/payload-markdown-directives.md`
+- `../payload-markdown/reference/directive-spec.json`
 - `../payload-markdown/reference/formatting.md`
 - `../payload-markdown/reference/quality.md`
+- `../payload-markdown/reference/automated-docs-workflow.md`
+- `../payload-markdown/reference/mcp-content-workflow.md`
 
-The `pmdocs install skill --agent codex` installer writes this sibling skill.
-If it is missing, reinstall the skill bundle before guessing directive names,
-props, themes, or formatting rules.
+`pmdocs install skill --agent codex` writes this sibling skill next to this
+one, taken from the project's installed `payload-markdown` package when there
+is one (so it matches the version the site renders with). If it is missing or
+outdated (`npx payload-markdown skill check`), reinstall it with
+`pmdocs install skill --agent codex --force` or
+`npx payload-markdown skill install` before guessing directive names, props,
+themes, or formatting rules.
+
+## Keep These Skills Current
+
+At the start of docs work in a project, run:
+
+```bash
+pmdocs skill check
+```
+
+- `outdated` or `missing`: run `pmdocs skill update` right away, without asking,
+  then re-read this file and `../payload-markdown/SKILL.md` before continuing.
+  The update refreshes this skill and the `payload-markdown` skill together and
+  keeps the installed `--docs-root` and `--package-manager`.
+- `modified`: someone edited the installed skill. Do not pass `--force`; tell the
+  user a newer skill is available and let them decide.
+- `current`: carry on.
+
+`pmdocs validate` and `pmdocs plan` print the same reminder on stderr ("the agent
+skill installed in this project is stale"); treat it the same way. Skip the check
+when `pmdocs` is not installed.
 
 ## Current Model
 
@@ -70,9 +99,47 @@ props, themes, or formatting rules.
   delete behavior matters.
 - Do not directly mutate generated Payload records unless the user explicitly
   asks for admin-side overrides.
+- When connected to the site's MCP server, follow `reference/mcp.md`: doc
+  content and frontmatter cannot be changed over MCP; change them in Git.
 - Do not invent directives, frontmatter fields, CLI flags, sync modes, runtime
   features, route helpers, or publishing behavior.
 - Do not describe unsupported features as implemented.
+
+## Project Metadata (`stack.toml`)
+
+`./docs/stack.toml` describes the product the docs are for: an optional
+title and description, and the technology stack grouped into categories. Agents
+own and maintain it; `pmdocs` validates it and syncs it to the docs set, where
+it appears on preview cards and in the site's public projects API. Read
+`reference/stack-toml.md` before creating or changing it.
+
+```toml
+[project]
+title = "Vaulthalla"
+description = "The Final Cloud — encrypted storage."
+
+[[stack.languages]]
+name = "C++23"
+
+[[stack.libraries]]
+name = "libpqxx"
+```
+
+- Update it in the same change whenever the project gains, drops or replaces a
+  language, framework, library, database, runtime, service or major tool. Do not
+  wait to be asked.
+- Categories are free-form keys (`languages`, `libraries`, `databases`,
+  `infrastructure`, `protocols`, `security`, ...). Keep the names a project
+  already uses; order categories and items by importance.
+- List what the project actually uses, as names people recognize (`PostgreSQL`,
+  not `postgres-16-alpine`). No icons, versions in separate keys, or URLs.
+- `title` and `description` replace the docs set's admin title and description
+  unless an admin turned on "Manually manage title/desc". Leave them out to keep
+  the admin's text.
+- Deleting the file stops syncing metadata (the last synced stack stays). An
+  empty `[stack]` table clears the stack.
+- `pmdocs validate` reports problems with the key to fix, such as
+  `stack.languages[1].name`.
 
 ## Negative Rules
 
@@ -171,19 +238,25 @@ pmdocs install routes --payload-app "src/app/(payload)"
 
 - `reference/docs-package.md`
 - `reference/frontmatter.md`
+- `reference/stack-toml.md`
 - `reference/workflow.md`
 - `reference/sync.md`
 - `reference/routing.md`
 - `reference/admin.md`
+- `reference/mcp.md`
 - `reference/troubleshooting.md`
 - `examples/github-actions.md`
 
 Payload Markdown companion references:
 
 - `../payload-markdown/reference/payload-markdown-directives.md`
+- `../payload-markdown/reference/directive-spec.json`
 - `../payload-markdown/reference/formatting.md`
 - `../payload-markdown/reference/quality.md`
+- `../payload-markdown/reference/automated-docs-workflow.md`
+- `../payload-markdown/reference/mcp-content-workflow.md`
 - `../payload-markdown/examples/docs-page.md`
+- `../payload-markdown/examples/reference-page.md`
 
 ## Safety Checklist
 
@@ -191,8 +264,9 @@ Before finishing:
 
 1. Confirm changed docs live under the configured docs root, normally `./docs`.
 2. Confirm changed docs have valid plugin frontmatter.
-3. Confirm internal links are root-relative and route-aware.
-4. If directives changed, confirm them against the sibling `payload-markdown` skill.
-5. Run validate.
-6. Run plan when sync behavior matters.
-7. Report validation or plan failures instead of guessing.
+3. Confirm `stack.toml` still matches the project's technologies.
+4. Confirm internal links are root-relative and route-aware.
+5. If directives changed, confirm them against the sibling `payload-markdown` skill.
+6. Run validate.
+7. Run plan when sync behavior matters.
+8. Report validation or plan failures instead of guessing.
