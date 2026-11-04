@@ -89,8 +89,10 @@ build_image() {
         echo "run-ci: building $image (tools: ${tools:-unknown})" >&2
         podman build --quiet --tag "$image" --build-arg "VALKYRIANLABS_TOOLS=$tools" \
           --file "$root/ci/Containerfile" "$root/ci" >/dev/null
+        # Older tags go, except those a running job's container still uses: `rmi --force` would kill
+        # that job (exit 143 mid-test). They are removed by the next build after those jobs finish.
         podman images --format '{{.Repository}}:{{.Tag}}' --filter "reference=$repository" |
-          grep -vx "$image" | xargs -r podman rmi --force >/dev/null 2>&1 || true
+          { grep -vx "$image" || true; } | while read -r old; do podman rmi "$old" >/dev/null 2>&1 || true; done
       fi
       flock -u 9
     fi
